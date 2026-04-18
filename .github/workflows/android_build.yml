@@ -1,0 +1,110 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: |
+          rm -f package-lock.json
+          npm install --no-audit --no-fund --legacy-peer-deps
+
+      - name: Build Web App
+        run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '21'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Add Android Platform
+        run: |
+          if [ ! -d "android" ]; then
+            npx cap add android
+          else
+            echo "Android platform already exists, skipping."
+          fi
+
+      - name: Inject Permissions
+        run: |
+          if ! grep -q "ACCESS_COARSE_LOCATION" android/app/src/main/AndroidManifest.xml; then
+            sed -i '/<\/manifest>/i \
+            <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />\
+            <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />' android/app/src/main/AndroidManifest.xml
+          fi
+
+      - name: Inject Intent Filter
+        run: |
+          sed -i '/<\/activity>/i \
+          <intent-filter>\
+              <action android:name="android.intent.action.VIEW" />\
+              <category android:name="android.intent.category.DEFAULT" />\
+              <category android:name="android.intent.category.BROWSABLE" />\
+              <data android:scheme="com.zajelexpress.admin" android:host="callback" />\
+          </intent-filter>' android/app/src/main/AndroidManifest.xml
+          echo "AndroidManifest.xml content after injection:"
+          cat android/app/src/main/AndroidManifest.xml
+
+      - name: Sync Capacitor
+        run: npx cap sync android
+
+      - name: Distribute Assets
+        run: node scripts/distribute-assets.js
+
+      - name: Build APKs
+        run: |
+          cd android
+          # حذف مجلد gradle بالكامل وإعادة إنشائه لضمان سلامة الملفات
+          rm -rf gradle
+          gradle wrapper
+          chmod +x gradlew
+          ./gradlew assembleDebug assembleRelease || { echo "Gradle build failed"; exit 1; }
+
+      - name: Generate Debug Keystore
+        run: |
+          mkdir -p ~/.android
+          keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+
+      - name: Sign Release APK
+        run: |
+          BUILD_TOOLS_DIR=$(ls -d $ANDROID_HOME/build-tools/* | tail -1)
+          # Zipalign the unsigned APK
+          $BUILD_TOOLS_DIR/zipalign -v 4 android/app/build/outputs/apk/release/app-release-unsigned.apk android/app/build/outputs/apk/release/app-release-aligned.apk
+          # Sign the aligned APK
+          $BUILD_TOOLS_DIR/apksigner sign --ks ~/.android/debug.keystore --ks-pass pass:android --key-pass pass:android --ks-key-alias androiddebugkey --out android/app/build/outputs/apk/release/app-release.apk android/app/build/outputs/apk/release/app-release-aligned.apk
+          # Verify the signed APK
+          $BUILD_TOOLS_DIR/apksigner verify android/app/build/outputs/apk/release/app-release.apk
+
+      - name: Upload Debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Upload Release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-apk
+          path: android/app/build/outputs/apk/release/app-release.apk

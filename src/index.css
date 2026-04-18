@@ -1,0 +1,192 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #10b981; /* emerald-500 */
+  --color-secondary: #4f46e5; /* indigo-600 */
+}
+
+@keyframes bg-pulse {
+  0%, 100% { background-color: #fecaca; } /* red-200 */
+  50% { background-color: #f87171; } /* red-400 */
+}
+.animate-bg-pulse {
+  animation: bg-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+body {
+  @apply bg-[#F3F6F9] transition-colors duration-300;
+}
+
+.dark body {
+  @apply bg-[#151521];
+}
+
+/* Global Dark Mode Styles for Elements */
+.dark .bg-white {
+  @apply !bg-[#1E1E2D];
+}
+
+.dark .text-gray-900 {
+  @apply !text-white;
+}
+
+.dark .text-gray-800 {
+  @apply !text-gray-200;
+}
+
+.dark .text-gray-700 {
+  @apply !text-gray-300;
+}
+
+.dark .text-gray-600 {
+  @apply !text-gray-400;
+}
+
+.dark .text-gray-500 {
+  @apply !text-gray-500;
+}
+
+.dark .text-gray-400 {
+  @apply !text-gray-500;
+}
+
+.dark .border-gray-50,
+.dark .border-gray-100,
+.dark .border-gray-200,
+.dark .border-gray-300 {
+  @apply !border-gray-700/60;
+}
+
+.dark .bg-gray-50,
+.dark .bg-gray-50\/50,
+.dark .bg-gray-50\/30 {
+  @apply !bg-[#2B2B40];
+}
+
+.dark .bg-gray-100 {
+  @apply !bg-[#2B2B40];
+}
+
+.dark .bg-gray-200 {
+  @apply !bg-[#3F4254];
+}
+
+.dark .bg-gray-900 {
+  @apply !bg-emerald-600 hover:!bg-emerald-700;
+}
+
+.dark .bg-gray-800 {
+  @apply !bg-[#2B2B40] border border-gray-700;
+}
+
+.bg-zap-gradient {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.dark .bg-zap-gradient {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+}
+
+.dark .rounded-\[2\.5rem\],
+.dark .rounded-3xl,
+.dark .rounded-2xl,
+.dark .rounded-xl {
+  @apply border border-gray-700/50;
+}
+
+.dark .hover\:bg-gray-50:hover,
+.dark .hover\:bg-gray-100:hover,
+.dark .hover\:bg-emerald-50:hover {
+  @apply hover:!bg-[#2B2B40];
+}
+
+.dark table thead {
+  @apply !bg-[#2B2B40];
+}
+
+.dark table th {
+  @apply !text-gray-400;
+}
+
+.dark table tbody tr:nth-child(even) {
+  @apply !bg-[#1E1E2D]/50;
+}
+
+.dark input, 
+.dark select, 
+.dark textarea {
+  @apply !bg-[#1E1E2D] !border-gray-600 !text-white focus:!border-emerald-500 focus:!ring-1 focus:!ring-emerald-500/20;
+}
+
+.dark .shadow-sm,
+.dark .shadow-md,
+.dark .shadow-lg,
+.dark .shadow-xl,
+.dark .shadow-2xl {
+  @apply !shadow-none;
+}
+
+/* Status Badges & Color Accents in Dark Mode */
+.dark .bg-emerald-50, .dark .bg-emerald-50\/30, .dark .bg-emerald-50\/50 { @apply !bg-emerald-900/20; }
+.dark .text-emerald-700, .dark .text-emerald-800 { @apply !text-emerald-400; }
+.dark .text-emerald-600 { @apply !text-emerald-500; }
+.dark .border-emerald-100, .dark .border-emerald-200 { @apply !border-emerald-900/30; }
+.dark .bg-emerald-100 { @apply !bg-emerald-900/30; }
+
+.dark .bg-green-50 { @apply !bg-green-900/20; }
+.dark .text-green-700, .dark .text-green-800 { @apply !text-green-400; }
+.dark .text-green-600 { @apply !text-green-500; }
+.dark .border-green-100 { @apply !border-green-900/30; }
+
+.dark .bg-amber-50 { @apply !bg-amber-900/20; }
+.dark .text-amber-700, .dark .text-amber-800 { @apply !text-amber-400; }
+.dark .text-amber-600 { @apply !text-amber-500; }
+.dark .border-amber-100 { @apply !border-amber-900/30; }
+
+.dark .bg-blue-50 { @apply !bg-blue-900/20; }
+.dark .text-blue-700, .dark .text-blue-800 { @apply !text-blue-400; }
+.dark .text-blue-600 { @apply !text-blue-500; }
+.dark .border-blue-100 { @apply !border-blue-900/30; }
+
+.dark .bg-red-50 { @apply !bg-red-900/20; }
+.dark .text-red-700, .dark .text-red-800 { @apply !text-red-400; }
+.dark .text-red-600 { @apply !text-red-500; }
+.dark .border-red-100 { @apply !border-red-900/30; }
+
+.dark .bg-indigo-50 { @apply !bg-indigo-900/20; }
+.dark .text-indigo-700, .dark .text-indigo-800 { @apply !text-indigo-400; }
+.dark .text-indigo-600 { @apply !text-indigo-500; }
+.dark .border-indigo-100 { @apply !border-indigo-900/30; }
+
+.dark .bg-purple-50 { @apply !bg-purple-900/20; }
+.dark .text-purple-700, .dark .text-purple-800 { @apply !text-purple-400; }
+.dark .text-purple-600 { @apply !text-purple-500; }
+.dark .border-purple-100 { @apply !border-purple-900/30; }
+
+/* Ensure icons are visible */
+.dark .lucide {
+  @apply transition-colors duration-300;
+}
+
+/* Modal Backdrops */
+.dark .bg-black.bg-opacity-25,
+.dark .bg-black\/50,
+.dark .bg-black\/60,
+.dark .bg-gray-600.bg-opacity-75 {
+  @apply !bg-black/70 !backdrop-blur-md;
+}
+
+/* Custom Scrollbar for dark sidebar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #2B2B40;
+  border-radius: 10px;
+}
+.custom-scrollbar:hover::-webkit-scrollbar-thumb {
+  background-color: #3F4254;
+}

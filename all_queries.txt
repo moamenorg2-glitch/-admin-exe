@@ -1,0 +1,3 @@
+src/pages/Dashboard.tsx:139:          queryClient.invalidateQueries({ queryKey: ['dashboard-data'] }).catch(console.error);
+src/pages/Dashboard.tsx:146:          queryClient.invalidateQueries({ queryKey: ['dashboard-data'] }).catch(console.error);
+src/pages/Dashboard.tsx:230:            onClick={() => queryClient.invalidateQueries({ queryKey: ['dashboard-data'] }).catch(console.error)}

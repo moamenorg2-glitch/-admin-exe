@@ -1,0 +1,9 @@
+{
+	"appId": "com.zajelexpress.admin",
+	"appName": "Admin App",
+	"webDir": "dist",
+	"bundledWebRuntime": false,
+	"server": {
+		"androidScheme": "https"
+	}
+}

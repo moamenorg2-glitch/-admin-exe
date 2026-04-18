@@ -1,0 +1,40 @@
+name: "Build Web & Electron (Win7 32-bit)"
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-electron-win-32:
+    name: Build Electron (Windows 32-bit)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Dependencies
+        run: |
+          if (Test-Path package-lock.json) { Remove-Item -Force package-lock.json }
+          npm cache clean --force
+          npm install --no-audit --no-fund --include=optional
+
+      - name: Build Web & Electron for 32-bit
+        # Using npx electron-builder directly targeting ia32
+        run: npm run build:electron
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.VITE_SUPABASE_SERVICE_ROLE_KEY }}
+
+      - name: Upload Electron Exe
+        uses: actions/upload-artifact@v4
+        with:
+          name: Windows-32bit-App
+          path: release/*.exe
