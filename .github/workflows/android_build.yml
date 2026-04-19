@@ -78,6 +78,8 @@ jobs:
       - name: Build APKs
         run: |
           cd android
+          rm -f gradle/wrapper/gradle-wrapper.jar
+          gradle wrapper --gradle-version 8.7
           chmod +x gradlew
           ./gradlew assembleDebug assembleRelease || { echo "Gradle build failed"; exit 1; }
 
