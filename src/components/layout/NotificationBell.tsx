@@ -136,7 +136,7 @@ export default function NotificationBell() {
               initial={{ opacity: 0, y: 10, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 10, scale: 0.95 }}
-              className="absolute left-0 mt-2 w-80 bg-[#1E1E2D] border border-gray-800 rounded-xl shadow-2xl z-40 overflow-hidden"
+              className="fixed md:absolute left-1/2 -translate-x-1/2 md:left-auto md:right-0 md:translate-x-0 top-20 md:top-full mt-2 w-[calc(100vw-2rem)] md:w-80 bg-[#1E1E2D] border border-gray-800 rounded-xl shadow-2xl z-40 overflow-hidden"
             >
               <div className="p-4 border-b border-gray-800 flex items-center justify-between bg-[#2B2B40]/30">
                 <h3 className="text-sm font-bold text-white">الإشعارات</h3>

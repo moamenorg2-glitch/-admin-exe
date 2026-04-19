@@ -3,10 +3,10 @@ import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './store/authStore';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import ProtectedRoute from './components/auth/ProtectedRoute';
+import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
 
-const Login = lazy(() => import('./pages/Login'));
 const AuthCallback = lazy(() => import('./pages/AuthCallback'));
-const Dashboard = lazy(() => import('./pages/Dashboard'));
 const OrdersList = lazy(() => import('./pages/orders/OrdersList')); // Main Orders List
 const UsersList = lazy(() => import('./pages/users/UsersList'));
 const VendorsList = lazy(() => import('./pages/vendors/VendorsList'));
@@ -67,7 +67,8 @@ export default function App() {
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<Dashboard />} />
             <Route path="/orders" element={<OrdersList />} />
-            <Route path="/users" element={<UsersList />} />
+            <Route path="/users" element={<UsersList fixedRole="customer" />} />
+            <Route path="/admins" element={<UsersList fixedRole="admin" />} />
             <Route path="/vendors" element={<VendorsList />} />
             <Route path="/drivers" element={<DriversList />} />
             <Route path="/promotions" element={<PromotionsList />} />

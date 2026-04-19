@@ -1,18 +1,21 @@
 import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
-import { Search, Filter, History, User, Table, Info, X } from 'lucide-react';
+import { Search, Filter, History, User, Table, Info, X, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { cn } from '../../lib/utils';
 import { handleGlobalError } from '../../utils/errorHandler';
+import { toast } from 'react-hot-toast';
 
 export default function AuditLogs() {
   const [searchQuery, setSearchQuery] = useState('');
   const [tableFilter, setTableFilter] = useState('All');
   const [selectedLog, setSelectedLog] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [isDeleting, setIsDeleting] = useState(false);
   const itemsPerPage = 15;
+  const queryClient = useQueryClient();
 
   // Reset page when filters change
   useEffect(() => {
@@ -65,6 +68,105 @@ export default function AuditLogs() {
   const logs = data?.logs || [];
   const totalCount = data?.totalCount || 0;
   const totalPages = Math.ceil(totalCount / itemsPerPage);
+
+  const deleteMutation = useMutation({
+    mutationFn: async ({ id, all }: { id?: string; all?: boolean }) => {
+      setIsDeleting(true);
+      const loadingToast = toast.loading(all ? 'جاري مسح السجل...' : 'جاري حذف السجل...');
+      
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        const response = await fetch('/api/admin/delete-audit-log', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session?.access_token}`
+          },
+          body: JSON.stringify({ id, all })
+        });
+
+        if (!response.ok) {
+          const err = await response.json().catch(() => ({ message: 'خطأ غير معروف في السيرفر' }));
+          throw new Error(err.message || 'فشل في حذف السجل');
+        }
+
+        const result = await response.json();
+        toast.success(all ? 'تم مسح السجل بالكامل' : 'تم حذف السجل بنجاح', { id: loadingToast, duration: 2500 });
+        return result;
+      } catch (err: any) {
+        toast.error(err instanceof Error ? err.message : 'حدث خطأ أثناء الحذف', { id: loadingToast, duration: 4000 });
+        throw err;
+      } finally {
+        setIsDeleting(false);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['audit_logs'] }).catch(console.error);
+    },
+    meta: { suppressGlobalError: true }
+  });
+
+  const handleDelete = (id: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    toast.dismiss(); // Clear any previous toasts
+    
+    // We'll use a double-toast approach since window.confirm might be blocked
+    toast((t) => (
+      <div className="flex flex-col gap-3" dir="rtl">
+        <p className="text-sm font-bold text-gray-800">هل أنت متأكد من حذف هذا السجل نهائياً؟</p>
+        <div className="flex gap-2">
+          <button
+            onClick={() => {
+              toast.dismiss(t.id);
+              deleteMutation.mutate({ id });
+            }}
+            className="px-3 py-1.5 bg-rose-500 text-white text-xs rounded-lg font-bold"
+          >
+            تأكيد الحذف
+          </button>
+          <button
+            onClick={() => toast.dismiss(t.id)}
+            className="px-3 py-1.5 bg-gray-100 text-gray-600 text-xs rounded-lg font-bold"
+          >
+            تراجع
+          </button>
+        </div>
+      </div>
+    ), { duration: 4000 });
+  };
+
+  const handleClearAll = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    toast.dismiss(); // Clear any previous toasts
+
+    toast((t) => (
+      <div className="flex flex-col gap-3" dir="rtl">
+        <p className="text-sm font-bold text-gray-800">تحذير! هل أنت متأكد من مسح جميع السجلات؟</p>
+        <div className="flex gap-2">
+          <button
+            onClick={() => {
+              toast.dismiss(t.id);
+              deleteMutation.mutate({ all: true });
+            }}
+            className="px-3 py-1.5 bg-rose-500 text-white text-xs rounded-lg font-bold"
+          >
+            مسح السجل بالكامل
+          </button>
+          <button
+            onClick={() => toast.dismiss(t.id)}
+            className="px-3 py-1.5 bg-gray-100 text-gray-600 text-xs rounded-lg font-bold"
+          >
+            تراجع
+          </button>
+        </div>
+      </div>
+    ), { duration: 4000 });
+  };
 
   const getActionBadge = (action: string) => {
     switch (action) {
@@ -370,7 +472,17 @@ export default function AuditLogs() {
           </div>
         </div>
         
-        <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+        <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto items-center">
+          <button
+            type="button"
+            onClick={(e) => handleClearAll(e)}
+            disabled={isDeleting || logs.length === 0}
+            className="flex items-center gap-2 px-6 py-3 bg-rose-500 text-white rounded-2xl font-bold hover:bg-rose-600 transition-all shadow-lg shadow-rose-200/50 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap active:scale-95 cursor-pointer z-10"
+          >
+            <Trash2 className="h-5 w-5" />
+            حذف الكل
+          </button>
+          
           <div className="relative group flex-1 sm:flex-none">
             <Search className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 group-focus-within:text-emerald-500 transition-colors" />
             <input
@@ -499,13 +611,24 @@ export default function AuditLogs() {
                       <span className="text-sm font-medium text-gray-500">{log.ip_address || '-'}</span>
                     </td>
                     <td className="px-8 py-5 whitespace-nowrap text-center">
-                      <button 
-                        onClick={() => setSelectedLog(log)}
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-50 text-emerald-700 text-sm font-bold hover:bg-emerald-100 transition-colors border border-emerald-100/50"
-                      >
-                        <Info className="h-4 w-4" />
-                        عرض
-                      </button>
+                      <div className="flex items-center justify-center gap-2">
+                        <button 
+                          onClick={() => setSelectedLog(log)}
+                          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-50 text-emerald-700 text-sm font-bold hover:bg-emerald-100 transition-colors border border-emerald-100/50"
+                        >
+                          <Info className="h-4 w-4" />
+                          عرض
+                        </button>
+                        <button 
+                          type="button"
+                          onClick={(e) => handleDelete(log.id, e)}
+                          disabled={isDeleting}
+                          className="p-2 text-rose-500 hover:bg-rose-50 rounded-xl transition-colors disabled:opacity-50 cursor-pointer active:scale-90 z-10"
+                          title="حذف السجل"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))

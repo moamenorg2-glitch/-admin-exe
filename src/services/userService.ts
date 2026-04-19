@@ -148,6 +148,24 @@ export const userService = {
         status: 'نشط'
       });
 
+      if (data.user_type === 'customer') {
+        await supabaseAdmin.from('customer_details').upsert({
+          user_id: userId,
+          phone: formattedPhone
+        });
+      } else if (data.user_type === 'admin') {
+        const { data: perm } = await supabaseAdmin.from('permissions').select('id').eq('module', 'all_access').single();
+        if (perm) {
+          await (supabaseAdmin.from('user_permissions' as any) as any).upsert({
+            user_id: userId,
+            permission_id: perm.id,
+            granted_by: (await supabase.auth.getUser()).data.user?.id || userId
+          });
+        }
+      }
+
+      await supabaseAdmin.from('wallets').upsert({ user_id: userId });
+
       return { success: true, user_id: userId };
     } else {
       // FALLBACK: Use Server API
@@ -160,8 +178,9 @@ export const userService = {
           password: data.password,
           full_name: data.full_name,
           user_type: data.user_type,
+          adminId: (await supabase.auth.getUser()).data.user?.id,
           metadata: {
-            customer_details: data.user_type === 'customer' ? { loyalty_points: 0, total_orders: 0 } : undefined
+            customer_details: data.user_type === 'customer' ? { phone: formattedPhone } : undefined
           }
         })
       });
@@ -178,7 +197,14 @@ export const userService = {
         }
       }
       
-      return response.json();
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        return response.json();
+      } else {
+        const text = await response.text();
+        console.error("Unexpected non-JSON response from API:", text);
+        throw new Error("تلقى المتصفح استجابة غير صالحة من الخادم. قد يكون الخادم في حالة إعادة تشغيل أو هناك خطأ في الإعدادات. يرجى المحاولة مرة أخرى.");
+      }
     }
   },
 
@@ -225,82 +251,37 @@ export const userService = {
   },
 
   async deleteUser(userId: string) {
-    if (!isAdminKeyAvailable) throw new Error("Service Role Key is missing.");
-    
     try {
-      // 1. First delete simple dependent records that don't have mission-critical data
-      // Delete customer details
-      await supabaseAdmin.from('customer_details').delete().eq('user_id', userId);
-      
-      // Delete notifications
-      await supabaseAdmin.from('notifications').delete().eq('user_id', userId);
+      const response = await fetch('/api/admin/delete-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId })
+      });
 
-      // Delete push subscriptions
-      await (supabaseAdmin.from('push_subscriptions' as any) as any).delete().eq('user_id', userId);
-
-      // Delete search history
-      await supabaseAdmin.from('search_history').delete().eq('user_id', userId);
-
-      // Delete favorites
-      await (supabaseAdmin.from('favorites' as any) as any).delete().eq('user_id', userId);
-
-      // 2. Check if user has orders or wallet transactions before total deletion
-      // If we delete the auth user, the profile must be deleted. 
-      // If profile has orders, it will fail due to FK constraints.
-      
-      // We try to delete the auth user. If it fails due to DB constraints, 
-      // we Fallback to "Soft Disable/Delete" by changing status.
-      const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
-      
-      if (error) {
-        // التحقق من كافة رسائل الخطأ التي تشير لوجود سجلات مرتبطة
-        const isConstraintError = 
-          error.message.includes('foreign key constraint') || 
-          error.message.includes('violates foreign key') || 
-          error.message.includes('Database error deleting user') ||
-          error.message.includes('conflict');
-
-        if (isConstraintError) {
-          const timestamp = Date.now();
-          const deletedEmail = `deleted.${timestamp}.${userId}@zajel.com`;
-          const deletedPhone = `000${timestamp}`.substring(0, 15);
-
-          await supabaseAdmin.from('profiles').update({ 
-            status: 'محذوف',
-            full_name: 'مستخدم مؤرشف',
-            primary_phone: deletedPhone,
-            email: deletedEmail
-          }).eq('user_id', userId);
-          
-          // تحديث بيانات الـ Auth لتحرير البريد والاتف الأصلي
-          await supabaseAdmin.auth.admin.updateUserById(userId, {
-            email: deletedEmail,
-            phone: deletedPhone,
-            user_metadata: { is_deleted: true }
-          });
-          
-          return { success: true, message: 'تم أرشفة المستخدم بنجاح وتحرير البريد الإلكتروني' };
+      if (!response.ok) {
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          const err = await response.json();
+          throw new Error(err.message || 'فشل في حذف المستخدم');
+        } else {
+          const text = await response.text();
+          throw new Error(`خطأ في النظام: ${text}`);
         }
-        throw error;
       }
-      
+
       return { success: true };
     } catch (err: any) {
-      if (err.message?.includes('Database error deleting user')) {
-        const timestamp = Date.now();
-        const deletedEmail = `deleted.${timestamp}.${userId}@zajel.com`;
-        await supabaseAdmin.from('profiles').update({ 
-          status: 'محذوف',
-          email: deletedEmail
-        }).eq('user_id', userId);
-        
-        await supabaseAdmin.auth.admin.updateUserById(userId, {
-          email: deletedEmail
-        });
-        
-        return { success: true, message: 'تم أرشفة المستخدم' };
-      }
       console.error('Error in deleteUser:', err);
+      // Fallback for direct UI access if API fails or for specific admins
+      if (isAdminKeyAvailable) {
+        try {
+          await supabaseAdmin.from('profiles').delete().eq('user_id', userId);
+          await supabaseAdmin.auth.admin.deleteUser(userId);
+          return { success: true };
+        } catch (adminErr: any) {
+          throw adminErr;
+        }
+      }
       throw err;
     }
   }

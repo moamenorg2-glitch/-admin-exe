@@ -11,7 +11,7 @@ export const driverService = {
       .from('driver_details')
       .select(`
         *,
-        profile:profiles!driver_details_user_id_fkey(full_name, primary_phone, avatar_url, email),
+        profile:profiles!driver_details_user_id_fkey(full_name, primary_phone, avatar_url, email, status),
         zone:zones!driver_details_zone_id_fkey(name_ar),
         location:driver_location(location),
         active_orders:order_delivery_team(
@@ -244,7 +244,7 @@ export const driverService = {
         status: 'نشط'
       });
 
-      const { error: driverError } = await supabaseAdmin.from('driver_details').insert({
+      const { error: driverError } = await supabaseAdmin.from('driver_details').upsert({
         user_id: userId,
         vehicle_type: formData.vehicle_type,
         vehicle_model: formData.vehicle_model,
@@ -257,6 +257,10 @@ export const driverService = {
       });
 
       if (driverError) throw driverError;
+      
+      // Create Wallet
+      await supabaseAdmin.from("wallets").upsert({ user_id: userId });
+
       return { ...authData, user_id: userId };
     } else {
       const response = await fetch('/api/admin/create-user', {

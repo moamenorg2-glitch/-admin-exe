@@ -431,7 +431,7 @@ export const orderService = {
   },
 
   async recalculateOrderTotals(masterOrderId: string) {
-    // 1. Fetch all sub-orders and their items
+    // 1. Fetch all sub-orders and their items in one go
     const { data: subOrders, error: subOrdersError } = await (supabase as any)
       .from('sub_orders')
       .select(`
@@ -448,41 +448,46 @@ export const orderService = {
       .eq('master_order_id', masterOrderId);
 
     if (subOrdersError) throw subOrdersError;
+    if (!subOrders) return;
 
     let masterItemsTotal = 0;
     let masterTotalTax = 0;
+    const { data: settings } = await supabase.from('system_settings').select('tax_rate').single();
+    const taxRate = settings?.tax_rate || 0;
 
-    // 2. Recalculate each sub-order
-    for (const subOrder of (subOrders as any[]) || []) {
-      // Skip cancelled or rejected sub-orders from totals
-      if (subOrder.sub_status === 'Cancelled' || subOrder.sub_status === 'Rejected') {
-        continue;
-      }
+    // Separate updates for items and sub-orders to batch them if possible
+    // Note: Supabase JS client doesn't support complex batch updates of different rows with different values easily in one call 
+    // without a custom RPC, but we can at least minimize logic overhead.
+    
+    for (const subOrder of (subOrders as any[])) {
+      if (subOrder.sub_status === 'Cancelled' || subOrder.sub_status === 'Rejected') continue;
 
       let subTotal = 0;
-      for (const item of (subOrder.items as any[]) || []) {
+      const itemUpdates = [];
+
+      for (const item of (subOrder.items as any[])) {
         let itemTotal = Number(item.unit_price_snapshot || 0) * Number(item.requested_qty || 0);
         
         if (item.selected_modifiers && typeof item.selected_modifiers === 'object') {
           Object.values(item.selected_modifiers).forEach((m: any) => {
-            if (m && typeof m === 'object' && m.price) {
-              itemTotal += Number(m.price) * Number(item.requested_qty || 0);
-            }
+            if (m?.price) itemTotal += Number(m.price) * Number(item.requested_qty || 0);
           });
         }
         
         subTotal += itemTotal;
-
-        // Update item total_line_price if it changed
         if (item.total_line_price !== itemTotal) {
-          await (supabase as any).from('order_items').update({ total_line_price: itemTotal }).eq('id', item.id);
+          itemUpdates.push({ id: item.id, total_line_price: itemTotal });
         }
       }
 
-      const { data: settings } = await supabase.from('system_settings').select('tax_rate').single();
-      const taxRate = settings?.tax_rate || 0;
-      const subTax = subTotal * (taxRate / 100);
+      // Batch update items for this sub-order if any changed
+      if (itemUpdates.length > 0) {
+        await Promise.all(itemUpdates.map(update => 
+          (supabase as any).from('order_items').update({ total_line_price: update.total_line_price }).eq('id', update.id)
+        ));
+      }
 
+      const subTax = subTotal * (taxRate / 100);
       await supabase
         .from('sub_orders')
         .update({ sub_total: subTotal, sub_tax: subTax })
@@ -492,7 +497,7 @@ export const orderService = {
       masterTotalTax += subTax;
     }
 
-    // 3. Update master order
+    // Update master order logic remains similar but with cleaner variables
     const { data: masterOrder, error: masterError } = await supabase
       .from('master_orders')
       .select('service_fee, delivery_fee, distance_fee, driver_tip, platform_discount, delivery_discount, farthest_vendor_id')
@@ -502,7 +507,7 @@ export const orderService = {
     if (masterError) throw masterError;
 
     let newDeliveryFee = Number(masterOrder.delivery_fee || 0);
-    const activeSubOrdersCount = (subOrders || []).filter(so => so.sub_status !== 'Cancelled' && so.sub_status !== 'Rejected').length;
+    const activeSubOrdersCount = subOrders.filter(so => so.sub_status !== 'Cancelled' && so.sub_status !== 'Rejected').length;
 
     if (activeSubOrdersCount > 0 && masterOrder.farthest_vendor_id) {
       const { data: vendor } = await supabase

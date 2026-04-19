@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
-import { Search, Filter, Car, Edit, Star, MapPin, Power, PowerOff, Plus, X, Loader2, Download, Eye, Trash2, User } from 'lucide-react';
+import { Search, Filter, Car, Edit, Star, MapPin, Power, PowerOff, Plus, X, Loader2, Download, Eye, Trash2, User, Ban, CheckCircle } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'motion/react';
 import { exportToCSV } from '../../utils/export';
 import { driverService } from '../../services/driverService';
+import { userService } from '../../services/userService';
 import { handleGlobalError } from '../../utils/errorHandler';
 
 export default function DriversList() {
@@ -86,6 +87,17 @@ export default function DriversList() {
     onError: (error) => {
       handleGlobalError(error, 'Update Driver Busy Status');
     }
+  });
+
+  const toggleAccountStatusMutation = useMutation({
+    mutationFn: async ({ id, currentStatus }: { id: string; currentStatus: string }) => {
+      const newStatus = currentStatus === 'نشط' || currentStatus === 'active' ? 'محظور' : 'نشط';
+      await userService.updateUserStatus(id, newStatus);
+    },
+    onSuccess: () => {
+      toast.success('تم تحديث حالة حساب السائق بنجاح');
+      queryClient.invalidateQueries({ queryKey: ['drivers'] }).catch(console.error);
+    },
   });
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
@@ -473,15 +485,28 @@ export default function DriversList() {
                     <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                       <div className="flex items-center justify-center gap-2">
                         <button 
+                          onClick={() => toggleAccountStatusMutation.mutate({ id: driver.user_id, currentStatus: driver.profile?.status || 'نشط' })}
+                          disabled={toggleAccountStatusMutation.isPending}
+                          className={cn(
+                            "p-2 rounded-md transition-colors inline-flex items-center gap-1",
+                            driver.profile?.status === 'نشط' || driver.profile?.status === 'active'
+                              ? "text-red-600 hover:text-red-900 bg-red-50" 
+                              : "text-green-600 hover:text-green-900 bg-green-50"
+                          )}
+                          title={driver.profile?.status === 'نشط' || driver.profile?.status === 'active' ? "إيقاف الحساب" : "تفعيل الحساب"}
+                        >
+                          {driver.profile?.status === 'نشط' || driver.profile?.status === 'active' ? <Ban className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
+                        </button>
+                        <button 
                           onClick={() => toggleStatusMutation.mutate({ id: driver.user_id, currentStatus: driver.is_online })}
                           disabled={toggleStatusMutation.isPending}
                           className={cn(
                             "p-2 rounded-md transition-colors inline-flex items-center gap-1",
                             driver.is_online 
-                              ? "text-red-600 hover:text-red-900 bg-red-50" 
-                              : "text-green-600 hover:text-green-900 bg-green-50"
+                              ? "text-orange-600 hover:text-orange-900 bg-orange-50" 
+                              : "text-blue-600 hover:text-blue-900 bg-blue-50"
                           )}
-                          title={driver.is_online ? "إيقاف" : "تفعيل"}
+                          title={driver.is_online ? "إيقاف الدوام (أوفلاين)" : "تسجيل الدوام (أونلاين)"}
                         >
                           {driver.is_online ? <PowerOff className="w-4 h-4" /> : <Power className="w-4 h-4" />}
                         </button>

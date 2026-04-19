@@ -65,7 +65,27 @@ createRoot(document.getElementById('root')!).render(
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <App />
-        <Toaster position="top-center" />
+        <Toaster 
+          position="top-center" 
+          toastOptions={{
+            className: 'font-bold text-sm select-none',
+            duration: 4000,
+            success: {
+              duration: 3000,
+              iconTheme: {
+                primary: '#10b981',
+                secondary: '#fff',
+              },
+            },
+            error: {
+              duration: 5000,
+              iconTheme: {
+                primary: '#ef4444',
+                secondary: '#fff',
+              },
+            },
+          }}
+        />
       </QueryClientProvider>
     </ErrorBoundary>
   </StrictMode>,

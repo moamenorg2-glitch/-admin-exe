@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
-import { Search, Filter, Store, Edit, Star, CheckCircle, XCircle, Plus, X, Loader2, Download, Trash2 } from 'lucide-react';
+import { Search, Filter, Store, Edit, Star, CheckCircle, XCircle, Plus, X, Loader2, Download, Trash2, Ban } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'motion/react';
 import { exportToCSV } from '../../utils/export';
 import { vendorService } from '../../services/vendorService';
+import { userService } from '../../services/userService';
 import { handleGlobalError } from '../../utils/errorHandler';
 
 export default function VendorsList() {
@@ -81,6 +82,17 @@ export default function VendorsList() {
       queryClient.invalidateQueries({ queryKey: ['vendors'] }).catch(console.error);
     },
     // Removed redundant onError: handleGlobalError is called by mutationCache in main.tsx
+  });
+
+  const toggleAccountStatusMutation = useMutation({
+    mutationFn: async ({ id, currentStatus }: { id: string; currentStatus: string }) => {
+      const newStatus = currentStatus === 'نشط' || currentStatus === 'active' ? 'محظور' : 'نشط';
+      await userService.updateUserStatus(id, newStatus);
+    },
+    onSuccess: () => {
+      toast.success('تم تحديث حالة حساب المتجر بنجاح');
+      queryClient.invalidateQueries({ queryKey: ['vendors'] }).catch(console.error);
+    },
   });
 
   const handleDeleteVendor = (vendor: any) => {
@@ -438,17 +450,30 @@ export default function VendorsList() {
                     <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                       <div className="flex items-center justify-center gap-2">
                         <button 
+                          onClick={() => toggleAccountStatusMutation.mutate({ id: vendor.user_id, currentStatus: vendor.profile?.status || 'نشط' })}
+                          disabled={toggleAccountStatusMutation.isPending}
+                          className={cn(
+                            "p-2 rounded-md transition-colors inline-flex items-center gap-1",
+                            vendor.profile?.status === 'نشط' || vendor.profile?.status === 'active'
+                              ? "text-red-600 hover:text-red-900 bg-red-50" 
+                              : "text-green-600 hover:text-green-900 bg-green-50"
+                          )}
+                          title={vendor.profile?.status === 'نشط' || vendor.profile?.status === 'active' ? "إيقاف الحساب" : "تفعيل الحساب"}
+                        >
+                          {vendor.profile?.status === 'نشط' || vendor.profile?.status === 'active' ? <Ban className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
+                        </button>
+                        <button 
                           onClick={() => toggleStatusMutation.mutate({ id: vendor.user_id, currentStatus: vendor.is_open })}
                           disabled={toggleStatusMutation.isPending}
                           className={cn(
                             "p-2 rounded-md transition-colors inline-flex items-center gap-1",
                             vendor.is_open 
-                              ? "text-red-600 hover:text-red-900 bg-red-50" 
-                              : "text-green-600 hover:text-green-900 bg-green-50"
+                              ? "text-orange-600 hover:text-orange-900 bg-orange-50" 
+                              : "text-blue-600 hover:text-blue-900 bg-blue-50"
                           )}
-                          title={vendor.is_open ? "إغلاق" : "فتح"}
+                          title={vendor.is_open ? "إغلاق المتجر (لا يستقبل طلبات)" : "فتح المتجر"}
                         >
-                          {vendor.is_open ? <XCircle className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
+                          {vendor.is_open ? <XCircle className="w-4 h-4" /> : <Store className="w-4 h-4" />}
                         </button>
                         <button 
                           onClick={() => handleEditClick(vendor)}

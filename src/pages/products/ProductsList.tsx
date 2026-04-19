@@ -27,7 +27,7 @@ export default function ProductsList() {
   const [isSectionsManagerOpen, setIsSectionsManagerOpen] = useState(false);
   const [isModifiersManagerOpen, setIsModifiersManagerOpen] = useState(false);
   const [selectedVendor, setSelectedVendor] = useState<string | null>(null);
-  const [selectedProductForModifiers, setSelectedProductForModifiers] = useState<{ id: string, vendorId: string } | null>(null);
+  const [selectedProductForModifiers, setSelectedProductForModifiers] = useState<{ id: string, vendorId: string, sectionId?: string } | null>(null);
   const [editingProduct, setEditingProduct] = useState<ProductFormData | null>(null);
   const [formData, setFormData] = useState<ProductFormData>({
     name_ar: '',
@@ -354,7 +354,11 @@ export default function ProductsList() {
                       <div className="flex items-center justify-center gap-3">
                         <button 
                           onClick={() => {
-                            setSelectedProductForModifiers({ id: product.id, vendorId: product.vendor_id });
+                            setSelectedProductForModifiers({ 
+                              id: product.id, 
+                              vendorId: product.vendor_id,
+                              sectionId: product.section_id 
+                            });
                             setIsModifiersManagerOpen(true);
                           }}
                           className="p-2.5 text-amber-600 hover:bg-amber-50 border border-amber-100 rounded-xl transition-all"
@@ -444,6 +448,7 @@ export default function ProductsList() {
         <ModifiersManager
           productId={selectedProductForModifiers.id}
           vendorId={selectedProductForModifiers.vendorId}
+          sectionId={selectedProductForModifiers.sectionId}
           onClose={() => {
             setIsModifiersManagerOpen(false);
             setSelectedProductForModifiers(null);

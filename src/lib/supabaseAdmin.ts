@@ -29,13 +29,44 @@ export const isAdminKeyAvailable = !!finalServiceRoleKey &&
                                    finalServiceRoleKey.length > 20 && 
                                    finalServiceRoleKey !== 'placeholder-key';
 
+let supabaseAdminInstance: any = null;
+
+export const getSupabaseAdmin = () => {
+  if (!supabaseAdminInstance) {
+    supabaseAdminInstance = createClient<Database>(
+      supabaseUrl, 
+      isAdminKeyAvailable ? finalServiceRoleKey : 'placeholder-key',
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+          detectSessionInUrl: false,
+          storage: {
+            getItem: (key) => null,
+            setItem: (key, value) => {},
+            removeItem: (key) => {}
+          }
+        }
+      }
+    );
+  }
+  return supabaseAdminInstance;
+};
+
+// For backward compatibility while encouraging lazy loading
 export const supabaseAdmin = createClient<Database>(
   supabaseUrl, 
   isAdminKeyAvailable ? finalServiceRoleKey : 'placeholder-key',
   {
     auth: {
       autoRefreshToken: false,
-      persistSession: false
+      persistSession: false,
+      detectSessionInUrl: false,
+      storage: {
+        getItem: (key) => null,
+        setItem: (key, value) => {},
+        removeItem: (key) => {}
+      }
     }
   }
 );

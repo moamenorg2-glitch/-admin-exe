@@ -14,7 +14,26 @@
 }
 
 body {
-  @apply bg-[#F3F6F9] transition-colors duration-300;
+  @apply bg-[#F3F6F9] transition-colors duration-300 antialiased;
+  user-select: none; /* Desktop app feel: no text selection on layout */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Explicitly allow text selection for inputs and content areas */
+input, textarea, [contenteditable="true"], .selectable-text {
+  user-select: text;
+}
+
+/* Custom Selection Color */
+::selection {
+  background-color: rgba(16, 185, 129, 0.2);
+  color: #065f46;
+}
+
+.dark ::selection {
+  background-color: rgba(16, 185, 129, 0.4);
+  color: #a7f3d0;
 }
 
 .dark body {
@@ -176,17 +195,40 @@ body {
   @apply !bg-black/70 !backdrop-blur-md;
 }
 
-/* Custom Scrollbar for dark sidebar */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
+/* Custom Global Scrollbar for Desktop App */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
 }
-.custom-scrollbar::-webkit-scrollbar-track {
+
+::-webkit-scrollbar-track {
   background: transparent;
 }
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: #2B2B40;
-  border-radius: 10px;
+
+::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1; /* slate-300 */
+  border-radius: 20px;
+  border: 3px solid #F3F6F9;
 }
-.custom-scrollbar:hover::-webkit-scrollbar-thumb {
-  background-color: #3F4254;
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: #94a3b8; /* slate-400 */
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background-color: #334155; /* slate-700 */
+  border: 3px solid #151521;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background-color: #475569; /* slate-600 */
+}
+
+/* Drag area for potential frameless window customization */
+.electron-drag {
+  -webkit-app-region: drag;
+}
+
+.electron-no-drag {
+  -webkit-app-region: no-drag;
 }

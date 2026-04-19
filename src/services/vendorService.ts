@@ -11,7 +11,7 @@ export const vendorService = {
       .from('vendor_details')
       .select(`
         *,
-        profile:profiles!vendor_details_user_id_fkey(full_name, primary_phone, avatar_url, email),
+        profile:profiles!vendor_details_user_id_fkey(full_name, primary_phone, avatar_url, email, status),
         category:vendor_categories!vendor_details_category_id_fkey(name_ar),
         zone:zones!vendor_details_zone_id_fkey(name_ar)
       `, { count: 'exact' });
@@ -85,16 +85,19 @@ export const vendorService = {
       if (authError) throw authError;
       const userId = authData.user.id;
 
-      // Update profile
-      await supabaseAdmin.from('profiles').update({
+      // Upsert profile
+      await supabaseAdmin.from('profiles').upsert({
+        user_id: userId,
+        email: formData.email || null,
         full_name: formData.brand_name,
         user_type: 'vendor',
         avatar_url: avatarUrl,
-        primary_phone: formattedPhone
-      }).eq('user_id', userId);
+        primary_phone: formattedPhone,
+        status: 'نشط'
+      });
 
-      // Create vendor details
-      const { error: vendorError } = await supabaseAdmin.from('vendor_details').insert({
+      // Upsert vendor details
+      const { error: vendorError } = await supabaseAdmin.from('vendor_details').upsert({
         user_id: userId,
         brand_name: formData.brand_name,
         category_id: formData.category_id,
@@ -109,6 +112,10 @@ export const vendorService = {
       });
 
       if (vendorError) throw vendorError;
+
+      // Create Wallet
+      await supabaseAdmin.from("wallets").upsert({ user_id: userId });
+
       return { ...authData, user_id: userId };
     }
 

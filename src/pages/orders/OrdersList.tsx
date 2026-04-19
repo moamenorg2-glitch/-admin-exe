@@ -61,6 +61,11 @@ const statusOrder: Record<OrderStatus, number> = {
 };
 
 
+import { useOrders } from '../../hooks/useOrders';
+import { OrderStats } from '../../components/orders/OrderStats';
+
+// ... existing status types/configs ...
+
 export default function OrdersList() {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialOrderId = searchParams.get('orderId');
@@ -70,10 +75,9 @@ export default function OrdersList() {
   const [dateRange, setDateRange] = useState<'today' | 'week' | 'month' | 'custom' | 'all'>('all');
   const [customDateRange, setCustomDateRange] = useState({ start: '', end: '' });
   const [searchQuery, setSearchQuery] = useState('');
-  const [now, setNow] = useState(new Date());
+  
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [assigningDriverOrderId, setAssigningDriverOrderId] = useState<string | null>(null);
-  const [isAutoAssigning, setIsAutoAssigning] = useState(false);
   const [selectedHistoryOrder, setSelectedHistoryOrder] = useState<any | null>(null);
   
   // Thresholds state
@@ -85,6 +89,7 @@ export default function OrdersList() {
     const saved = localStorage.getItem('DELIVERY_THRESHOLD');
     return saved ? parseInt(saved) : 45;
   });
+
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isColumnSettingsOpen, setIsColumnSettingsOpen] = useState(false);
   const [infoModal, setInfoModal] = useState<{
@@ -96,6 +101,15 @@ export default function OrdersList() {
   ]);
   const [openVendorDropdownId, setOpenVendorDropdownId] = useState<string | null>(null);
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
+
+  const pageSize = 20;
+
+  const { data, isLoading, refetch, now } = useOrders(page, pageSize, {
+    selectedStatuses,
+    dateRange,
+    customDateRange,
+    searchQuery
+  });
 
   useEffect(() => {
     if (initialOrderId) {
@@ -127,78 +141,7 @@ export default function OrdersList() {
     );
   };
 
-  const pageSize = 20;
-
   const queryClient = useQueryClient();
-
-  // Real-time subscription
-  useEffect(() => {
-    const channel = supabase
-      .channel('orders-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'master_orders' }, () => {
-        queryClient.invalidateQueries({ queryKey: ['orders'] }).catch(console.error);
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'sub_orders' }, () => {
-        queryClient.invalidateQueries({ queryKey: ['orders'] }).catch(console.error);
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'order_delivery_team' }, () => {
-        queryClient.invalidateQueries({ queryKey: ['orders'] }).catch(console.error);
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel).catch(err => {
-        console.error('Error removing orders channel:', err);
-      });
-    };
-  }, [queryClient]);
-
-  // Update "now" every minute to refresh delay indicators
-  useEffect(() => {
-    const interval = setInterval(() => setNow(new Date()), 60000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // Temporary check for order_delivery_team table
-  useEffect(() => {
-    const checkTable = async () => {
-      try {
-        const { data, error } = await supabase.from('order_delivery_team').select('id').limit(1);
-        if (error) {
-          console.error('Table order_delivery_team check failed:', error);
-          toast.error('خطأ في الوصول إلى جدول فريق التوصيل: ' + error.message);
-        } else {
-          console.log('Table order_delivery_team is accessible:', data);
-        }
-      } catch (err) {
-        console.error('Unexpected error checking table:', err);
-      }
-    };
-    checkTable();
-  }, []);
-
-  const { data, isLoading, refetch } = useQuery({
-    queryKey: ['orders', page, selectedStatuses, dateRange, customDateRange, searchQuery],
-    queryFn: async () => {
-      try {
-        const result = await orderService.fetchOrders(page, pageSize, {
-          selectedStatuses,
-          dateRange,
-          customDateRange,
-          searchQuery
-        });
-
-        const sortedOrders = result.data.sort((a, b) => {
-          return statusOrder[a.status as OrderStatus] - statusOrder[b.status as OrderStatus];
-        });
-
-        return { orders: sortedOrders, count: result.count };
-      } catch (error) {
-        handleGlobalError(error, 'Fetch Orders');
-        throw error;
-      }
-    },
-  });
 
   const handleQuickAccept = async (orderId: string) => {
     try {
@@ -454,50 +397,12 @@ export default function OrdersList() {
       </div>
 
       {/* Summary Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm flex items-center gap-4">
-          <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl">
-            <RefreshCw className="w-6 h-6" />
-          </div>
-          <div>
-            <p className="text-sm font-bold text-gray-400">إجمالي الطلبات</p>
-            <p className="text-2xl font-black text-gray-900">{data?.count || 0}</p>
-          </div>
-        </div>
-        <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm flex items-center gap-4">
-          <div className="p-3 bg-amber-50 text-amber-600 rounded-2xl">
-            <Clock className="w-6 h-6" />
-          </div>
-          <div>
-            <p className="text-sm font-bold text-gray-400">قيد الانتظار</p>
-            <p className="text-2xl font-black text-gray-900">
-              {data?.orders?.filter(o => o.status === 'Pending').length || 0}
-            </p>
-          </div>
-        </div>
-        <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm flex items-center gap-4">
-          <div className="p-3 bg-red-50 text-red-600 rounded-2xl">
-            <AlertCircle className="w-6 h-6" />
-          </div>
-          <div>
-            <p className="text-sm font-bold text-gray-400">طلبات متأخرة</p>
-            <p className="text-2xl font-black text-gray-900">
-              {data?.orders?.filter(o => getDelayStatusForOrder(o).isDelayed).length || 0}
-            </p>
-          </div>
-        </div>
-        <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm flex items-center gap-4">
-          <div className="p-3 bg-emerald-50 text-emerald-600 rounded-2xl">
-            <Store className="w-6 h-6" />
-          </div>
-          <div>
-            <p className="text-sm font-bold text-gray-400">إجمالي المبيعات (مكتملة)</p>
-            <p className="text-2xl font-black text-gray-900">
-              {data?.orders?.filter(o => o.status === 'Completed').reduce((sum, o) => sum + (Number(o.grand_total) || 0), 0).toFixed(2) || '0.00'} ج.م
-            </p>
-          </div>
-        </div>
-      </div>
+      <OrderStats 
+        count={data?.count || 0}
+        pendingCount={data?.orders?.filter(o => o.status === 'Pending').length || 0}
+        delayedCount={data?.orders?.filter(o => getDelayStatusForOrder(o).isDelayed).length || 0}
+        totalSales={data?.orders?.filter(o => o.status === 'Completed').reduce((sum, o) => sum + (Number(o.grand_total) || 0), 0).toFixed(2) || '0.00'}
+      />
 
       {/* Filters & Search */}
       <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm space-y-6">

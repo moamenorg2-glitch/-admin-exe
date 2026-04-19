@@ -9,6 +9,7 @@ import ConfirmModal from '../ui/ConfirmModal';
 interface ModifiersManagerProps {
   productId: string;
   vendorId: string;
+  sectionId?: string;
   onClose: () => void;
 }
 
@@ -22,15 +23,17 @@ interface ModifierOption {
 interface ModifierGroup {
   id: string;
   vendor_id: string;
-  product_id: string;
+  product_id: string | null;
+  section_id: string | null;
   title_ar: string;
   min_selection: number;
   max_selection: number;
   options: ModifierOption[];
 }
 
-export default function ModifiersManager({ productId, vendorId, onClose }: ModifiersManagerProps) {
+export default function ModifiersManager({ productId, vendorId, sectionId, onClose }: ModifiersManagerProps) {
   const [newGroupName, setNewGroupName] = useState('');
+  const [newGroupScope, setNewGroupScope] = useState<'product' | 'section' | 'vendor'>('product');
   const [expandedGroupId, setExpandedGroupId] = useState<string | null>(null);
   const [newOptionName, setNewOptionName] = useState('');
   const [newOptionPrice, setNewOptionPrice] = useState(0);
@@ -39,16 +42,31 @@ export default function ModifiersManager({ productId, vendorId, onClose }: Modif
   const queryClient = useQueryClient();
 
   const { data: groups, isLoading } = useQuery({
-    queryKey: ['modifier-groups', productId],
+    queryKey: ['modifier-groups', productId, sectionId, vendorId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Build filters
+      let query = supabase
         .from('modifier_groups')
         .select(`
           *,
           options:modifier_options(*)
-        ` as any)
-        .eq('product_id', productId)
+        ` as any);
+
+      // We want groups that are:
+      // 1. Specific to this product
+      // 2. OR Global for this section (if sectionId provided)
+      // 3. OR Global for this vendor (where section/product are null)
+      
+      const filters = [`product_id.eq.${productId}`];
+      if (sectionId) {
+        filters.push(`and(section_id.eq.${sectionId},product_id.is.null)`);
+      }
+      filters.push(`and(vendor_id.eq.${vendorId},section_id.is.null,product_id.is.null)`);
+
+      const { data, error } = await query
+        .or(filters.join(','))
         .order('created_at');
+
       if (error) throw error;
       return data as any as ModifierGroup[];
     },
@@ -56,20 +74,28 @@ export default function ModifiersManager({ productId, vendorId, onClose }: Modif
   });
 
   const addGroupMutation = useMutation({
-    mutationFn: async (title: string) => {
+    mutationFn: async ({ title, scope }: { title: string, scope: 'product' | 'section' | 'vendor' }) => {
+      const insertData: any = {
+        vendor_id: vendorId,
+        title_ar: title,
+        min_selection: 0,
+        max_selection: 1
+      };
+
+      if (scope === 'product') {
+        insertData.product_id = productId;
+      } else if (scope === 'section' && sectionId) {
+        insertData.section_id = sectionId;
+      }
+      // If vendor scope, both product_id and section_id remain null
+
       const { error } = await supabase
         .from('modifier_groups')
-        .insert({
-          vendor_id: vendorId,
-          product_id: productId,
-          title_ar: title,
-          min_selection: 0,
-          max_selection: 1
-        });
+        .insert(insertData);
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['modifier-groups', productId] }).catch(console.error);
+      queryClient.invalidateQueries({ queryKey: ['modifier-groups'] }).catch(console.error);
       setNewGroupName('');
       toast.success('تم إضافة مجموعة الإضافات بنجاح');
     },
@@ -155,21 +181,55 @@ export default function ModifiersManager({ productId, vendorId, onClose }: Modif
           {/* Add New Group */}
           <div className="bg-gray-50 p-5 rounded-3xl border border-gray-100 space-y-4">
             <h4 className="text-sm font-black text-gray-500 uppercase tracking-widest">إضافة مجموعة جديدة</h4>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={newGroupName}
-                onChange={(e) => setNewGroupName(e.target.value)}
-                placeholder="مثال: اختر الحجم، إضافات البيتزا..."
-                className="flex-1 px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 font-medium"
-              />
-              <button
-                onClick={() => addGroupMutation.mutate(newGroupName)}
-                disabled={!newGroupName || addGroupMutation.isPending}
-                className="px-6 py-2.5 bg-emerald-600 text-white rounded-xl font-black disabled:opacity-50 shadow-lg shadow-emerald-100"
-              >
-                إضافة
-              </button>
+            <div className="space-y-3">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newGroupName}
+                  onChange={(e) => setNewGroupName(e.target.value)}
+                  placeholder="مثال: اختر الحجم، إضافات البيتزا..."
+                  className="flex-1 px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 font-medium"
+                />
+                <button
+                  onClick={() => addGroupMutation.mutate({ title: newGroupName, scope: newGroupScope })}
+                  disabled={!newGroupName || addGroupMutation.isPending}
+                  className="px-6 py-2.5 bg-emerald-600 text-white rounded-xl font-black disabled:opacity-50 shadow-lg shadow-emerald-100"
+                >
+                  إضافة
+                </button>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => setNewGroupScope('product')}
+                  className={cn(
+                    "px-3 py-1.5 rounded-lg text-xs font-bold border transition-all",
+                    newGroupScope === 'product' ? "bg-emerald-100 border-emerald-200 text-emerald-700" : "bg-white border-gray-200 text-gray-500 hover:bg-gray-50"
+                  )}
+                >
+                  لهذا المنتج فقط
+                </button>
+                {sectionId && (
+                  <button
+                    onClick={() => setNewGroupScope('section')}
+                    className={cn(
+                      "px-3 py-1.5 rounded-lg text-xs font-bold border transition-all",
+                      newGroupScope === 'section' ? "bg-amber-100 border-amber-200 text-amber-700" : "bg-white border-gray-200 text-gray-500 hover:bg-gray-50"
+                    )}
+                  >
+                    لكل منتجات الفئة
+                  </button>
+                )}
+                <button
+                  onClick={() => setNewGroupScope('vendor')}
+                  className={cn(
+                    "px-3 py-1.5 rounded-lg text-xs font-bold border transition-all",
+                    newGroupScope === 'vendor' ? "bg-blue-100 border-blue-200 text-blue-700" : "bg-white border-gray-200 text-gray-500 hover:bg-gray-50"
+                  )}
+                >
+                  لكل منتجات المتجر
+                </button>
+              </div>
             </div>
           </div>
 
@@ -189,10 +249,24 @@ export default function ModifiersManager({ productId, vendorId, onClose }: Modif
                     onClick={() => setExpandedGroupId(expandedGroupId === group.id ? null : group.id)}
                   >
                     <div className="flex items-center gap-3">
-                      <span className="font-black text-gray-900">{group.title_ar}</span>
-                      <span className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-lg font-bold">
-                        {group.options?.length || 0} خيارات
-                      </span>
+                      <div className="flex flex-col">
+                        <span className="font-black text-gray-900">{group.title_ar}</span>
+                        <div className="flex gap-2 mt-1">
+                          <span className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-lg font-bold">
+                            {group.options?.length || 0} خيارات
+                          </span>
+                          {!group.product_id && !group.section_id && (
+                            <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-lg font-bold">
+                              عام للمتجر
+                            </span>
+                          )}
+                          {group.section_id && (
+                            <span className="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-lg font-bold">
+                              عام للفئة
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <button 

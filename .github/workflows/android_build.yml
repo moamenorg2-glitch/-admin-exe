@@ -57,13 +57,15 @@ jobs:
 
       - name: Inject Intent Filter
         run: |
-          sed -i '/<\/activity>/i \
-          <intent-filter>\
-              <action android:name="android.intent.action.VIEW" />\
-              <category android:name="android.intent.category.DEFAULT" />\
-              <category android:name="android.intent.category.BROWSABLE" />\
-              <data android:scheme="com.zajelexpress.admin" android:host="callback" />\
-          </intent-filter>' android/app/src/main/AndroidManifest.xml
+          if ! grep -q "com.zajelexpress.admin" android/app/src/main/AndroidManifest.xml; then
+            sed -i '/<\/activity>/i \
+            <intent-filter>\
+                <action android:name="android.intent.action.VIEW" />\
+                <category android:name="android.intent.category.DEFAULT" />\
+                <category android:name="android.intent.category.BROWSABLE" />\
+                <data android:scheme="com.zajelexpress.admin" android:host="callback" />\
+            </intent-filter>' android/app/src/main/AndroidManifest.xml
+          fi
           echo "AndroidManifest.xml content after injection:"
           cat android/app/src/main/AndroidManifest.xml
 
@@ -76,9 +78,6 @@ jobs:
       - name: Build APKs
         run: |
           cd android
-          # حذف مجلد gradle بالكامل وإعادة إنشائه لضمان سلامة الملفات
-          rm -rf gradle
-          gradle wrapper
           chmod +x gradlew
           ./gradlew assembleDebug assembleRelease || { echo "Gradle build failed"; exit 1; }
 

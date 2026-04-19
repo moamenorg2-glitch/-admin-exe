@@ -28,6 +28,7 @@ export const navigation = [
   { name: 'المنتجات', href: '/products', icon: Package, group: 'إدارة الطلبات' },
   { name: 'التقييمات', href: '/reviews', icon: Star, group: 'إدارة الطلبات' },
   { name: 'العملاء', href: '/users', icon: Users, group: 'إدارة المستخدمين' },
+  { name: 'المسؤولين', href: '/admins', icon: Shield, group: 'إدارة المستخدمين' },
   { name: 'التجار', href: '/vendors', icon: Store, group: 'إدارة المستخدمين' },
   { name: 'السائقين', href: '/drivers', icon: Car, group: 'إدارة المستخدمين' },
   { name: 'المالية والمحافظ', href: '/finance', icon: Wallet, group: 'المالية' },

@@ -1,20 +1,58 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Zajel Express - Admin Dashboard
 
-# Run and deploy your AI Studio app
+نظام متكامل لإدارة خدمات التوصيل والمتاجر والمناديب.
 
-This contains everything you need to run your app locally.
+## 🚀 التقنيات المستخدمة (Tech Stack)
 
-View your app in AI Studio: https://ai.studio/apps/ec85b68d-ba89-42a9-80a7-19e9d1b4e1bd
+- **Frontend:** React 19 (Vite), TypeScript, Tailwind CSS.
+- **Backend/DB:** Supabase (Auth, PostgreSQL, Storage, Realtime).
+- **State Management:** Zustand & TanStack Query (React Query).
+- **Desktop/Mobile Deployment:** Electron & Capacitor.
+- **Icons & UI:** Lucide React, Framer Motion.
 
-## Run Locally
+## 📁 هيكل المجلدات (Folder Structure)
 
-**Prerequisites:**  Node.js
+- `src/components`: المكونات القابلة لإعادة الاستخدام (UI & Modules).
+- `src/pages`: صفحات التطبيق الرئيسية.
+- `src/hooks`: الـ Hooks المخصصة لإدارة المنطق المشترك.
+- `src/services`: خدمات التعامل مع API و Supabase.
+- `src/store`: مخازن الحالة العالمية (Zustand).
+- `src/types`: تعريفات TypeScript للحماية البرمجية.
+- `src/utils`: دوال مساعدة عامة.
 
+## 🛠️ البدء (Getting Started)
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+1. **تثبيت التبعيات:**
+   ```bash
+   npm install
+   ```
+
+2. **إعداد متغيرات البيئة:**
+   قم بإنشاء ملف `.env` بناءً على `.env.example` وأضف مفاتيح Supabase الخاصة بك.
+
+3. **تشغيل المشروع في وضع التطوير:**
+   ```bash
+   npm run dev
+   ```
+
+4. **بناء نسخة الإنتاج:**
+   ```bash
+   npm run build
+   ```
+
+## 🔒 الأمان وأفضل الممارسات
+
+- يتم استخدام **Row Level Security (RLS)** في Supabase لتأمين البيانات.
+- جميع مسارات الأدمن محمية بواسطة `ProtectedRoute`.
+- يتم استخدام `Zod` للتحقق من صحة المدخلات في النماذج.
+
+## 📄 دليل المطورين (Developer Guide)
+
+لإضافة ميزة جديدة، يرجى اتباع النمط التالي:
+1. تعريف الجدول في قاعدة البيانات وتحديث `database.types.ts`.
+2. إنشاء خدمة (Service) في `src/services` للتعامل مع العمليات الأساسية.
+3. إنشاء Hook في `src/hooks` لإدارة جلب البيانات والحالة الفورية.
+4. بناء المكونات في `src/components` ثم دمجها في الصفحات.
+
+---
+بني بحب بواسطة Zajel Team.

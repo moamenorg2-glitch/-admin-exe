@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
@@ -28,10 +28,22 @@ const userTypeNames: Record<string, string> = {
   vendor: 'تاجر',
 };
 
-export default function UsersList() {
+interface UsersListProps {
+  fixedRole?: UserType;
+}
+
+export default function UsersList({ fixedRole }: UsersListProps) {
   const navigate = useNavigate();
   const [page, setPage] = useState(0);
-  const [typeFilter, setTypeFilter] = useState<UserType>('customer');
+  const [typeFilter, setTypeFilter] = useState<UserType>(fixedRole || 'customer');
+  
+  // Update state if prop changes
+  useEffect(() => {
+    if (fixedRole) {
+      setTypeFilter(fixedRole);
+    }
+  }, [fixedRole]);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -345,22 +357,24 @@ export default function UsersList() {
             />
           </div>
 
-          <div className="relative">
-            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-              <Filter className="h-4 w-4 text-gray-400" />
+          {!fixedRole && (
+            <div className="relative">
+              <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                <Filter className="h-4 w-4 text-gray-400" />
+              </div>
+              <select
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value as UserType)}
+                className="block w-full sm:w-48 pr-10 border-gray-300 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm border py-2 pl-3"
+              >
+                <option value="customer">العملاء فقط</option>
+                <option value="All">جميع المستخدمين</option>
+                <option value="admin">المسؤولين</option>
+                <option value="driver">السائقين</option>
+                <option value="vendor">التجار</option>
+              </select>
             </div>
-            <select
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value as UserType)}
-              className="block w-full sm:w-48 pr-10 border-gray-300 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm border py-2 pl-3"
-            >
-              <option value="customer">العملاء فقط</option>
-              <option value="All">جميع المستخدمين</option>
-              <option value="admin">المسؤولين</option>
-              <option value="driver">السائقين</option>
-              <option value="vendor">التجار</option>
-            </select>
-          </div>
+          )}
         </div>
       </div>
 

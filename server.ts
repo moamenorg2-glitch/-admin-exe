@@ -150,7 +150,7 @@ async function startServer() {
     // 2. Create Profile
     const { error: profileError } = await supabaseAdmin
       .from("profiles")
-      .insert({
+      .upsert({
         user_id: userId,
         full_name,
         user_type,
@@ -165,11 +165,11 @@ async function startServer() {
       throw new AppError(profileError.message, 400);
     }
 
-    // 3. Create specific details (driver/vendor/customer)
+    // 3. Create specific details (driver/vendor/customer/admin)
     if (user_type === 'driver' && metadata.driver_details) {
       const { error: driverError } = await supabaseAdmin
         .from("driver_details")
-        .insert({
+        .upsert({
           user_id: userId,
           ...metadata.driver_details
         });
@@ -178,7 +178,7 @@ async function startServer() {
       const { tax_registration_number, ...vendorDetails } = metadata.vendor_details;
       const { error: vendorError } = await supabaseAdmin
         .from("vendor_details")
-        .insert({
+        .upsert({
           user_id: userId,
           tax_registration_number,
           ...vendorDetails
@@ -187,15 +187,30 @@ async function startServer() {
     } else if (user_type === 'customer' && metadata.customer_details) {
       const { error: customerError } = await supabaseAdmin
         .from("customer_details")
-        .insert({
+        .upsert({
           user_id: userId,
           ...metadata.customer_details
         });
       if (customerError) throw new AppError(customerError.message, 400);
+    } else if (user_type === 'admin') {
+      // Grant all_access permission to new admins by default
+      const { data: permData } = await supabaseAdmin
+        .from('permissions')
+        .select('id')
+        .eq('module', 'all_access')
+        .single();
+      
+      if (permData) {
+        await supabaseAdmin.from('user_permissions' as any).upsert({
+          user_id: userId,
+          permission_id: permData.id,
+          granted_by: req.body.adminId || userId
+        });
+      }
     }
 
     // 4. Create Wallet
-    await supabaseAdmin.from("wallets").insert({ user_id: userId });
+    await supabaseAdmin.from("wallets").upsert({ user_id: userId });
 
     res.json({ user_id: userId });
   }));
@@ -282,20 +297,90 @@ async function startServer() {
       return next(new AppError("User ID is required", 400));
     }
 
-    // Delete from Auth (this will cascade to profiles and other tables if foreign keys are set to CASCADE)
-    // However, it's safer to delete from Auth using admin API.
-    const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(userId);
+    console.log(`[DeleteUser] Starting comprehensive cleanup for user: ${userId}`);
+
+    // 1. Get Wallet ID for further deletions
+    const { data: walletData } = await supabaseAdmin.from('wallets').select('user_id').eq('user_id', userId).single();
     
-    if (authError) {
-      // If user doesn't exist in Auth, we might still want to try deleting from profiles
-      if (authError.message.includes('User not found')) {
-        const { error: profileError } = await supabaseAdmin.from('profiles').delete().eq('user_id', userId);
-        if (profileError) throw new AppError(profileError.message, 400);
-      } else {
-        throw new AppError(authError.message, 400);
-      }
+    // 2. Aggregate all deletions in a safe order to satisfy FKs
+    
+    // Delete Sub-items first
+    await supabaseAdmin.from('notifications').delete().eq('user_id', userId);
+    await supabaseAdmin.from('search_history').delete().eq('user_id', userId);
+    await (supabaseAdmin.from('favorites' as any) as any).delete().eq('user_id', userId);
+    await (supabaseAdmin.from('push_subscriptions' as any) as any).delete().eq('user_id', userId);
+    await supabaseAdmin.from('user_permissions' as any).delete().eq('user_id', userId);
+    await supabaseAdmin.from('chat_messages').delete().eq('sender_id', userId);
+    await supabaseAdmin.from('promotion_usage').delete().eq('user_id', userId);
+    
+    // Support tickets
+    await supabaseAdmin.from('support_tickets').delete().eq('user_id', userId);
+    await supabaseAdmin.from('support_tickets').update({ assigned_to: null } as any).eq('assigned_to', userId);
+
+    // Audit logs - set to null to keep history but remove user link
+    await supabaseAdmin.from('audit_logs').update({ admin_id: null } as any).eq('admin_id', userId);
+
+    // Orders Related
+    // If user is customer, get their master orders to delete children first
+    const { data: userOrders } = await supabaseAdmin.from('master_orders').select('id').eq('customer_id', userId);
+    if (userOrders && userOrders.length > 0) {
+        const orderIds = userOrders.map(o => o.id);
+        await supabaseAdmin.from('reviews').delete().in('order_id', orderIds);
+        await supabaseAdmin.from('order_delivery_team').delete().in('master_order_id', orderIds);
+        await supabaseAdmin.from('sub_orders').delete().in('master_order_id', orderIds);
+        await supabaseAdmin.from('master_orders').delete().in('id', orderIds);
     }
 
+    // Wallet transactions
+    await supabaseAdmin.from('wallets_transaction').delete().eq('wallet_id', userId); // wallet_id is same as user_id in this app
+    await supabaseAdmin.from('wallets').delete().eq('user_id', userId);
+
+    // Specific details
+    await supabaseAdmin.from('customer_details').delete().eq('user_id', userId);
+    
+    // Driver cleanup
+    await supabaseAdmin.from('order_delivery_team').delete().eq('driver_id', userId);
+    await supabaseAdmin.from('order_status_history').delete().eq('driver_id', userId);
+    await supabaseAdmin.from('driver_details').delete().eq('user_id', userId);
+    
+    // Vendor cleanup
+    await supabaseAdmin.from('products').delete().eq('vendor_id', userId);
+    await supabaseAdmin.from('menu_sections').delete().eq('vendor_id', userId);
+    await supabaseAdmin.from('modifier_groups').delete().eq('vendor_id', userId);
+    await supabaseAdmin.from('sub_orders').delete().eq('vendor_id', userId);
+    await supabaseAdmin.from('vendor_details').delete().eq('user_id', userId);
+
+    // Finally delete profile
+    await supabaseAdmin.from('profiles').delete().eq('user_id', userId);
+
+    // 3. Delete from Auth
+    const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(userId);
+    
+    if (authError && !authError.message.includes('User not found')) {
+        throw new AppError(authError.message, 400);
+    }
+
+    console.log(`[DeleteUser] Successfully deleted user ${userId} and all related data.`);
+    res.json({ success: true });
+  }));
+
+  app.post("/api/admin/delete-audit-log", catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+    if (!supabaseAdmin) return next(new AppError("Supabase Service Role Key is not configured", 500));
+    const { id, all } = req.body;
+    
+    if (all) {
+      // Use a condition that matches all records
+      const { error } = await supabaseAdmin.from('audit_logs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      if (error) throw new AppError(error.message, 400);
+      console.log(`[AuditLogs] Successfully cleared all audit logs.`);
+    } else if (id) {
+      const { error } = await supabaseAdmin.from('audit_logs').delete().eq('id', id);
+      if (error) throw new AppError(error.message, 400);
+      console.log(`[AuditLogs] Successfully deleted log entry: ${id}`);
+    } else {
+      return next(new AppError("Log ID or 'all' flag is required", 400));
+    }
+    
     res.json({ success: true });
   }));
 

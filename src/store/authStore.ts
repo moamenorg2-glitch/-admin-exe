@@ -38,7 +38,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         // Fetch profile to check if admin
         const { data: profile, error } = await supabase
           .from('profiles')
-          .select('*')
+          .select('full_name, user_type, primary_phone, email, avatar_url, status')
           .eq('user_id', session.user.id)
           .single();
 
@@ -48,8 +48,8 @@ export const useAuthStore = create<AuthState>((set) => ({
           return;
         }
 
-        const isAdmin = (profile as any)?.user_type === 'admin' || session.user.email === 'moamen.org2@gmail.com';
-        set({ user: session.user, profile: profile as Profile, isAdmin, isLoading: false });
+        const isAdmin = (profile as any)?.user_type === 'admin';
+        set({ user: session.user, profile: profile as unknown as Profile, isAdmin, isLoading: false });
       } else {
         set({ user: null, profile: null, isAdmin: false, isLoading: false });
       }
