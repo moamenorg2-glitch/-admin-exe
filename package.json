@@ -74,6 +74,7 @@
       "output": "release"
     },
     "win": {
+      
       "target": [
         {
           "target": "nsis",

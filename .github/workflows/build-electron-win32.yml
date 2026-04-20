@@ -24,6 +24,10 @@ jobs:
           npm cache clean --force
           npm install --no-audit --no-fund --include=optional
 
+      - name: Clean Invalid Icons
+        run: |
+          if (Test-Path icons) { Remove-Item -Recurse -Force icons }
+
       - name: Build Web & Electron for 32-bit
         # Using npx electron-builder directly targeting ia32
         run: npm run build:electron
