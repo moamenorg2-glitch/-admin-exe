@@ -6,6 +6,26 @@ import ProtectedRoute from './components/auth/ProtectedRoute';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 
+// Check for missing Supabase configuration at startup
+const isMissingSupabase = !import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+const MissingConfigWarning = () => (
+  <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+    <div className="bg-white p-8 rounded-2xl shadow-xl max-w-lg w-full text-center border-2 border-red-500">
+      <h1 className="text-2xl font-bold text-red-600 mb-4">تنقل ناقص (Missing Configuration)</h1>
+      <p className="text-gray-700 mb-4">
+        لم يتم العثور على مفتاح <strong>VITE_SUPABASE_ANON_KEY</strong> أثناء عملية البناء من GitHub Actions.
+      </p>
+      <p className="text-gray-600 text-sm bg-red-50 p-4 rounded-xl border border-red-100 text-right" dir="rtl">
+        لحل هذه المشكلة:<br/>
+        1. اذهب إلى إعدادات المستودع في GitHub (Settings &gt; Secrets and variables &gt; Actions).<br/>
+        2. تأكد من إضافة <code>VITE_SUPABASE_ANON_KEY</code> و <code>VITE_SUPABASE_URL</code> بالقيم الصحيحة من لوحة تحكم Supabase.<br/>
+        3. قم بإعادة تشغيل مسار العمل (Re-run Workflow) وسيتم إنشاء تطبيق أندرويد يعمل بشكل صحيح.
+      </p>
+    </div>
+  </div>
+);
+
 const AuthCallback = lazy(() => import('./pages/AuthCallback'));
 const OrdersList = lazy(() => import('./pages/orders/OrdersList')); // Main Orders List
 const UsersList = lazy(() => import('./pages/users/UsersList'));
@@ -44,10 +64,17 @@ export default function App() {
   const { checkUser, isLoading } = useAuthStore();
 
   useEffect(() => {
-    checkUser().catch(err => {
-      console.error('Initial checkUser failed:', err);
-    });
+    // Only check user if Supabase is properly configured
+    if (!isMissingSupabase) {
+      checkUser().catch(err => {
+        console.error('Initial checkUser failed:', err);
+      });
+    }
   }, [checkUser]);
+
+  if (isMissingSupabase) {
+    return <MissingConfigWarning />;
+  }
 
   if (isLoading) {
     return (
