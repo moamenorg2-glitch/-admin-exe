@@ -2,6 +2,7 @@ import { supabase } from '../lib/supabase';
 import { Database } from '../types/database.types';
 import { supabaseAdmin, isAdminKeyAvailable } from '../lib/supabaseAdmin';
 import { formatToE164 } from '../utils/phoneUtils';
+import { getApiUrl } from '../utils/apiUtils';
 
 export type Vendor = Database['public']['Tables']['vendor_details']['Row'];
 
@@ -52,7 +53,7 @@ export const vendorService = {
       return { success: true };
     }
     
-    const response = await fetch('/api/admin/delete-user', {
+    const response = await fetch(getApiUrl('/api/admin/delete-user'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId }),
@@ -119,7 +120,7 @@ export const vendorService = {
       return { ...authData, user_id: userId };
     }
 
-    const response = await fetch('/api/admin/create-user', {
+    const response = await fetch(getApiUrl('/api/admin/create-user'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -191,7 +192,7 @@ export const vendorService = {
       return { success: true };
     }
 
-    const response = await fetch('/api/admin/update-user', {
+    const response = await fetch(getApiUrl('/api/admin/update-user'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

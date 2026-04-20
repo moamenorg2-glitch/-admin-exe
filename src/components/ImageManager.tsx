@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Loader2, Upload, Trash2, Edit } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { handleGlobalError } from '../utils/errorHandler';
+import { getApiUrl } from '../utils/apiUtils';
 
 interface ImageManagerProps {
   bucket: string;
@@ -26,7 +27,7 @@ export const ImageManager: React.FC<ImageManagerProps> = ({ bucket, path, curren
     formData.append('path', path);
 
     try {
-      const endpoint = isUpdate ? '/api/admin/update' : '/api/admin/upload';
+      const endpoint = getApiUrl(isUpdate ? '/api/admin/update' : '/api/admin/upload');
       const response = await fetch(endpoint, {
         method: 'POST',
         body: formData,
@@ -59,7 +60,7 @@ export const ImageManager: React.FC<ImageManagerProps> = ({ bucket, path, curren
   const handleDelete = async () => {
     setIsDeleting(true);
     try {
-      const response = await fetch('/api/admin/delete', {
+      const response = await fetch(getApiUrl('/api/admin/delete'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ bucket, paths: [path] }),

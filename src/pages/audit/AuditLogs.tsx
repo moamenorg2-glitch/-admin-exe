@@ -7,6 +7,7 @@ import { ar } from 'date-fns/locale';
 import { cn } from '../../lib/utils';
 import { handleGlobalError } from '../../utils/errorHandler';
 import { toast } from 'react-hot-toast';
+import { getApiUrl } from '../../utils/apiUtils';
 
 export default function AuditLogs() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -77,7 +78,7 @@ export default function AuditLogs() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         
-        const response = await fetch('/api/admin/delete-audit-log', {
+        const response = await fetch(getApiUrl('/api/admin/delete-audit-log'), {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',

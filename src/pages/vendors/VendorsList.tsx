@@ -9,6 +9,7 @@ import { exportToCSV } from '../../utils/export';
 import { vendorService } from '../../services/vendorService';
 import { userService } from '../../services/userService';
 import { handleGlobalError } from '../../utils/errorHandler';
+import { getApiUrl } from '../../utils/apiUtils';
 
 export default function VendorsList() {
   const [page, setPage] = useState(0);
@@ -127,7 +128,7 @@ export default function VendorsList() {
         uploadFormData.append('bucket', 'profiles');
         uploadFormData.append('path', `${response.user_id}/${Date.now()}_${selectedFile.name}`);
         
-        const uploadRes = await fetch('/api/admin/upload', {
+        const uploadRes = await fetch(getApiUrl('/api/admin/upload'), {
           method: 'POST',
           body: uploadFormData
         });
@@ -205,7 +206,7 @@ export default function VendorsList() {
 
   const deleteVendorMutation = useMutation({
     mutationFn: async (userId: string) => {
-      const response = await fetch('/api/admin/delete-user', {
+      const response = await fetch(getApiUrl('/api/admin/delete-user'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId }),
@@ -261,7 +262,7 @@ export default function VendorsList() {
       uploadFormData.append('path', `${selectedVendor.user_id}/${Date.now()}_${selectedFile.name}`);
       
       try {
-        const response = await fetch('/api/admin/upload', {
+        const response = await fetch(getApiUrl('/api/admin/upload'), {
           method: 'POST',
           body: uploadFormData
         });

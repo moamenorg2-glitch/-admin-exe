@@ -2,6 +2,7 @@ import { supabase } from '../lib/supabase';
 import { Database } from '../types/database.types';
 import { supabaseAdmin, isAdminKeyAvailable } from '../lib/supabaseAdmin';
 import { formatToE164 } from '../utils/phoneUtils';
+import { getApiUrl } from '../utils/apiUtils';
 
 export type Driver = Database['public']['Tables']['driver_details']['Row'];
 
@@ -263,7 +264,7 @@ export const driverService = {
 
       return { ...authData, user_id: userId };
     } else {
-      const response = await fetch('/api/admin/create-user', {
+      const response = await fetch(getApiUrl('/api/admin/create-user'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -338,7 +339,7 @@ export const driverService = {
       return { success: true };
     }
 
-    const response = await fetch('/api/admin/update-user', {
+    const response = await fetch(getApiUrl('/api/admin/update-user'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

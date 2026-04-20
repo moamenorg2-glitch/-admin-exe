@@ -2,6 +2,7 @@ import { supabase } from '../lib/supabase';
 import { Database } from '../types/database.types';
 import { supabaseAdmin, isAdminKeyAvailable } from '../lib/supabaseAdmin';
 import { formatToE164 } from '../utils/phoneUtils';
+import { getApiUrl } from '../utils/apiUtils';
 
 export type Profile = Database['public']['Tables']['profiles']['Row'];
 
@@ -169,7 +170,7 @@ export const userService = {
       return { success: true, user_id: userId };
     } else {
       // FALLBACK: Use Server API
-      const response = await fetch('/api/admin/create-user', {
+      const response = await fetch(getApiUrl('/api/admin/create-user'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -209,50 +210,84 @@ export const userService = {
   },
 
   async updateUser(userId: string, data: any) {
-    if (!isAdminKeyAvailable) throw new Error("Service Role Key is missing. Cannot update users directly.");
     const formattedPhone = formatToE164(data.primary_phone);
 
-    const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
-      email: data.email || undefined,
-      phone: formattedPhone,
-      password: data.password || undefined,
-      user_metadata: {
+    if (isAdminKeyAvailable) {
+      const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+        email: data.email || undefined,
+        phone: formattedPhone,
+        password: data.password || undefined,
+        user_metadata: {
+          full_name: data.full_name,
+          user_type: data.user_type,
+          avatar_url: data.avatar_url,
+        }
+      });
+
+      if (authError) throw authError;
+
+      await supabaseAdmin.from('profiles').update({
         full_name: data.full_name,
         user_type: data.user_type,
         avatar_url: data.avatar_url,
+        primary_phone: formattedPhone
+      }).eq('user_id', userId);
+
+      if (data.user_type === 'customer' && data.city) {
+        await supabaseAdmin.from('customer_details')
+          .update({
+            phone: formattedPhone,
+            city: data.city,
+            district: data.district,
+            street_name: data.street_name,
+            building_number: data.building_number,
+            floor_number: data.floor_number,
+            apartment_num: data.apartment_number,
+            landmark: data.landmark,
+          })
+          .eq('user_id', userId);
       }
-    });
 
-    if (authError) throw authError;
-
-    await supabaseAdmin.from('profiles').update({
-      full_name: data.full_name,
-      user_type: data.user_type,
-      avatar_url: data.avatar_url,
-      primary_phone: formattedPhone
-    }).eq('user_id', userId);
-
-    if (data.user_type === 'customer' && data.city) {
-      await supabaseAdmin.from('customer_details')
-        .update({
+      return { success: true };
+    } else {
+      // FALLBACK: Use Server API
+      const response = await fetch(getApiUrl('/api/admin/update-user'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          email: data.email || undefined,
           phone: formattedPhone,
-          city: data.city,
-          district: data.district,
-          street_name: data.street_name,
-          building_number: data.building_number,
-          floor_number: data.floor_number,
-          apartment_num: data.apartment_number,
-          landmark: data.landmark,
+          password: data.password || undefined,
+          full_name: data.full_name,
+          user_type: data.user_type,
+          avatar_url: data.avatar_url,
+          metadata: {
+            customer_details: data.user_type === 'customer' ? {
+              phone: formattedPhone,
+              city: data.city,
+              district: data.district,
+              street_name: data.street_name,
+              building_number: data.building_number,
+              floor_number: data.floor_number,
+              apartment_num: data.apartment_number,
+              landmark: data.landmark,
+            } : undefined
+          }
         })
-        .eq('user_id', userId);
-    }
+      });
 
-    return { success: true };
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.message || err.error || 'Failed to update user');
+      }
+      return response.json();
+    }
   },
 
   async deleteUser(userId: string) {
     try {
-      const response = await fetch('/api/admin/delete-user', {
+      const response = await fetch(getApiUrl('/api/admin/delete-user'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId })

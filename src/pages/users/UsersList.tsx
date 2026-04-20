@@ -11,6 +11,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { exportToCSV } from '../../utils/export';
 import { userService } from '../../services/userService';
 import { handleGlobalError } from '../../utils/errorHandler';
+import { getApiUrl } from '../../utils/apiUtils';
 
 type UserType = 'admin' | 'customer' | 'driver' | 'vendor' | 'All';
 
@@ -116,7 +117,7 @@ export default function UsersList({ fixedRole }: UsersListProps) {
           uploadFormData.append('bucket', 'profiles');
           uploadFormData.append('path', `${response.user_id}/${Date.now()}_${file.name}`);
           
-          const uploadRes = await fetch('/api/admin/upload', {
+          const uploadRes = await fetch(getApiUrl('/api/admin/upload'), {
             method: 'POST',
             body: uploadFormData
           });
@@ -172,7 +173,7 @@ export default function UsersList({ fixedRole }: UsersListProps) {
           uploadFormData.append('bucket', 'profiles');
           uploadFormData.append('path', `${selectedUser.user_id}/${Date.now()}_${selectedFile.name}`);
           
-          const response = await fetch('/api/admin/upload', {
+          const response = await fetch(getApiUrl('/api/admin/upload'), {
             method: 'POST',
             body: uploadFormData
           });
