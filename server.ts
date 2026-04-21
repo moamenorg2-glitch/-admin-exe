@@ -5,6 +5,7 @@ import { fileURLToPath } from "url";
 import { createClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
 import multer from "multer";
+import cors from "cors";
 
 dotenv.config();
 
@@ -58,6 +59,13 @@ function formatPhone(phone: string): string {
 async function startServer() {
   const app = express();
   const PORT = 3000;
+
+  // السماح بالطلبات الخارجية (CORS) لجميع مسارات API لحل مشكلة تطبيق الأندرويد
+  app.use("/api", cors({
+    origin: "*", // في بيئة الهاتف يكون الأصل عادة http://localhost أو capacitor://localhost
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"]
+  }));
 
   app.use(express.json());
 
