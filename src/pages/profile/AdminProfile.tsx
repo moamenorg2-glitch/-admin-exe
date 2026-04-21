@@ -5,6 +5,7 @@ import { useAuthStore } from '../../store/authStore';
 import { User, Mail, Phone, Shield, Camera, Save, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { handleGlobalError } from '../../utils/errorHandler';
+import { uploadService } from '../../services/uploadService';
 
 export default function AdminProfile() {
   const { profile, user, setProfile } = useAuthStore();
@@ -41,7 +42,7 @@ export default function AdminProfile() {
       if (formData.avatar_url && formData.avatar_url.includes('supabase.co/storage/v1/object/public/profiles/')) {
         const oldPath = formData.avatar_url.split('/profiles/')[1];
         if (oldPath) {
-          await supabase.storage.from('profiles').remove([oldPath]);
+          await uploadService.deleteFile('profiles', oldPath).catch(console.error);
         }
       }
 
@@ -50,23 +51,9 @@ export default function AdminProfile() {
       const fileName = `${user.id}-${Date.now()}.${fileExt}`;
       const filePath = `${user.id}/${fileName}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from('profiles')
-        .upload(filePath, file, { upsert: true });
+      const uploadData = await uploadService.uploadFile(file, 'profiles', filePath);
 
-      if (uploadError) {
-        if (uploadError.message.includes('Bucket not found') || uploadError.message.includes('The resource was not found')) {
-           throw new Error('حاوية التخزين "profiles" غير موجودة في Supabase. يرجى إنشاؤها أولاً.');
-        }
-        throw uploadError;
-      }
-
-      // 3. Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('profiles')
-        .getPublicUrl(filePath);
-
-      setFormData(prev => ({ ...prev, avatar_url: publicUrl }));
+      setFormData(prev => ({ ...prev, avatar_url: uploadData.publicUrl }));
       toast.success('تم رفع الصورة بنجاح، لا تنس حفظ التغييرات');
     } catch (error: any) {
       handleGlobalError(error, 'رفع صورة الملف الشخصي');

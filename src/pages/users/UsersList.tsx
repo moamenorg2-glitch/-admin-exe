@@ -10,6 +10,7 @@ import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'motion/react';
 import { exportToCSV } from '../../utils/export';
 import { userService } from '../../services/userService';
+import { uploadService } from '../../services/uploadService';
 import { handleGlobalError } from '../../utils/errorHandler';
 import { getApiUrl } from '../../utils/apiUtils';
 
@@ -112,20 +113,16 @@ export default function UsersList({ fixedRole }: UsersListProps) {
         });
         
         if (file && response.user_id) {
-          const uploadFormData = new FormData();
-          uploadFormData.append('file', file);
-          uploadFormData.append('bucket', 'profiles');
-          uploadFormData.append('path', `${response.user_id}/${Date.now()}_${file.name}`);
-          
-          const uploadRes = await fetch(getApiUrl('/api/admin/upload'), {
-            method: 'POST',
-            body: uploadFormData
-          });
-          
-          if (uploadRes.ok) {
-            const uploadData = await uploadRes.json();
-            const avatarUrl = uploadData.publicUrl || uploadData.path;
-            await userService.updateProfile(response.user_id, { avatar_url: avatarUrl });
+          try {
+            const uploadData = await uploadService.uploadFile(
+              file, 
+              'profiles', 
+              `${response.user_id}/${Date.now()}_${file.name}`
+            );
+            await userService.updateProfile(response.user_id, { avatar_url: uploadData.publicUrl });
+          } catch (error) {
+            console.error('Failed to upload avatar:', error);
+            toast.error('تم إضافة المستخدم ولكن فشل رفع الصورة');
           }
         }
       } finally {
@@ -168,22 +165,12 @@ export default function UsersList({ fixedRole }: UsersListProps) {
       try {
         let avatarUrl = data.avatar_url;
         if (selectedFile) {
-          const uploadFormData = new FormData();
-          uploadFormData.append('file', selectedFile);
-          uploadFormData.append('bucket', 'profiles');
-          uploadFormData.append('path', `${selectedUser.user_id}/${Date.now()}_${selectedFile.name}`);
-          
-          const response = await fetch(getApiUrl('/api/admin/upload'), {
-            method: 'POST',
-            body: uploadFormData
-          });
-          
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'حدث خطأ أثناء رفع الصورة');
-          }
-          const uploadData = await response.json();
-          avatarUrl = uploadData.publicUrl || uploadData.path;
+          const uploadData = await uploadService.uploadFile(
+            selectedFile, 
+            'profiles', 
+            `${selectedUser.user_id}/${Date.now()}_${selectedFile.name}`
+          );
+          avatarUrl = uploadData.publicUrl;
         }
 
         await userService.updateUser(selectedUser.user_id, {

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Loader2, Upload, Trash2, Edit } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { handleGlobalError } from '../utils/errorHandler';
-import { getApiUrl } from '../utils/apiUtils';
+import { uploadService } from '../services/uploadService';
 
 interface ImageManagerProps {
   bucket: string;
@@ -21,34 +21,9 @@ export const ImageManager: React.FC<ImageManagerProps> = ({ bucket, path, curren
     if (!file) return;
 
     setIsUploading(true);
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('bucket', bucket);
-    formData.append('path', path);
-
     try {
-      const endpoint = getApiUrl(isUpdate ? '/api/admin/update' : '/api/admin/upload');
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const contentType = response.headers.get("content-type");
-        if (contentType && contentType.includes("application/json")) {
-          const errData = await response.json();
-          throw new Error(errData.message || 'Failed to upload image');
-        } else {
-          const text = await response.text();
-          console.error("Upload error response:", text);
-          throw new Error(`Server returned non-JSON response (${response.status})`);
-        }
-      }
-      
-      const data = await response.json();
-      const publicUrl = data.publicUrl || `${(import.meta as any).env.VITE_SUPABASE_URL}/storage/v1/object/public/${bucket}/${path}`;
-      
-      onImageChanged(publicUrl);
+      const uploadData = await uploadService.uploadFile(file, bucket, path);
+      onImageChanged(uploadData.publicUrl);
       toast.success('تم رفع الصورة بنجاح');
     } catch (error) {
       handleGlobalError(error, 'ImageManager.handleUpload');
@@ -60,14 +35,7 @@ export const ImageManager: React.FC<ImageManagerProps> = ({ bucket, path, curren
   const handleDelete = async () => {
     setIsDeleting(true);
     try {
-      const response = await fetch(getApiUrl('/api/admin/delete'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bucket, paths: [path] }),
-      });
-
-      if (!response.ok) throw new Error('Failed to delete image');
-      
+      await uploadService.deleteFile(bucket, path);
       onImageChanged('');
       toast.success('تم حذف الصورة بنجاح');
     } catch (error) {

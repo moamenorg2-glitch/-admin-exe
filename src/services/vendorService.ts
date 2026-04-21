@@ -47,181 +47,102 @@ export const vendorService = {
   },
 
   async deleteVendor(userId: string) {
-    if (isAdminKeyAvailable) {
-      const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
-      if (error) throw error;
-      return { success: true };
-    }
-    
-    const response = await fetch(getApiUrl('/api/admin/delete-user'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId }),
-    });
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to delete vendor');
-    }
-    return response.json();
+    if (!isAdminKeyAvailable) throw new Error("Service Role Key is missing. Cannot delete vendor directly.");
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
+    if (error) throw error;
+    return { success: true };
   },
 
   async createVendor(formData: any, avatarUrl: string) {
+    if (!isAdminKeyAvailable) throw new Error("Service Role Key is missing. Cannot create vendor directly.");
     const formattedPhone = formatToE164(formData.primary_phone);
     
-    if (isAdminKeyAvailable) {
-      // Create user via admin client
-      const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-        email: formData.email || undefined,
-        phone: formattedPhone,
-        password: formData.password,
-        email_confirm: true,
-        phone_confirm: true,
-        user_metadata: {
-          full_name: formData.brand_name,
-          user_type: 'vendor',
-          avatar_url: avatarUrl,
-        }
-      });
-
-      if (authError) throw authError;
-      const userId = authData.user.id;
-
-      // Upsert profile
-      await supabaseAdmin.from('profiles').upsert({
-        user_id: userId,
-        email: formData.email || null,
+    // Create user via admin client
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+      email: formData.email || undefined,
+      phone: formattedPhone,
+      password: formData.password,
+      email_confirm: true,
+      phone_confirm: true,
+      user_metadata: {
         full_name: formData.brand_name,
         user_type: 'vendor',
         avatar_url: avatarUrl,
-        primary_phone: formattedPhone,
-        status: 'نشط'
-      });
-
-      // Upsert vendor details
-      const { error: vendorError } = await supabaseAdmin.from('vendor_details').upsert({
-        user_id: userId,
-        brand_name: formData.brand_name,
-        category_id: formData.category_id,
-        zone_id: formData.zone_id,
-        commission_rate: formData.commission_rate,
-        min_order_value: formData.min_order_value,
-        landmark: formData.address,
-        preparation_time_avg: formData.preparation_time_avg,
-        tax_registration_number: formData.tax_registration_number,
-        is_open: true,
-        is_featured: false
-      });
-
-      if (vendorError) throw vendorError;
-
-      // Create Wallet
-      await supabaseAdmin.from("wallets").upsert({ user_id: userId });
-
-      return { ...authData, user_id: userId };
-    }
-
-    const response = await fetch(getApiUrl('/api/admin/create-user'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email: formData.email || undefined,
-        phone: formattedPhone,
-        password: formData.password,
-        full_name: formData.brand_name,
-        avatar_url: avatarUrl,
-        user_type: 'vendor',
-        metadata: {
-          vendor_details: {
-            brand_name: formData.brand_name,
-            category_id: formData.category_id,
-            zone_id: formData.zone_id,
-            commission_rate: formData.commission_rate,
-            min_order_value: formData.min_order_value,
-            landmark: formData.address,
-            preparation_time_avg: formData.preparation_time_avg,
-            tax_registration_number: formData.tax_registration_number,
-            is_open: true,
-            is_featured: false
-          }
-        }
-      })
+      }
     });
 
-    if (!response.ok) {
-      const err = await response.json();
-      throw new Error(err.message || err.error || 'Failed to create vendor');
-    }
-    return response.json();
+    if (authError) throw authError;
+    const userId = authData.user.id;
+
+    // Upsert profile
+    await supabaseAdmin.from('profiles').upsert({
+      user_id: userId,
+      email: formData.email || null,
+      full_name: formData.brand_name,
+      user_type: 'vendor',
+      avatar_url: avatarUrl,
+      primary_phone: formattedPhone,
+      status: 'نشط'
+    });
+
+    // Upsert vendor details
+    const { error: vendorError } = await supabaseAdmin.from('vendor_details').upsert({
+      user_id: userId,
+      brand_name: formData.brand_name,
+      category_id: formData.category_id,
+      zone_id: formData.zone_id,
+      commission_rate: formData.commission_rate,
+      min_order_value: formData.min_order_value,
+      landmark: formData.address,
+      preparation_time_avg: formData.preparation_time_avg,
+      tax_registration_number: formData.tax_registration_number,
+      is_open: true,
+      is_featured: false
+    });
+
+    if (vendorError) throw vendorError;
+
+    // Create Wallet
+    await supabaseAdmin.from("wallets").upsert({ user_id: userId });
+
+    return { ...authData, user_id: userId };
   },
 
   async updateVendor(userId: string, data: any) {
+    if (!isAdminKeyAvailable) throw new Error("Service Role Key is missing. Cannot update vendor directly.");
     const formattedPhone = formatToE164(data.primary_phone);
 
-    if (isAdminKeyAvailable) {
-      const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
-        email: data.email || undefined,
-        phone: formattedPhone,
-        password: data.password || undefined,
-        user_metadata: {
-          full_name: data.brand_name,
-          user_type: 'vendor',
-          avatar_url: data.avatar_url,
-        }
-      });
-
-      if (authError) throw authError;
-
-      await supabaseAdmin.from('profiles').update({
+    const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+      email: data.email || undefined,
+      phone: formattedPhone,
+      password: data.password || undefined,
+      user_metadata: {
         full_name: data.brand_name,
-        avatar_url: data.avatar_url,
-        primary_phone: formattedPhone
-      }).eq('user_id', userId);
-
-      const { error: vendorError } = await supabaseAdmin.from('vendor_details').update({
-        brand_name: data.brand_name,
-        category_id: data.category_id,
-        zone_id: data.zone_id,
-        commission_rate: data.commission_rate,
-        min_order_value: data.min_order_value,
-        landmark: data.address,
-        preparation_time_avg: data.preparation_time_avg,
-        tax_registration_number: data.tax_registration_number,
-      }).eq('user_id', userId);
-
-      if (vendorError) throw vendorError;
-      return { success: true };
-    }
-
-    const response = await fetch(getApiUrl('/api/admin/update-user'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        userId,
-        email: data.email || undefined,
-        phone: formattedPhone,
-        password: data.password || undefined,
-        full_name: data.brand_name,
-        avatar_url: data.avatar_url,
         user_type: 'vendor',
-        metadata: {
-          vendor_details: {
-            brand_name: data.brand_name,
-            category_id: data.category_id,
-            zone_id: data.zone_id,
-            commission_rate: data.commission_rate,
-            min_order_value: data.min_order_value,
-            landmark: data.address,
-            preparation_time_avg: data.preparation_time_avg,
-            tax_registration_number: data.tax_registration_number,
-          }
-        }
-      })
+        avatar_url: data.avatar_url,
+      }
     });
 
-    if (!response.ok) {
-      const err = await response.json();
-      throw new Error(err.message || err.error || 'Failed to update vendor');
-    }
-    return response.json();
+    if (authError) throw authError;
+
+    await supabaseAdmin.from('profiles').update({
+      full_name: data.brand_name,
+      avatar_url: data.avatar_url,
+      primary_phone: formattedPhone
+    }).eq('user_id', userId);
+
+    const { error: vendorError } = await supabaseAdmin.from('vendor_details').update({
+      brand_name: data.brand_name,
+      category_id: data.category_id,
+      zone_id: data.zone_id,
+      commission_rate: data.commission_rate,
+      min_order_value: data.min_order_value,
+      landmark: data.address,
+      preparation_time_avg: data.preparation_time_avg,
+      tax_registration_number: data.tax_registration_number,
+    }).eq('user_id', userId);
+
+    if (vendorError) throw vendorError;
+    return { success: true };
   }
 };

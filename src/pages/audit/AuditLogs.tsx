@@ -7,7 +7,7 @@ import { ar } from 'date-fns/locale';
 import { cn } from '../../lib/utils';
 import { handleGlobalError } from '../../utils/errorHandler';
 import { toast } from 'react-hot-toast';
-import { getApiUrl } from '../../utils/apiUtils';
+import { supabaseAdmin, isAdminKeyAvailable } from '../../lib/supabaseAdmin';
 
 export default function AuditLogs() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -76,25 +76,20 @@ export default function AuditLogs() {
       const loadingToast = toast.loading(all ? 'جاري مسح السجل...' : 'جاري حذف السجل...');
       
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        const response = await fetch(getApiUrl('/api/admin/delete-audit-log'), {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session?.access_token}`
-          },
-          body: JSON.stringify({ id, all })
-        });
-
-        if (!response.ok) {
-          const err = await response.json().catch(() => ({ message: 'خطأ غير معروف في السيرفر' }));
-          throw new Error(err.message || 'فشل في حذف السجل');
+        if (!isAdminKeyAvailable) {
+          throw new Error("لا يمكن إتمام العملية، مفتاح المسؤول (Service Role Key) غير متوفر.");
         }
 
-        const result = await response.json();
+        if (all) {
+          const { error } = await supabaseAdmin.from('audit_logs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          if (error) throw error;
+        } else if (id) {
+          const { error } = await supabaseAdmin.from('audit_logs').delete().eq('id', id);
+          if (error) throw error;
+        }
+
         toast.success(all ? 'تم مسح السجل بالكامل' : 'تم حذف السجل بنجاح', { id: loadingToast, duration: 2500 });
-        return result;
+        return { success: true };
       } catch (err: any) {
         toast.error(err instanceof Error ? err.message : 'حدث خطأ أثناء الحذف', { id: loadingToast, duration: 4000 });
         throw err;

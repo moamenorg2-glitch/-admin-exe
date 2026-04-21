@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { exportToCSV } from '../../utils/export';
 import { driverService } from '../../services/driverService';
 import { userService } from '../../services/userService';
+import { uploadService } from '../../services/uploadService';
 import { handleGlobalError } from '../../utils/errorHandler';
 import { getApiUrl } from '../../utils/apiUtils';
 
@@ -117,20 +118,16 @@ export default function DriversList() {
       const response = await driverService.createDriver(formData, '');
 
       if (selectedFile && response.user_id) {
-        const uploadFormData = new FormData();
-        uploadFormData.append('file', selectedFile);
-        uploadFormData.append('bucket', 'profiles');
-        uploadFormData.append('path', `${response.user_id}/${Date.now()}_${selectedFile.name}`);
-        
-        const uploadRes = await fetch(getApiUrl('/api/admin/upload'), {
-          method: 'POST',
-          body: uploadFormData
-        });
-        
-        if (uploadRes.ok) {
-          const uploadData = await uploadRes.json();
-          const avatarUrl = uploadData.publicUrl || uploadData.path;
-          await supabase.from('profiles').update({ avatar_url: avatarUrl }).eq('user_id', response.user_id);
+        try {
+          const uploadData = await uploadService.uploadFile(
+            selectedFile, 
+            'profiles', 
+            `${response.user_id}/${Date.now()}_${selectedFile.name}`
+          );
+          await supabase.from('profiles').update({ avatar_url: uploadData.publicUrl }).eq('user_id', response.user_id);
+        } catch (error) {
+          console.error('Failed to upload avatar:', error);
+          toast.error('تم إضافة السائق ولكن فشل رفع الصورة.');
         }
       }
 
@@ -252,23 +249,13 @@ export default function DriversList() {
 
     let avatarUrl = formData.avatar_url;
     if (selectedFile && selectedDriver) {
-      const uploadFormData = new FormData();
-      uploadFormData.append('file', selectedFile);
-      uploadFormData.append('bucket', 'profiles');
-      uploadFormData.append('path', `${selectedDriver.user_id}/${Date.now()}_${selectedFile.name}`);
-      
       try {
-        const response = await fetch(getApiUrl('/api/admin/upload'), {
-          method: 'POST',
-          body: uploadFormData
-        });
-        
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Failed to upload image');
-        }
-        const data = await response.json();
-        avatarUrl = data.publicUrl || data.path;
+        const uploadData = await uploadService.uploadFile(
+          selectedFile, 
+          'profiles', 
+          `${selectedDriver.user_id}/${Date.now()}_${selectedFile.name}`
+        );
+        avatarUrl = uploadData.publicUrl;
       } catch (error) {
         console.error('Upload error:', error);
         toast.error('حدث خطأ أثناء رفع الصورة');
