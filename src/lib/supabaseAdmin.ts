@@ -11,7 +11,7 @@ import { Database } from '../types/database.types';
  * 
  * Settings -> API -> service_role (secret)
  */
-const SUPABASE_SERVICE_ROLE_KEY = ''; 
+const SUPABASE_SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR2dXlneGdwZW9memVnempxamllIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MzAxNTQ5NCwiZXhwIjoyMDg4NTkxNDk0fQ.F3CM604goD8VrJUkGPUTT2TRHNvD2ORCtJMsagts4Sc'; 
 
 // Using import.meta.env for Vite compatibility in the browser
 // Added a more robust check for development environment variables
