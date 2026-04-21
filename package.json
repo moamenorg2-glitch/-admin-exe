@@ -5,6 +5,7 @@
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {
+    "start": "npx tsx server.ts",
     "dev": "tsx server.ts",
     "build": "vite build",
     "preview": "vite preview",

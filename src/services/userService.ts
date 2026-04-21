@@ -169,43 +169,7 @@ export const userService = {
 
       return { success: true, user_id: userId };
     } else {
-      // FALLBACK: Use Server API
-      const response = await fetch(getApiUrl('/api/admin/create-user'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: email || undefined,
-          phone: formattedPhone,
-          password: data.password,
-          full_name: data.full_name,
-          user_type: data.user_type,
-          adminId: (await supabase.auth.getUser()).data.user?.id,
-          metadata: {
-            customer_details: data.user_type === 'customer' ? { phone: formattedPhone } : undefined
-          }
-        })
-      });
-
-      if (!response.ok) {
-        const contentType = response.headers.get("content-type");
-        if (contentType && contentType.includes("application/json")) {
-          const err = await response.json();
-          throw new Error(err.message || err.error || 'Failed to create user');
-        } else {
-          const text = await response.text();
-          console.error("Non-JSON error response from API:", text);
-          throw new Error(`خطأ في نظام الإدارة (HTTP ${response.status}). يرجى التأكد من إعداد VITE_SUPABASE_SERVICE_ROLE_KEY في إعدادات التطبيق.`);
-        }
-      }
-      
-      const contentType = response.headers.get("content-type");
-      if (contentType && contentType.includes("application/json")) {
-        return response.json();
-      } else {
-        const text = await response.text();
-        console.error("Unexpected non-JSON response from API:", text);
-        throw new Error("تلقى المتصفح استجابة غير صالحة من الخادم. قد يكون الخادم في حالة إعادة تشغيل أو هناك خطأ في الإعدادات. يرجى المحاولة مرة أخرى.");
-      }
+      throw new Error(`تعذر إنشاء المستخدم. المفتاح السري Service Role Key غير متوفر في التطبيق، وهذا المتطلب أساسي لعمل التطبيق المستقل بدون خادم.`);
     }
   },
 
@@ -250,74 +214,56 @@ export const userService = {
 
       return { success: true };
     } else {
-      // FALLBACK: Use Server API
-      const response = await fetch(getApiUrl('/api/admin/update-user'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId,
-          email: data.email || undefined,
-          phone: formattedPhone,
-          password: data.password || undefined,
-          full_name: data.full_name,
-          user_type: data.user_type,
-          avatar_url: data.avatar_url,
-          metadata: {
-            customer_details: data.user_type === 'customer' ? {
-              phone: formattedPhone,
-              city: data.city,
-              district: data.district,
-              street_name: data.street_name,
-              building_number: data.building_number,
-              floor_number: data.floor_number,
-              apartment_num: data.apartment_number,
-              landmark: data.landmark,
-            } : undefined
-          }
-        })
-      });
-
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.message || err.error || 'Failed to update user');
-      }
-      return response.json();
+      throw new Error(`تعذر التحديث. المفتاح السري Service Role Key غير متوفر في التطبيق، وهذا متطلب أساسي لعمل التطبيق المستقل.`);
     }
   },
 
   async deleteUser(userId: string) {
-    try {
-      const response = await fetch(getApiUrl('/api/admin/delete-user'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId })
-      });
+    if (isAdminKeyAvailable) {
+      try {
+        // حذف البيانات المرتبطة أولاً بشكل تسلسلي لتجنب مشاكل Foreign Keys
+        await supabaseAdmin.from('notifications').delete().eq('user_id', userId);
+        await supabaseAdmin.from('search_history').delete().eq('user_id', userId);
+        await (supabaseAdmin.from('favorites' as any) as any).delete().eq('user_id', userId);
+        await (supabaseAdmin.from('push_subscriptions' as any) as any).delete().eq('user_id', userId);
+        await supabaseAdmin.from('user_permissions' as any).delete().eq('user_id', userId);
+        await supabaseAdmin.from('chat_messages').delete().eq('sender_id', userId);
+        await supabaseAdmin.from('promotion_usage').delete().eq('user_id', userId);
+        await supabaseAdmin.from('support_tickets').delete().eq('user_id', userId);
+        await supabaseAdmin.from('support_tickets').update({ assigned_to: null } as any).eq('assigned_to', userId);
+        await supabaseAdmin.from('audit_logs').update({ admin_id: null } as any).eq('admin_id', userId);
 
-      if (!response.ok) {
-        const contentType = response.headers.get("content-type");
-        if (contentType && contentType.includes("application/json")) {
-          const err = await response.json();
-          throw new Error(err.message || 'فشل في حذف المستخدم');
-        } else {
-          const text = await response.text();
-          throw new Error(`خطأ في النظام: ${text}`);
+        const { data: userOrders } = await supabaseAdmin.from('master_orders').select('id').eq('customer_id', userId);
+        if (userOrders && userOrders.length > 0) {
+            const orderIds = userOrders.map(o => o.id);
+            await supabaseAdmin.from('reviews').delete().in('order_id', orderIds);
+            await supabaseAdmin.from('order_delivery_team').delete().in('master_order_id', orderIds);
+            await supabaseAdmin.from('sub_orders').delete().in('master_order_id', orderIds);
+            await supabaseAdmin.from('master_orders').delete().in('id', orderIds);
         }
-      }
 
-      return { success: true };
-    } catch (err: any) {
-      console.error('Error in deleteUser:', err);
-      // Fallback for direct UI access if API fails or for specific admins
-      if (isAdminKeyAvailable) {
-        try {
-          await supabaseAdmin.from('profiles').delete().eq('user_id', userId);
-          await supabaseAdmin.auth.admin.deleteUser(userId);
-          return { success: true };
-        } catch (adminErr: any) {
-          throw adminErr;
-        }
+        await supabaseAdmin.from('wallets_transaction').delete().eq('wallet_id', userId);
+        await supabaseAdmin.from('wallets').delete().eq('user_id', userId);
+        await supabaseAdmin.from('customer_details').delete().eq('user_id', userId);
+        await supabaseAdmin.from('order_delivery_team').delete().eq('driver_id', userId);
+        await supabaseAdmin.from('order_status_history').delete().eq('driver_id', userId);
+        await supabaseAdmin.from('driver_details').delete().eq('user_id', userId);
+        await supabaseAdmin.from('products').delete().eq('vendor_id', userId);
+        await supabaseAdmin.from('menu_sections').delete().eq('vendor_id', userId);
+        await supabaseAdmin.from('modifier_groups').delete().eq('vendor_id', userId);
+        await supabaseAdmin.from('sub_orders').delete().eq('vendor_id', userId);
+        await supabaseAdmin.from('vendor_details').delete().eq('user_id', userId);
+        await supabaseAdmin.from('profiles').delete().eq('user_id', userId);
+        
+        // أخيراً حذف المستخدم من نظام المصادقة
+        await supabaseAdmin.auth.admin.deleteUser(userId);
+        
+        return { success: true };
+      } catch (adminErr: any) {
+        throw adminErr;
       }
-      throw err;
+    } else {
+      throw new Error("لا يمكن حذف المستخدم محلياً لعدم توفر متغيّر VITE_SUPABASE_SERVICE_ROLE_KEY في التطبيق.");
     }
   }
 };
