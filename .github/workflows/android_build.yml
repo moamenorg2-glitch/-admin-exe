@@ -29,6 +29,8 @@ jobs:
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_APP_URL: ${{ secrets.APP_URL }}
+          APP_URL: ${{ secrets.APP_URL }}
 
       - name: Setup Java
         uses: actions/setup-java@v4
