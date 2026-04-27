@@ -363,7 +363,8 @@ export default function LiveMap({ embedded = false, initialType = 'all', initial
           realMarkers.push(c);
         }
 
-        setMarkers(realMarkers);
+        setMarkers(prev => JSON.stringify(realMarkers) !== JSON.stringify(prev) ? realMarkers : prev);
+        
         if (filterType === 'order') {
           setTrackedOrderNumber(foundOrderNumber);
         } else {
@@ -379,6 +380,7 @@ export default function LiveMap({ embedded = false, initialType = 'all', initial
 
     return () => clearInterval(interval);
   }, [selectedZoneId, filterType, filterId]);
+
 
   return (
     <div className="space-y-6 pb-12 h-full flex flex-col" dir="rtl">
