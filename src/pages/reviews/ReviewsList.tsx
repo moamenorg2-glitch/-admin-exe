@@ -21,7 +21,7 @@ export default function ReviewsList() {
           master_orders:order_id (
             order_number,
             customer_id,
-            profiles:customer_id (full_name)
+            profiles:customer_id (full_name, avatar_url)
           )
         `, { count: 'exact' })
         .order('created_at', { ascending: false })
@@ -102,8 +102,17 @@ export default function ReviewsList() {
             <div key={review.id} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
               <div className="flex justify-between items-start mb-4">
                 <div className="flex items-center gap-2">
-                  <div className="bg-emerald-100 p-2 rounded-full">
-                    <User className="w-4 h-4 text-emerald-600" />
+                  <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border border-gray-100 shrink-0">
+                    {review.master_orders?.profiles?.avatar_url ? (
+                      <img 
+                        src={review.master_orders.profiles.avatar_url} 
+                        alt="" 
+                        className="w-full h-full object-cover"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <User className="w-5 h-5 text-gray-400" />
+                    )}
                   </div>
                   <div>
                     <div className="text-sm font-bold text-gray-900">

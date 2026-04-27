@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
-import { Search, Filter, Shield, User, Store, Car, Edit, Ban, CheckCircle, Plus, X, Loader2, Download, Eye, Trash2 } from 'lucide-react';
+import { Search, Filter, Shield, User, Store, Car, Edit, Ban, CheckCircle, Plus, X, Loader2, Download, Eye, Trash2, Info } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'motion/react';
@@ -381,6 +381,16 @@ export default function UsersList({ fixedRole }: UsersListProps) {
                 <th scope="col" className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">
                   تاريخ التسجيل
                 </th>
+                {typeFilter !== 'admin' && (
+                  <>
+                    <th scope="col" className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">
+                      إجمالي الطلبات
+                    </th>
+                    <th scope="col" className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">
+                      طلبات اليوم
+                    </th>
+                  </>
+                )}
                 <th scope="col" className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">
                   الحالة
                 </th>
@@ -410,7 +420,7 @@ export default function UsersList({ fixedRole }: UsersListProps) {
                 ))
               ) : data?.users?.length === 0 ? (
                 <tr key="users-empty">
-                  <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan={typeFilter === 'admin' ? 5 : 7} className="px-6 py-12 text-center text-gray-500">
                     لا يوجد مستخدمين يطابقون معايير البحث
                   </td>
                 </tr>
@@ -423,7 +433,7 @@ export default function UsersList({ fixedRole }: UsersListProps) {
                         <div className="flex items-center">
                           <div className="flex-shrink-0 h-10 w-10 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden">
                             {user.avatar_url ? (
-                              <img src={user.avatar_url} alt="" className="h-10 w-10 object-cover" />
+                              <img src={user.avatar_url} alt="" className="h-10 w-10 object-cover rounded-full" />
                             ) : (
                               <Icon className="h-5 w-5 text-gray-400" />
                             )}
@@ -463,6 +473,25 @@ export default function UsersList({ fixedRole }: UsersListProps) {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {format(new Date(user.created_at), 'PP', { locale: ar })}
                       </td>
+                      {typeFilter !== 'admin' && (
+                        <>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-bold">
+                            {user.total_orders || 0}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-emerald-600 font-bold">
+                            <div className="flex items-center gap-2">
+                              <span>{user.today_orders || 0}</span>
+                              <button 
+                                onClick={() => handleViewClick(user)}
+                                className="p-1 hover:bg-emerald-50 rounded-full transition-colors text-gray-400 hover:text-emerald-600"
+                                title="تفاصيل إضافية"
+                              >
+                                <Info className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </>
+                      )}
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={cn(
                           "px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full",
@@ -974,6 +1003,20 @@ export default function UsersList({ fixedRole }: UsersListProps) {
 
               <div className="p-6 overflow-y-auto flex-1 space-y-6">
                 {/* Basic Info */}
+                {/* Order Statistics Summary */}
+                {selectedUser.user_type !== 'admin' && (
+                  <div className="grid grid-cols-2 gap-4 bg-emerald-50 p-6 rounded-2xl border border-emerald-100 shadow-sm">
+                    <div className="text-center">
+                      <span className="text-sm font-black text-emerald-600 block uppercase tracking-widest mb-1">إجمالي الطلبات</span>
+                      <span className="text-3xl font-black text-emerald-700">{selectedUser.total_orders || 0}</span>
+                    </div>
+                    <div className="text-center border-r border-emerald-200">
+                      <span className="text-sm font-black text-emerald-600 block uppercase tracking-widest mb-1">طلبات اليوم</span>
+                      <span className="text-3xl font-black text-emerald-700">{selectedUser.today_orders || 0}</span>
+                    </div>
+                  </div>
+                )}
+
                 <div className="bg-gray-50 p-4 rounded-xl space-y-4">
                   <h4 className="font-bold text-gray-900 border-b pb-2">البيانات الأساسية</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

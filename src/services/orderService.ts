@@ -626,5 +626,44 @@ export const orderService = {
   async updateCustomerPhone(customerId: string, phone: string) {
     const { error } = await supabase.from('profiles').update({ primary_phone: phone }).eq('user_id', customerId);
     if (error) throw error;
+  },
+
+  async fetchEntityDailyStats(type: 'vendor' | 'driver', entityId: string) {
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    if (type === 'vendor') {
+      const { count: completed } = await supabase
+        .from('sub_orders')
+        .select('*', { count: 'exact', head: true })
+        .eq('vendor_id', entityId)
+        .eq('sub_status', 'Delivered')
+        .gte('created_at', startOfDay.toISOString());
+
+      const { count: cancelled } = await supabase
+        .from('sub_orders')
+        .select('*', { count: 'exact', head: true })
+        .eq('vendor_id', entityId)
+        .eq('sub_status', 'Cancelled')
+        .gte('created_at', startOfDay.toISOString());
+
+      return { completed_today: completed || 0, cancelled_today: cancelled || 0 };
+    } else {
+      const { count: completed } = await supabase
+        .from('order_delivery_team')
+        .select('*, master_orders!fk_order_delivery_team_master_order(status, created_at)', { count: 'exact', head: true })
+        .eq('driver_id', entityId)
+        .eq('master_orders.status', 'Completed')
+        .gte('master_orders.created_at', startOfDay.toISOString());
+
+      const { count: cancelled } = await supabase
+        .from('order_delivery_team')
+        .select('*, master_orders!fk_order_delivery_team_master_order(status, created_at)', { count: 'exact', head: true })
+        .eq('driver_id', entityId)
+        .eq('master_orders.status', 'Cancelled')
+        .gte('master_orders.created_at', startOfDay.toISOString());
+
+      return { completed_today: completed || 0, cancelled_today: cancelled || 0 };
+    }
   }
 };

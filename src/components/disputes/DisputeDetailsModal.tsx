@@ -172,7 +172,21 @@ export default function DisputeDetailsModal({ dispute, onClose, onIssuePenalty }
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-gray-500 font-medium">المحكم الحالي:</span>
-                    <span className="font-bold text-gray-900">{dispute.arbitrator?.full_name || 'غير معين'}</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden border border-gray-300">
+                        {dispute.arbitrator?.avatar_url ? (
+                          <img 
+                            src={dispute.arbitrator.avatar_url} 
+                            alt="" 
+                            className="w-full h-full object-cover"
+                            referrerPolicy="no-referrer"
+                          />
+                        ) : (
+                          <User className="w-3 h-3 text-gray-400" />
+                        )}
+                      </div>
+                      <span className="font-bold text-gray-900">{dispute.arbitrator?.full_name || 'غير معين'}</span>
+                    </div>
                   </div>
                   <div className="pt-4 border-t border-gray-200">
                     <p className="text-sm text-gray-500 mb-2">موضوع التذكرة:</p>

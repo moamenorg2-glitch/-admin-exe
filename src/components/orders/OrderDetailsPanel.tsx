@@ -693,12 +693,12 @@ export default function OrderDetailsPanel({ orderId, onClose, prepThreshold, del
                     </div>
 
                     <div className="flex items-start gap-4 mb-6">
-                      <div className="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center text-emerald-600 shrink-0 shadow-inner overflow-hidden">
+                      <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 shrink-0 shadow-inner overflow-hidden">
                         {(order.customer as any)?.avatar_url ? (
                           <img 
                             src={(order.customer as any).avatar_url} 
                             alt="" 
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-cover rounded-full"
                             referrerPolicy="no-referrer"
                           />
                         ) : (
@@ -867,12 +867,12 @@ export default function OrderDetailsPanel({ orderId, onClose, prepThreshold, del
                           </button>
                           
                           <div className="flex items-center gap-4 flex-1">
-                            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-gray-100 shrink-0 overflow-hidden">
+                            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm border border-gray-100 shrink-0 overflow-hidden">
                               {subOrder.vendor?.profile?.avatar_url ? (
                                 <img 
                                   src={subOrder.vendor.profile.avatar_url} 
                                   alt="" 
-                                  className="w-full h-full object-cover"
+                                  className="w-full h-full object-cover rounded-full"
                                   referrerPolicy="no-referrer"
                                 />
                               ) : (
@@ -1095,12 +1095,12 @@ export default function OrderDetailsPanel({ orderId, onClose, prepThreshold, del
                         order.delivery_team.map((team: any) => (
                           <div key={team.id} className="flex items-center justify-between bg-gray-50/50 p-3 rounded-2xl border border-gray-100 group/driver">
                             <div className="flex items-center gap-4">
-                              <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-emerald-600 shadow-sm border border-gray-100 overflow-hidden">
+                              <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-emerald-600 shadow-sm border border-gray-100 overflow-hidden">
                                 {team.driver?.user?.avatar_url ? (
                                   <img 
                                     src={team.driver.user.avatar_url} 
                                     alt="" 
-                                    className="w-full h-full object-cover"
+                                    className="w-full h-full object-cover rounded-full"
                                     referrerPolicy="no-referrer"
                                   />
                                 ) : (

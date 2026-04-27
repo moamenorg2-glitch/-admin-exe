@@ -43,7 +43,7 @@ export default function AuditLogs() {
             ip_address,
             created_at,
             updated_at,
-            profiles!admin_id(full_name)
+            profiles!admin_id(full_name, avatar_url)
           `, { count: 'exact' });
 
         if (tableFilter !== 'All') {
@@ -584,8 +584,19 @@ export default function AuditLogs() {
                     </td>
                     <td className="px-8 py-5 whitespace-nowrap">
                       <div className="flex items-center gap-3">
-                        <div className="h-9 w-9 rounded-xl bg-gray-100 flex items-center justify-center text-gray-500 font-bold text-sm">
-                          {log.profiles?.full_name?.[0] || 'ن'}
+                        <div className="h-9 w-9 rounded-xl bg-gray-100 flex items-center justify-center overflow-hidden border border-gray-100 shrink-0">
+                          {log.profiles?.avatar_url ? (
+                            <img 
+                              src={log.profiles.avatar_url} 
+                              alt="" 
+                              className="w-full h-full object-cover"
+                              referrerPolicy="no-referrer"
+                            />
+                          ) : (
+                            <span className="text-gray-500 font-bold text-sm">
+                              {log.profiles?.full_name?.[0] || 'ن'}
+                            </span>
+                          )}
                         </div>
                         <div className="text-sm font-bold text-gray-900">{log.profiles?.full_name || 'نظام'}</div>
                       </div>

@@ -31,7 +31,7 @@ export default function DisputesList() {
           *,
           support_tickets:ticket_id (ticket_number, subject, chat_room_id),
           master_orders:order_id (order_number),
-          arbitrator:arbitrator_id (full_name)
+          arbitrator:arbitrator_id (full_name, avatar_url)
         `, { count: 'exact' })
         .order('created_at', { ascending: false })
         .range(page * pageSize, (page + 1) * pageSize - 1);
@@ -189,8 +189,17 @@ export default function DisputesList() {
                     </td>
                     <td className="px-8 py-5">
                       <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 bg-gray-100 rounded-full flex items-center justify-center text-gray-500">
-                          <User className="w-4 h-4" />
+                        <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border border-gray-100 shrink-0">
+                          {dispute.arbitrator?.avatar_url ? (
+                            <img 
+                              src={dispute.arbitrator.avatar_url} 
+                              alt="" 
+                              className="w-full h-full object-cover"
+                              referrerPolicy="no-referrer"
+                            />
+                          ) : (
+                            <User className="w-4 h-4 text-gray-400" />
+                          )}
                         </div>
                         <span className="text-sm font-bold text-gray-700">{dispute.arbitrator?.full_name || 'غير معين'}</span>
                       </div>

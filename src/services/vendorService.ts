@@ -30,12 +30,53 @@ export const vendorService = {
       query = query.eq('is_open', filters.statusFilter === 'Open');
     }
 
-    const { data, count, error } = await query
+    const { data: vendors, count, error } = await query
       .order('created_at', { ascending: false })
       .range(page * pageSize, (page + 1) * pageSize - 1);
 
     if (error) throw error;
-    return { vendors: data, count };
+
+    // Enrich with order counts
+    const enrichedVendors = await Promise.all((vendors || []).map(async (vendor: any) => {
+      const startOfDay = new Date();
+      startOfDay.setHours(0, 0, 0, 0);
+
+      const { count: total } = await supabase
+        .from('sub_orders')
+        .select('*', { count: 'exact', head: true })
+        .eq('vendor_id', vendor.user_id);
+      
+      const { count: today } = await supabase
+        .from('sub_orders')
+        .select('*', { count: 'exact', head: true })
+        .eq('vendor_id', vendor.user_id)
+        .gte('created_at', startOfDay.toISOString());
+
+      // Get Today's status counts for the modal requirement
+      const { count: completedToday } = await supabase
+        .from('sub_orders')
+        .select('*', { count: 'exact', head: true })
+        .eq('vendor_id', vendor.user_id)
+        .eq('sub_status', 'Delivered')
+        .gte('created_at', startOfDay.toISOString());
+
+      const { count: cancelledToday } = await supabase
+        .from('sub_orders')
+        .select('*', { count: 'exact', head: true })
+        .eq('vendor_id', vendor.user_id)
+        .eq('sub_status', 'Cancelled')
+        .gte('created_at', startOfDay.toISOString());
+
+      return { 
+        ...vendor, 
+        total_orders: total || 0, 
+        today_orders: today || 0,
+        completed_today: completedToday || 0,
+        cancelled_today: cancelledToday || 0
+      };
+    }));
+
+    return { vendors: enrichedVendors, count };
   },
 
   async updateVendorStatus(vendorId: string, isOpen: boolean) {

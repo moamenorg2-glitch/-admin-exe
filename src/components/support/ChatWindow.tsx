@@ -198,6 +198,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ roomId, onClose, orderNumber, i
     }
   };
 
+  const otherParticipant = messages.find(m => m.sender_id !== currentUserId)?.sender;
+
   return (
     <motion.div 
       id="chat-window-container"
@@ -209,11 +211,23 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ roomId, onClose, orderNumber, i
       {/* Header */}
       <div id="chat-header" className="p-4 bg-primary text-white flex justify-between items-center">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-            <User className="w-6 h-6" />
+          <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center overflow-hidden">
+            {otherParticipant?.avatar_url ? (
+              <img 
+                src={otherParticipant.avatar_url} 
+                alt="" 
+                className="w-full h-full object-cover"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <User className="w-6 h-6" />
+            )}
           </div>
           <div>
-            <h3 className="font-bold text-lg">محادثة الدعم {orderNumber && `(طلب #${orderNumber})`}</h3>
+            <h3 className="font-bold text-lg">
+              {otherParticipant?.full_name ? `محادثة مع ${otherParticipant.full_name}` : 'محادثة الدعم'} 
+              {orderNumber && ` (طلب #${orderNumber})`}
+            </h3>
             <p className="text-xs text-white/70">{isActive ? 'نشط الآن' : 'مغلق'}</p>
           </div>
         </div>
@@ -278,13 +292,27 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ roomId, onClose, orderNumber, i
                   key={msg.id}
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
+                  className={`flex gap-3 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}
                 >
+                  <div className="flex-shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden border border-gray-100 shadow-sm">
+                      {msg.sender?.avatar_url ? (
+                        <img 
+                          src={msg.sender.avatar_url} 
+                          alt="" 
+                          className="w-full h-full object-cover"
+                          referrerPolicy="no-referrer"
+                        />
+                      ) : (
+                        <User className="w-4 h-4 text-gray-400" />
+                      )}
+                    </div>
+                  </div>
                   <div
                     className={`max-w-[70%] rounded-2xl px-4 py-2 shadow-sm ${
                       isMe
-                        ? 'bg-primary text-white rounded-br-none'
-                        : 'bg-white text-gray-800 rounded-bl-none border border-gray-100'
+                        ? 'bg-primary text-white rounded-tr-none'
+                        : 'bg-white text-gray-800 rounded-tl-none border border-gray-100'
                     }`}
                   >
                     {!isMe && (

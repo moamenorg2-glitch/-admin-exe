@@ -40,12 +40,53 @@ export const driverService = {
     // استبعاد المناديب المحذوفين منطقياً
     query = query.neq('profiles.status', 'محذوف');
 
-    const { data, error, count } = await query
+    const { data: drivers, error, count } = await query
       .order('created_at', { ascending: false })
       .range(page * pageSize, (page + 1) * pageSize - 1);
 
     if (error) throw error;
-    return { drivers: data, count };
+
+    // Enrich with order counts
+    const enrichedDrivers = await Promise.all((drivers || []).map(async (driver: any) => {
+      const startOfDay = new Date();
+      startOfDay.setHours(0, 0, 0, 0);
+
+      const { count: total } = await supabase
+        .from('order_delivery_team')
+        .select('*', { count: 'exact', head: true })
+        .eq('driver_id', driver.user_id);
+      
+      const { count: today } = await supabase
+        .from('order_delivery_team')
+        .select('*, master_order:master_orders!fk_order_delivery_team_master_order(created_at)', { count: 'exact', head: true })
+        .eq('driver_id', driver.user_id)
+        .gte('master_orders.created_at', startOfDay.toISOString());
+
+      // Get Today's status counts for the modal requirement
+      const { count: completedToday } = await supabase
+        .from('order_delivery_team')
+        .select('*, master_order:master_orders!fk_order_delivery_team_master_order(status, created_at)', { count: 'exact', head: true })
+        .eq('driver_id', driver.user_id)
+        .eq('master_orders.status', 'Completed')
+        .gte('master_orders.created_at', startOfDay.toISOString());
+
+      const { count: cancelledToday } = await supabase
+        .from('order_delivery_team')
+        .select('*, master_order:master_orders!fk_order_delivery_team_master_order(status, created_at)', { count: 'exact', head: true })
+        .eq('driver_id', driver.user_id)
+        .eq('master_orders.status', 'Cancelled')
+        .gte('master_orders.created_at', startOfDay.toISOString());
+
+      return { 
+        ...driver, 
+        total_orders: total || 0, 
+        today_orders: today || 0,
+        completed_today: completedToday || 0,
+        cancelled_today: cancelledToday || 0
+      };
+    }));
+
+    return { drivers: enrichedDrivers, count };
   },
 
   async updateDriverStatus(driverId: string, isOnline: boolean) {

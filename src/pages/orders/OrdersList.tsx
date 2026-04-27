@@ -369,6 +369,24 @@ export default function OrdersList() {
     });
   }, [data?.orders, sortConfig]);
 
+  useEffect(() => {
+    if (infoModal && (infoModal.type === 'vendor' || infoModal.type === 'driver')) {
+      const id = infoModal.type === 'vendor' ? infoModal.data.user_id : infoModal.data.user_id;
+      if (id && infoModal.data.completed_today === undefined) {
+        orderService.fetchEntityDailyStats(infoModal.type, id)
+          .then(stats => {
+            setInfoModal(prev => {
+              if (prev && prev.data.user_id === id) {
+                return { ...prev, data: { ...prev.data, ...stats } };
+              }
+              return prev;
+            });
+          })
+          .catch(console.error);
+      }
+    }
+  }, [infoModal]);
+
   const statsData = useMemo(() => {
     return {
       count: data?.count || 0,
@@ -683,12 +701,12 @@ export default function OrdersList() {
                             })}
                             className="flex items-center text-right group/info hover:bg-emerald-50 p-2 -m-2 rounded-2xl transition-all cursor-pointer"
                           >
-                            <div className="h-10 w-10 rounded-2xl bg-emerald-50 flex items-center justify-center border border-emerald-100 group-hover/info:scale-110 transition-transform overflow-hidden">
+                            <div className="h-10 w-10 rounded-full bg-emerald-50 flex items-center justify-center border border-emerald-100 group-hover/info:scale-110 transition-transform overflow-hidden">
                               {order.customer?.avatar_url ? (
                                 <img 
                                   src={order.customer.avatar_url} 
                                   alt="" 
-                                  className="h-full w-full object-cover"
+                                  className="h-full w-full object-cover rounded-full"
                                   referrerPolicy="no-referrer"
                                 />
                               ) : (
@@ -884,12 +902,12 @@ export default function OrdersList() {
                                         })}
                                         className="flex items-center gap-2 text-sm text-gray-900 font-black bg-emerald-50/50 px-4 py-2 rounded-2xl border border-emerald-100 w-fit hover:bg-emerald-100 transition-all group/dinfo cursor-pointer"
                                       >
-                                        <div className="w-6 h-6 rounded-lg bg-emerald-100 flex items-center justify-center overflow-hidden shrink-0">
+                                        <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center overflow-hidden shrink-0">
                                           {teamMember.driver?.user?.avatar_url ? (
                                             <img 
                                               src={teamMember.driver.user.avatar_url} 
                                               alt="" 
-                                              className="h-full w-full object-cover"
+                                              className="h-full w-full object-cover rounded-full"
                                               referrerPolicy="no-referrer"
                                             />
                                           ) : (
@@ -1138,23 +1156,40 @@ export default function OrdersList() {
               </div>
 
               <div className="space-y-6">
+                {(infoModal.type === 'driver' || infoModal.type === 'vendor') && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-4 bg-emerald-50 rounded-3xl border border-emerald-100 flex flex-col items-center">
+                      <div className="text-xs font-black text-emerald-600 uppercase tracking-widest mb-1">مكتمل اليوم</div>
+                      <div className="text-2xl font-black text-emerald-700">
+                        {infoModal.data.completed_today ?? '0'}
+                      </div>
+                    </div>
+                    <div className="p-4 bg-red-50 rounded-3xl border border-red-100 flex flex-col items-center">
+                      <div className="text-xs font-black text-red-600 uppercase tracking-widest mb-1">ملغي اليوم</div>
+                      <div className="text-2xl font-black text-red-700">
+                        {infoModal.data.cancelled_today ?? '0'}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
                 <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-3xl border border-gray-100">
-                  <div className="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center overflow-hidden">
+                  <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center overflow-hidden">
                     {infoModal.type === 'customer' ? (
                       infoModal.data.avatar_url ? (
-                        <img src={infoModal.data.avatar_url} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                        <img src={infoModal.data.avatar_url} alt="" className="w-full h-full object-cover rounded-full" referrerPolicy="no-referrer" />
                       ) : (
                         <User className="w-8 h-8 text-emerald-600" />
                       )
                     ) : infoModal.type === 'vendor' ? (
                       infoModal.data.profile?.avatar_url ? (
-                        <img src={infoModal.data.profile.avatar_url} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                        <img src={infoModal.data.profile.avatar_url} alt="" className="w-full h-full object-cover rounded-full" referrerPolicy="no-referrer" />
                       ) : (
                         <Store className="w-8 h-8 text-emerald-600" />
                       )
                     ) : (
                       infoModal.data.avatar_url ? (
-                        <img src={infoModal.data.avatar_url} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                        <img src={infoModal.data.avatar_url} alt="" className="w-full h-full object-cover rounded-full" referrerPolicy="no-referrer" />
                       ) : (
                         <Motorbike className="w-8 h-8 text-emerald-600" />
                       )

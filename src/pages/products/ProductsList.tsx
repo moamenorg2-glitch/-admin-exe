@@ -314,9 +314,9 @@ export default function ProductsList() {
                   <tr key={product.id} className="hover:bg-gray-50/50 transition-colors group">
                     <td className="px-8 py-5 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="flex-shrink-0 h-14 w-14 bg-gray-50 rounded-2xl overflow-hidden border border-gray-100 group-hover:scale-105 transition-transform">
+                        <div className="flex-shrink-0 h-14 w-14 bg-gray-50 rounded-full overflow-hidden border border-gray-100 group-hover:scale-105 transition-transform">
                           {product.image_url ? (
-                            <img src={product.image_url} alt={product.name_ar} className="h-full w-full object-cover" referrerPolicy="no-referrer" />
+                            <img src={product.image_url} alt={product.name_ar} className="h-full w-full object-cover rounded-full" referrerPolicy="no-referrer" />
                           ) : (
                             <div className="h-full w-full flex items-center justify-center">
                               <Package className="h-6 w-6 text-gray-400" />

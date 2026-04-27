@@ -33,12 +33,67 @@ export const userService = {
       query = query.or(`full_name.ilike.%${filters.search}%,primary_phone.ilike.%${filters.search}%,email.ilike.%${filters.search}%`);
     }
 
-    const { data, error, count } = await query
+    const { data: users, error, count } = await query
       .order('created_at', { ascending: false })
       .range(page * pageSize, (page + 1) * pageSize - 1);
 
     if (error) throw error;
-    return { users: data, count };
+
+    // Enrich with order counts if they are customers or the type matches
+    const enrichedUsers = await Promise.all((users || []).map(async (user) => {
+      const stats = { total_orders: 0, today_orders: 0 };
+      
+      const startOfDay = new Date();
+      startOfDay.setHours(0, 0, 0, 0);
+
+      if (user.user_type === 'customer') {
+        const { count: total } = await supabase
+          .from('master_orders')
+          .select('*', { count: 'exact', head: true })
+          .eq('customer_id', user.user_id);
+        
+        const { count: today } = await supabase
+          .from('master_orders')
+          .select('*', { count: 'exact', head: true })
+          .eq('customer_id', user.user_id)
+          .gte('created_at', startOfDay.toISOString());
+        
+        stats.total_orders = total || 0;
+        stats.today_orders = today || 0;
+      } else if (user.user_type === 'driver') {
+        const { count: total } = await supabase
+          .from('order_delivery_team')
+          .select('*', { count: 'exact', head: true })
+          .eq('driver_id', user.user_id);
+        
+        const { count: today } = await supabase
+          .from('order_delivery_team')
+          .select('*, master_order:master_orders!fk_order_delivery_team_master_order(*)', { count: 'exact', head: true })
+          .eq('driver_id', user.user_id)
+          .gte('master_orders.created_at', startOfDay.toISOString());
+          
+        stats.total_orders = total || 0;
+        stats.today_orders = today || 0;
+      } else if (user.user_type === 'vendor') {
+        const { count: total } = await supabase
+          .from('sub_orders')
+          .select('*', { count: 'exact', head: true })
+          .eq('vendor_id', user.user_id);
+        
+        const { count: today } = await supabase
+          .from('sub_orders')
+          .select('*', { count: 'exact', head: true })
+          .eq('vendor_id', user.user_id)
+          .gte('created_at', startOfDay.toISOString());
+          
+        stats.total_orders = total || 0;
+        stats.today_orders = today || 0;
+      }
+
+      return { ...user, ...stats };
+    }));
+
+    return { users: enrichedUsers, count };
   },
 
   async updateProfile(userId: string, profileData: Partial<Profile>) {

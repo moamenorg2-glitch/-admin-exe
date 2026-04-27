@@ -38,7 +38,7 @@ export default function TransactionsList() {
           .select(`
             *,
             wallets!wallet_id (
-              profiles!user_id (full_name, user_type)
+              profiles!user_id (full_name, user_type, avatar_url)
             ),
             master_orders!reference_id (order_number)
           `, { count: 'exact' })
@@ -213,8 +213,17 @@ export default function TransactionsList() {
                   <tr key={tx.transaction_id} className="hover:bg-gray-50/50 transition-colors group even:bg-gray-50/30">
                     <td className="px-8 py-5 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10 rounded-2xl bg-gray-50 flex items-center justify-center group-hover:scale-105 transition-transform">
-                          <User className="h-5 w-5 text-gray-400" />
+                        <div className="flex-shrink-0 h-10 w-10 rounded-2xl bg-gray-50 flex items-center justify-center group-hover:scale-105 transition-transform overflow-hidden border border-gray-100">
+                          {(tx.wallets as any)?.profiles?.avatar_url ? (
+                            <img 
+                              src={(tx.wallets as any).profiles.avatar_url} 
+                              alt="" 
+                              className="w-full h-full object-cover"
+                              referrerPolicy="no-referrer"
+                            />
+                          ) : (
+                            <User className="h-5 w-5 text-gray-400" />
+                          )}
                         </div>
                         <div className="mr-4">
                           <div className="text-sm font-bold text-gray-900">

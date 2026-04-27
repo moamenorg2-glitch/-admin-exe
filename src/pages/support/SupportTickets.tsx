@@ -23,6 +23,7 @@ interface SupportTicket {
   profile: {
     full_name: string;
     primary_phone: string;
+    avatar_url: string | null;
   } | null;
   order: {
     order_number: number;
@@ -49,7 +50,7 @@ export default function SupportTickets() {
         .from('support_tickets')
         .select(`
           *,
-          profile:profiles!support_tickets_user_id_fkey(full_name, primary_phone),
+          profile:profiles!support_tickets_user_id_fkey(full_name, primary_phone, avatar_url),
           order:master_orders!support_tickets_order_id_fkey(order_number),
           dispute:dispute_resolution(id)
         `)
@@ -250,8 +251,24 @@ export default function SupportTickets() {
                   <tr key={ticket.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#{ticket.ticket_number}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{ticket.profile?.full_name}</div>
-                      <div className="text-xs text-gray-500">{ticket.profile?.primary_phone}</div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden shrink-0 border border-gray-100">
+                          {ticket.profile?.avatar_url ? (
+                            <img 
+                              src={ticket.profile.avatar_url} 
+                              alt="" 
+                              className="w-full h-full object-cover"
+                              referrerPolicy="no-referrer"
+                            />
+                          ) : (
+                            <User className="w-4 h-4 text-gray-400" />
+                          )}
+                        </div>
+                        <div>
+                          <div className="text-sm text-gray-900 font-medium">{ticket.profile?.full_name}</div>
+                          <div className="text-xs text-gray-500">{ticket.profile?.primary_phone}</div>
+                        </div>
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {ticket.order ? (
@@ -311,7 +328,18 @@ export default function SupportTickets() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">
-                    <User className="w-5 h-5 text-gray-400" />
+                    <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center overflow-hidden border border-gray-200">
+                      {selectedTicket.profile?.avatar_url ? (
+                        <img 
+                          src={selectedTicket.profile.avatar_url} 
+                          alt="" 
+                          className="w-full h-full object-cover"
+                          referrerPolicy="no-referrer"
+                        />
+                      ) : (
+                        <User className="w-6 h-6 text-gray-400" />
+                      )}
+                    </div>
                     <div>
                       <p className="text-xs text-gray-500">المستخدم</p>
                       <p className="text-sm font-medium">{selectedTicket.profile?.full_name}</p>

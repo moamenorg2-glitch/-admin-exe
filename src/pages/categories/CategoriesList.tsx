@@ -187,9 +187,9 @@ export default function CategoriesList() {
           data?.map((category) => (
             <div key={category.id} className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 hover:shadow-md transition-all group">
               <div className="flex flex-col items-center text-center">
-                <div className="h-20 w-20 bg-emerald-50 rounded-2xl flex items-center justify-center mb-4 overflow-hidden group-hover:scale-105 transition-transform">
+                <div className="h-20 w-20 bg-emerald-50 rounded-full flex items-center justify-center mb-4 overflow-hidden group-hover:scale-105 transition-transform">
                   {category.icon_url ? (
-                    <img src={category.icon_url} alt="" className="h-full w-full object-cover" referrerPolicy="no-referrer" />
+                    <img src={category.icon_url} alt="" className="h-full w-full object-cover rounded-full" referrerPolicy="no-referrer" />
                   ) : (
                     <Store className="h-10 w-10 text-emerald-600" />
                   )}

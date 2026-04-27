@@ -23,7 +23,7 @@ export default function AssignDriverModal({ isOpen, onClose, onAssign, isAssigni
             user_id,
             vehicle_type,
             is_busy,
-            user:profiles!driver_details_user_id_fkey(full_name, primary_phone),
+            user:profiles!driver_details_user_id_fkey(full_name, primary_phone, avatar_url),
             active_orders:order_delivery_team(
               master_order:master_orders!fk_order_delivery_team_master_order(status, id)
             )
@@ -70,8 +70,17 @@ export default function AssignDriverModal({ isOpen, onClose, onAssign, isAssigni
                 className={`w-full flex items-center justify-between p-3 rounded-lg border border-gray-100 hover:bg-emerald-50 hover:border-emerald-200 transition-all cursor-pointer ${isAssigning ? 'opacity-50 pointer-events-none' : ''}`}
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center shrink-0">
-                    <Motorbike className="w-5 h-5 text-gray-400" />
+                  <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center shrink-0 overflow-hidden border border-gray-200">
+                    {driver.user?.avatar_url ? (
+                      <img 
+                        src={driver.user.avatar_url} 
+                        alt="" 
+                        className="w-full h-full object-cover rounded-full"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <Motorbike className="w-5 h-5 text-gray-400" />
+                    )}
                   </div>
                   <div className="text-right">
                     <div className="flex items-center gap-2 flex-wrap">

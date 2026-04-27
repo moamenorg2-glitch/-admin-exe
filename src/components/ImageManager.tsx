@@ -48,8 +48,8 @@ export const ImageManager: React.FC<ImageManagerProps> = ({ bucket, path, curren
   return (
     <div className="flex items-center gap-2">
       {currentImageUrl && (
-        <div className="relative h-16 w-16 border rounded-md overflow-hidden">
-          <img src={currentImageUrl} alt="Product" className="h-full w-full object-cover" referrerPolicy="no-referrer" />
+        <div className="relative h-16 w-16 border rounded-full overflow-hidden">
+          <img src={currentImageUrl} alt="Product" className="h-full w-full object-cover rounded-full" referrerPolicy="no-referrer" />
           {!disabled && (
             <button 
               onClick={handleDelete}

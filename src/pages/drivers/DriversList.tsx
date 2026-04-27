@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
-import { Search, Filter, Car, Edit, Star, MapPin, Power, PowerOff, Plus, X, Loader2, Download, Eye, Trash2, User, Ban, CheckCircle } from 'lucide-react';
+import { Search, Filter, Car, Edit, Star, MapPin, Power, PowerOff, Plus, X, Loader2, Download, Eye, Trash2, User, Ban, CheckCircle, Info } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'motion/react';
@@ -372,6 +372,12 @@ export default function DriversList() {
                   التقييم
                 </th>
                 <th scope="col" className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">
+                  إجمالي الطلبات
+                </th>
+                <th scope="col" className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">
+                  طلبات اليوم
+                </th>
+                <th scope="col" className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">
                   الطلبات النشطة
                 </th>
                 <th scope="col" className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">
@@ -416,7 +422,7 @@ export default function DriversList() {
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10 bg-indigo-100 rounded-full flex items-center justify-center overflow-hidden">
                           {(driver.profile as any)?.avatar_url ? (
-                            <img src={(driver.profile as any).avatar_url} alt="" className="h-10 w-10 object-cover" />
+                            <img src={(driver.profile as any).avatar_url} alt="" className="h-10 w-10 object-cover rounded-full" />
                           ) : (
                             <Car className="h-5 w-5 text-indigo-600" />
                           )}
@@ -443,6 +449,21 @@ export default function DriversList() {
                       <div className="flex items-center text-sm text-gray-900">
                         <Star className="w-4 h-4 ml-1 text-yellow-400 fill-current" />
                         {driver.driver_rating ? Number(driver.driver_rating).toFixed(1) : 'جديد'}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-bold">
+                      {driver.total_orders || 0}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-emerald-600 font-bold">
+                      <div className="flex items-center gap-2">
+                        <span>{driver.today_orders || 0}</span>
+                        <button 
+                          onClick={() => handleViewClick(driver)}
+                          className="p-1 hover:bg-emerald-50 rounded-full transition-colors text-gray-400 hover:text-emerald-600"
+                          title="تفاصيل إضافية"
+                        >
+                          <Info className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -920,6 +941,31 @@ export default function DriversList() {
               </div>
 
               <div className="p-6 overflow-y-auto flex-1 space-y-6">
+                {/* Order Statistics Summary */}
+                <div className="bg-emerald-50 p-6 rounded-2xl border border-emerald-100 shadow-sm space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="text-center">
+                      <span className="text-xs font-black text-emerald-600 block uppercase tracking-widest mb-1">إجمالي الطلبات</span>
+                      <span className="text-2xl font-black text-emerald-700">{selectedDriver.total_orders || 0}</span>
+                    </div>
+                    <div className="text-center border-r border-emerald-200">
+                      <span className="text-xs font-black text-emerald-600 block uppercase tracking-widest mb-1">طلبات اليوم</span>
+                      <span className="text-2xl font-black text-emerald-700">{selectedDriver.today_orders || 0}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="pt-4 border-t border-emerald-100 grid grid-cols-2 gap-4">
+                    <div className="flex flex-col items-center">
+                      <span className="text-[10px] font-bold text-emerald-500 uppercase">مكتمل اليوم</span>
+                      <span className="text-lg font-black text-emerald-600">{selectedDriver.completed_today || 0}</span>
+                    </div>
+                    <div className="flex flex-col items-center border-r border-emerald-100">
+                      <span className="text-[10px] font-bold text-red-500 uppercase">ملغي اليوم</span>
+                      <span className="text-lg font-black text-red-600">{selectedDriver.cancelled_today || 0}</span>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="bg-gray-50 p-4 rounded-xl space-y-4">
                   <h4 className="font-bold text-gray-900 border-b pb-2">البيانات الأساسية</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

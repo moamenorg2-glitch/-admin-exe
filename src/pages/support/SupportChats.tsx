@@ -55,7 +55,10 @@ export default function SupportChats() {
         .from('chat_rooms' as any) as any)
         .select(`
           id, order_id, room_type, participant_ids, is_active, created_at, updated_at,
-          master_orders:order_id (order_number),
+          master_orders:order_id (
+            order_number,
+            customer:profiles!master_orders_customer_id_fkey(full_name, avatar_url)
+          ),
           support_tickets (id, ticket_number, order_id)
         `)
         .order('updated_at', { ascending: false });
@@ -193,13 +196,22 @@ export default function SupportChats() {
                       selectedRoomId === room.id ? 'bg-primary/5 border-primary' : 'border-transparent'
                     }`}
                   >
-                    <div className="p-2 bg-gray-100 rounded-full shrink-0">
-                      <User className="w-5 h-5 text-gray-500" />
+                    <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border border-gray-100 shrink-0">
+                      {room.master_orders?.customer?.avatar_url ? (
+                        <img 
+                          src={room.master_orders.customer.avatar_url} 
+                          alt="" 
+                          className="w-full h-full object-cover"
+                          referrerPolicy="no-referrer"
+                        />
+                      ) : (
+                        <User className="w-5 h-5 text-gray-500" />
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-start mb-1">
                         <span className="font-bold text-gray-900 text-sm truncate">
-                          {getRoomTypeLabel(room.room_type)}
+                          {room.master_orders?.customer?.full_name || getRoomTypeLabel(room.room_type)}
                         </span>
                         <span className="text-[10px] text-gray-400 whitespace-nowrap">
                           {format(new Date(room.updated_at), 'HH:mm', { locale: ar })}
