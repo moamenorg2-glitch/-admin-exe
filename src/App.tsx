@@ -27,13 +27,14 @@ const MissingConfigWarning = () => (
 );
 
 const AuthCallback = lazy(() => import('./pages/AuthCallback'));
-const OrdersList = lazy(() => import('./pages/orders/OrdersList')); // Main Orders List
+const OrdersList = lazy(() => import('./pages/orders/OrdersList'));
 const UsersList = lazy(() => import('./pages/users/UsersList'));
 const VendorsList = lazy(() => import('./pages/vendors/VendorsList'));
 const DriversList = lazy(() => import('./pages/drivers/DriversList'));
 const PromotionsList = lazy(() => import('./pages/promotions/PromotionsList'));
 const FinanceDashboard = lazy(() => import('./pages/finance/FinanceDashboard'));
 const ZonesList = lazy(() => import('./pages/zones/ZonesList'));
+const LiveMap = lazy(() => import('./pages/zones/LiveMap'));
 const NotificationsList = lazy(() => import('./pages/notifications/NotificationsList'));
 const ReportsDashboard = lazy(() => import('./pages/reports/ReportsDashboard'));
 const SystemSettings = lazy(() => import('./pages/settings/SystemSettings'));
@@ -101,6 +102,7 @@ export default function App() {
             <Route path="/promotions" element={<PromotionsList />} />
             <Route path="/finance" element={<FinanceDashboard />} />
             <Route path="/finance/transactions" element={<TransactionsList />} />
+            <Route path="/map" element={<LiveMap />} />
             <Route path="/zones" element={<ZonesList />} />
             <Route path="/notifications" element={<NotificationsList />} />
             <Route path="/reports" element={<ReportsDashboard />} />

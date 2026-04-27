@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from '../../lib/supabase';
@@ -9,11 +9,15 @@ import { cn } from '../../lib/utils';
 import { getDelayStatus } from '../../utils/orderUtils';
 import OrderDetailsPanel from '../../components/orders/OrderDetailsPanel';
 import AssignDriverModal from '../../components/orders/AssignDriverModal';
+import LiveMap from '../zones/LiveMap';
 import * as XLSX from 'xlsx';
 import { orderService } from '../../services/orderService';
 import { handleGlobalError } from '../../utils/errorHandler';
 import toast from 'react-hot-toast';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useOrders } from '../../hooks/useOrders';
+import { useDebounce } from '../../hooks/useDebounce';
+import { OrderStats } from '../../components/orders/OrderStats';
 
 type OrderStatus = 'Pending' | 'Active' | 'OnTheWay' | 'Completed' | 'Cancelled' | 'Rejected';
 
@@ -61,13 +65,10 @@ const statusOrder: Record<OrderStatus, number> = {
 };
 
 
-import { useOrders } from '../../hooks/useOrders';
-import { OrderStats } from '../../components/orders/OrderStats';
-
-// ... existing status types/configs ...
-
 export default function OrdersList() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const initialOrderId = searchParams.get('orderId');
 
   const [page, setPage] = useState(0);
@@ -76,9 +77,14 @@ export default function OrdersList() {
   const [customDateRange, setCustomDateRange] = useState({ start: '', end: '' });
   const [searchQuery, setSearchQuery] = useState('');
   
+  // Apply debounce to the search query to prevent excessive API calls
+  const debouncedSearchQuery = useDebounce(searchQuery, 600);
+
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [trackingTarget, setTrackingTarget] = useState<{type: 'order' | 'driver' | 'vendor', id: string, name?: string} | null>(null);
   const [assigningDriverOrderId, setAssigningDriverOrderId] = useState<string | null>(null);
   const [selectedHistoryOrder, setSelectedHistoryOrder] = useState<any | null>(null);
+  const [activeTab, setActiveTab] = useState<'current' | 'history'>('current');
   
   // Thresholds state
   const [prepThreshold, setPrepThreshold] = useState(() => {
@@ -104,54 +110,42 @@ export default function OrdersList() {
 
   const pageSize = 20;
 
-  const { data, isLoading, refetch, now } = useOrders(page, pageSize, {
-    selectedStatuses,
+  const currentAvailableStatuses: OrderStatus[] = ['Pending', 'Active', 'OnTheWay'];
+  const historyAvailableStatuses: OrderStatus[] = ['Completed', 'Cancelled', 'Rejected'];
+
+  const availableStatusesToShow = activeTab === 'current' ? currentAvailableStatuses : historyAvailableStatuses;
+
+  const resolvedStatusesForQuery = selectedStatuses.length > 0 
+    ? selectedStatuses 
+    : (activeTab === 'current' ? currentAvailableStatuses : historyAvailableStatuses);
+
+  const { data, isLoading, isFetching, isPlaceholderData, refetch, now } = useOrders(page, pageSize, {
+    selectedStatuses: resolvedStatusesForQuery,
     dateRange,
     customDateRange,
-    searchQuery
+    searchQuery: debouncedSearchQuery
   });
 
+  // Prefetch the next page for smoother pagination (Technical Stability Feature)
   useEffect(() => {
-    if (initialOrderId) {
-      setSelectedOrderId(initialOrderId);
+    if (data?.count && data.count > (page + 1) * pageSize) {
+      queryClient.prefetchQuery({
+        queryKey: ['orders', page + 1, {
+          selectedStatuses: resolvedStatusesForQuery,
+          dateRange,
+          customDateRange,
+          searchQuery: debouncedSearchQuery
+        }],
+        queryFn: () => orderService.fetchOrders(page + 1, pageSize, {
+          selectedStatuses: resolvedStatusesForQuery,
+          dateRange,
+          customDateRange,
+          searchQuery: debouncedSearchQuery
+        }),
+        staleTime: 10000
+      });
     }
-  }, [initialOrderId]);
-
-  const allColumns = [
-    { key: 'order_number', label: 'رقم الطلب' },
-    { key: 'customer', label: 'العميل' },
-    { key: 'vendors', label: 'المتاجر' },
-    { key: 'date', label: 'التاريخ' },
-    { key: 'total', label: 'الإجمالي' },
-    { key: 'delivery_fee', label: 'رسوم التوصيل' },
-    { key: 'driver_tip', label: 'إكرامية المندوب' },
-    { key: 'total_tax', label: 'إجمالي الضرائب' },
-    { key: 'total_distance', label: 'المسافة (كم)' },
-    { key: 'status', label: 'الحالة' },
-    { key: 'driver', label: 'المندوب' },
-    { key: 'time_tracking', label: 'تتبع الوقت' },
-    { key: 'actions', label: 'إجراءات' },
-  ];
-
-  const toggleColumn = (key: string) => {
-    setVisibleColumns(prev => 
-      prev.includes(key) 
-        ? prev.filter(c => c !== key)
-        : [...prev, key]
-    );
-  };
-
-  const queryClient = useQueryClient();
-
-  const handleQuickAccept = async (orderId: string) => {
-    try {
-      await orderService.updateOrderStatus(orderId, 'Active');
-      toast.success('تم قبول الطلب بنجاح وتحويله للتحضير');
-      queryClient.invalidateQueries({ queryKey: ['orders'] }).catch(console.error);
-    } catch (error) {
-      handleGlobalError(error, 'Quick Accept Order');
-    }
-  };
+  }, [data, page, pageSize, queryClient, resolvedStatusesForQuery, dateRange, customDateRange, debouncedSearchQuery]);
 
   const removeDriverMutation = useMutation({
     mutationFn: async ({ teamId, driverId }: { teamId: string, driverId: string }) => {
@@ -246,6 +240,46 @@ export default function OrdersList() {
     }
   });
 
+  useEffect(() => {
+    if (initialOrderId) {
+      setSelectedOrderId(initialOrderId);
+    }
+  }, [initialOrderId]);
+
+  const allColumns = [
+    { key: 'order_number', label: 'رقم الطلب' },
+    { key: 'customer', label: 'العميل' },
+    { key: 'vendors', label: 'المتاجر' },
+    { key: 'date', label: 'التاريخ' },
+    { key: 'total', label: 'الإجمالي' },
+    { key: 'delivery_fee', label: 'رسوم التوصيل' },
+    { key: 'driver_tip', label: 'إكرامية المندوب' },
+    { key: 'total_tax', label: 'إجمالي الضرائب' },
+    { key: 'total_distance', label: 'المسافة (كم)' },
+    { key: 'status', label: 'الحالة' },
+    { key: 'driver', label: 'المندوب' },
+    { key: 'time_tracking', label: 'تتبع الوقت' },
+    { key: 'actions', label: 'إجراءات' },
+  ];
+
+  const toggleColumn = (key: string) => {
+    setVisibleColumns(prev => 
+      prev.includes(key) 
+        ? prev.filter(c => c !== key)
+        : [...prev, key]
+    );
+  };
+
+  const handleQuickAccept = async (orderId: string) => {
+    try {
+      await orderService.updateOrderStatus(orderId, 'Active');
+      toast.success('تم قبول الطلب بنجاح وتحويله للتحضير');
+      queryClient.invalidateQueries({ queryKey: ['orders'] }).catch(console.error);
+    } catch (error) {
+      handleGlobalError(error, 'Quick Accept Order');
+    }
+  };
+
   const handleExport = () => {
     if (!data?.orders) return;
     
@@ -268,34 +302,36 @@ export default function OrdersList() {
     XLSX.writeFile(wb, `orders_export_${format(new Date(), 'yyyyMMdd_HHmmss')}.xlsx`);
   };
 
-  const toggleStatusFilter = (status: OrderStatus) => {
+  const toggleStatusFilter = useCallback((status: OrderStatus) => {
     setSelectedStatuses(prev => 
       prev.includes(status) 
         ? prev.filter(s => s !== status)
         : [...prev, status]
     );
     setPage(0);
-  };
+  }, []);
 
-  const clearFilters = () => {
+  const clearFilters = useCallback(() => {
     setSelectedStatuses([]);
     setDateRange('all');
     setCustomDateRange({ start: '', end: '' });
     setSearchQuery('');
     setPage(0);
-  };
+  }, []);
 
-  const getDelayStatusForOrder = (order: any) => {
+  const getDelayStatusForOrder = useCallback((order: any) => {
     return getDelayStatus(order, now, prepThreshold, deliveryThreshold);
-  };
+  }, [now, prepThreshold, deliveryThreshold]);
 
-  const handleSort = (key: string) => {
+  const handleSort = useCallback((key: string) => {
     let direction: 'asc' | 'desc' = 'asc';
-    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc';
-    }
-    setSortConfig({ key, direction });
-  };
+    setSortConfig(currentConfig => {
+      if (currentConfig && currentConfig.key === key && currentConfig.direction === 'asc') {
+        direction = 'desc';
+      }
+      return { key, direction };
+    });
+  }, []);
 
   const sortedOrders = useMemo(() => {
     if (!data?.orders) return [];
@@ -333,43 +369,67 @@ export default function OrdersList() {
     });
   }, [data?.orders, sortConfig]);
 
+  const statsData = useMemo(() => {
+    return {
+      count: data?.count || 0,
+      pendingCount: data?.orders?.filter(o => o.status === 'Pending').length || 0,
+      delayedCount: data?.orders?.filter(o => getDelayStatusForOrder(o).isDelayed).length || 0,
+      totalSales: data?.orders?.filter(o => o.status === 'Completed').reduce((sum, o) => sum + (Number(o.grand_total) || 0), 0).toFixed(2) || '0.00'
+    };
+  }, [data?.orders, data?.count, getDelayStatusForOrder]);
+
   return (
     <div className="space-y-8 pb-12" dir="rtl">
       {/* Header Section */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-        <div className="flex items-center gap-4">
-          <div className="p-3.5 bg-emerald-100 rounded-2xl shadow-sm">
-            <RefreshCw className="w-7 h-7 text-emerald-600" />
+          <div className="flex items-center gap-4">
+            <div className="p-3.5 bg-emerald-100 rounded-2xl shadow-sm relative">
+              <RefreshCw className="w-7 h-7 text-emerald-600" />
+              <span className="absolute -top-1 -right-1 flex h-4 w-4">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-4 w-4 bg-emerald-500 border-2 border-white"></span>
+              </span>
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">إدارة الطلبات</h2>
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700 animate-pulse">
+                  مباشر
+                </span>
+              </div>
+              <p className="mt-1 text-gray-500 font-medium">متابعة ومعالجة جميع الطلبات في الوقت الفعلي.</p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">إدارة الطلبات</h2>
-            <p className="mt-1 text-gray-500 font-medium">متابعة ومعالجة جميع الطلبات في الوقت الفعلي.</p>
-          </div>
-        </div>
         
         <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
-          <button
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={() => refetch().catch(console.error)}
-            className="inline-flex items-center justify-center px-5 py-3 bg-white border border-gray-200 shadow-sm text-sm font-bold rounded-2xl text-gray-700 hover:bg-gray-50 transition-all"
+            className="inline-flex items-center justify-center px-5 py-3 bg-white border border-gray-200 shadow-sm text-sm font-bold rounded-2xl text-gray-700 hover:bg-gray-50 transition-all cursor-pointer"
           >
             <RefreshCw className="w-5 h-5 ml-2 text-emerald-500" />
             تحديث
-          </button>
-          <button
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={handleExport}
-            className="inline-flex items-center justify-center px-5 py-3 bg-white border border-gray-200 shadow-sm text-sm font-bold rounded-2xl text-gray-700 hover:bg-gray-50 transition-all"
+            className="inline-flex items-center justify-center px-5 py-3 bg-white border border-gray-200 shadow-sm text-sm font-bold rounded-2xl text-gray-700 hover:bg-gray-50 transition-all cursor-pointer"
           >
             <Download className="w-5 h-5 ml-2 text-blue-500" />
             تصدير
-          </button>
+          </motion.button>
           <div className="relative">
-            <button
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => setIsColumnSettingsOpen(!isColumnSettingsOpen)}
-              className="inline-flex items-center justify-center px-5 py-3 bg-white border border-gray-200 shadow-sm text-sm font-bold rounded-2xl text-gray-700 hover:bg-gray-50 transition-all"
+              className="inline-flex items-center justify-center px-5 py-3 bg-white border border-gray-200 shadow-sm text-sm font-bold rounded-2xl text-gray-700 hover:bg-gray-50 transition-all cursor-pointer"
             >
               <Settings className="w-5 h-5 ml-2 text-gray-500" />
               الأعمدة
-            </button>
+            </motion.button>
             {isColumnSettingsOpen && (
               <div className="absolute left-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-gray-100 p-2 z-20">
                 {allColumns.map(col => (
@@ -386,23 +446,59 @@ export default function OrdersList() {
               </div>
             )}
           </div>
-          <button
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={() => setIsSettingsOpen(true)}
-            className="inline-flex items-center justify-center px-5 py-3 bg-emerald-600 text-white shadow-lg shadow-emerald-200 text-sm font-bold rounded-2xl hover:bg-emerald-700 transition-all"
+            className="inline-flex items-center justify-center px-5 py-3 bg-emerald-600 text-white shadow-lg shadow-emerald-200 text-sm font-bold rounded-2xl hover:bg-emerald-700 transition-all cursor-pointer"
           >
             <Clock className="w-5 h-5 ml-2" />
             إعدادات الوقت
-          </button>
+          </motion.button>
         </div>
       </div>
 
       {/* Summary Stats */}
       <OrderStats 
-        count={data?.count || 0}
-        pendingCount={data?.orders?.filter(o => o.status === 'Pending').length || 0}
-        delayedCount={data?.orders?.filter(o => getDelayStatusForOrder(o).isDelayed).length || 0}
-        totalSales={data?.orders?.filter(o => o.status === 'Completed').reduce((sum, o) => sum + (Number(o.grand_total) || 0), 0).toFixed(2) || '0.00'}
+        count={statsData.count}
+        pendingCount={statsData.pendingCount}
+        delayedCount={statsData.delayedCount}
+        totalSales={statsData.totalSales}
       />
+
+      {/* Tabs */}
+      <div className="flex bg-white rounded-2xl p-1 border border-gray-100 shadow-sm w-fit">
+        <button
+          onClick={() => {
+            setActiveTab('current');
+            setSelectedStatuses([]);
+            setPage(0);
+          }}
+          className={cn(
+            "px-6 py-2.5 rounded-xl text-sm font-black transition-all cursor-pointer",
+            activeTab === 'current' 
+              ? "bg-emerald-500 text-white shadow-md"
+              : "text-gray-500 hover:text-emerald-600 hover:bg-emerald-50"
+          )}
+        >
+          الطلبات الحالية
+        </button>
+        <button
+          onClick={() => {
+            setActiveTab('history');
+            setSelectedStatuses([]);
+            setPage(0);
+          }}
+          className={cn(
+            "px-6 py-2.5 rounded-xl text-sm font-black transition-all cursor-pointer",
+            activeTab === 'history' 
+              ? "bg-emerald-500 text-white shadow-md"
+              : "text-gray-500 hover:text-emerald-600 hover:bg-emerald-50"
+          )}
+        >
+          سجل الطلبات
+        </button>
+      </div>
 
       {/* Filters & Search */}
       <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm space-y-6">
@@ -438,13 +534,15 @@ export default function OrdersList() {
           </div>
           
           {(selectedStatuses.length > 0 || dateRange !== 'all' || searchQuery) && (
-            <button
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.95 }}
               onClick={clearFilters}
-              className="inline-flex items-center justify-center px-6 py-3.5 bg-red-50 text-red-600 font-bold rounded-2xl hover:bg-red-100 transition-all border border-red-100"
+              className="inline-flex items-center justify-center px-6 py-3.5 bg-red-50 text-red-600 font-bold rounded-2xl hover:bg-red-100 transition-all border border-red-100 cursor-pointer"
             >
               <X className="w-5 h-5 ml-2" />
               مسح الفلاتر
-            </button>
+            </motion.button>
           )}
         </div>
 
@@ -472,19 +570,23 @@ export default function OrdersList() {
         )}
 
         <div className="flex flex-wrap gap-3">
-          {Object.entries(statusNames).map(([key, value]) => (
-            <button
+          {Object.entries(statusNames)
+            .filter(([key]) => availableStatusesToShow.includes(key as OrderStatus))
+            .map(([key, value]) => (
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               key={key}
               onClick={() => toggleStatusFilter(key as OrderStatus)}
               className={cn(
-                "px-5 py-2.5 rounded-2xl text-xs font-black border transition-all tracking-wide",
+                "px-5 py-2.5 rounded-2xl text-xs font-black border transition-all tracking-wide cursor-pointer",
                 selectedStatuses.includes(key as OrderStatus)
                   ? "bg-emerald-600 border-emerald-600 text-white shadow-md shadow-emerald-100"
                   : "bg-white border-gray-100 text-gray-500 hover:border-emerald-200 hover:text-emerald-600"
               )}
             >
               {value}
-            </button>
+            </motion.button>
           ))}
         </div>
       </div>
@@ -512,7 +614,7 @@ export default function OrdersList() {
                 ))}
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-50">
+            <tbody className={cn("bg-white divide-y divide-gray-50 transition-opacity duration-300", isFetching && !isLoading ? "opacity-40" : "")}>
               {isLoading ? (
                 Array.from({ length: 5 }).map((_, index) => (
                   <tr key={`orders-skeleton-${index}`} className="animate-pulse">
@@ -572,31 +674,47 @@ export default function OrdersList() {
                       )}
                       {visibleColumns.includes('customer') && (
                         <td className="px-8 py-6 whitespace-nowrap">
-                          <button 
-                            onClick={() => setInfoModal({ type: 'customer', data: { ...order.customer, address: order.address } })}
-                            className="flex items-center text-right group/info hover:bg-emerald-50 p-2 -m-2 rounded-2xl transition-all"
+                          <motion.button 
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => setInfoModal({ 
+                              type: 'customer', 
+                              data: { ...order.customer, address: order.address, masterOrderId: order.id } 
+                            })}
+                            className="flex items-center text-right group/info hover:bg-emerald-50 p-2 -m-2 rounded-2xl transition-all cursor-pointer"
                           >
-                            <div className="h-10 w-10 rounded-2xl bg-emerald-50 flex items-center justify-center border border-emerald-100 group-hover/info:scale-110 transition-transform">
-                              <User className="w-5 h-5 text-emerald-600" />
+                            <div className="h-10 w-10 rounded-2xl bg-emerald-50 flex items-center justify-center border border-emerald-100 group-hover/info:scale-110 transition-transform overflow-hidden">
+                              {order.customer?.avatar_url ? (
+                                <img 
+                                  src={order.customer.avatar_url} 
+                                  alt="" 
+                                  className="h-full w-full object-cover"
+                                  referrerPolicy="no-referrer"
+                                />
+                              ) : (
+                                <User className="w-5 h-5 text-emerald-600" />
+                              )}
                             </div>
                             <div className="mr-4">
                               <div className="text-sm font-black text-gray-900 group-hover/info:text-emerald-700">{order.customer?.full_name || 'غير معروف'}</div>
                             </div>
-                          </button>
+                          </motion.button>
                         </td>
                       )}
                       {visibleColumns.includes('vendors') && (
                         <td className="px-8 py-6 whitespace-nowrap">
                           {order.sub_orders?.length > 1 ? (
                             <div className="relative">
-                              <button
+                              <motion.button
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
                                 onClick={() => setOpenVendorDropdownId(openVendorDropdownId === order.id ? null : order.id)}
-                                className="flex items-center gap-2 text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-2 rounded-xl border border-emerald-100 w-fit hover:bg-emerald-100 transition-all"
+                                className="flex items-center gap-2 text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-2 rounded-xl border border-emerald-100 w-fit hover:bg-emerald-100 transition-all cursor-pointer"
                               >
                                 <Store className="w-4 h-4" />
                                 <span>{order.sub_orders.length} متاجر</span>
                                 <ChevronDown className={cn("w-4 h-4 transition-transform", openVendorDropdownId === order.id && "rotate-180")} />
-                              </button>
+                              </motion.button>
                               
                               <AnimatePresence>
                                 {openVendorDropdownId === order.id && (
@@ -607,22 +725,38 @@ export default function OrdersList() {
                                     className="absolute top-full right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-gray-100 p-2 z-50 flex flex-col gap-1"
                                   >
                                     {order.sub_orders.map((so: any, idx: number) => (
-                                      <button 
+                                      <motion.button 
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
                                         key={so.id || `so-${idx}`} 
                                         onClick={() => {
-                                          setInfoModal({ type: 'vendor', data: so.vendor });
+                                          setInfoModal({ 
+                                            type: 'vendor', 
+                                            data: { ...so.vendor, masterOrderId: order.id } 
+                                          });
                                           setOpenVendorDropdownId(null);
                                         }}
-                                        className="flex items-center justify-between text-xs font-bold text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-xl transition-colors w-full text-right"
+                                        className="flex items-center justify-between text-xs font-bold text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-xl transition-colors w-full text-right cursor-pointer"
                                       >
                                         <div className="flex items-center gap-2">
-                                          <Store className="w-3.5 h-3.5 text-emerald-500" />
+                                          <div className="w-5 h-5 rounded overflow-hidden bg-white flex items-center justify-center shrink-0 border border-gray-100">
+                                            {so.vendor?.profile?.avatar_url ? (
+                                              <img 
+                                                src={so.vendor.profile.avatar_url} 
+                                                alt="" 
+                                                className="w-full h-full object-cover"
+                                                referrerPolicy="no-referrer"
+                                              />
+                                            ) : (
+                                              <Store className="w-3 h-3 text-emerald-500" />
+                                            )}
+                                          </div>
                                           <span className="truncate max-w-[100px]">{so.vendor?.brand_name || 'متجر غير معروف'}</span>
                                         </div>
                                         <span className="text-[10px] bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded-lg whitespace-nowrap">
                                           {so.order_items?.length || 0} منتج
                                         </span>
-                                      </button>
+                                      </motion.button>
                                     ))}
                                   </motion.div>
                                 )}
@@ -631,17 +765,33 @@ export default function OrdersList() {
                           ) : (
                             <div className="flex flex-col gap-2">
                               {order.sub_orders?.map((so: any, idx: number) => (
-                                <button 
+                                <motion.button 
+                                  whileHover={{ scale: 1.02 }}
+                                  whileTap={{ scale: 0.98 }}
                                   key={so.id || `so-${idx}`} 
-                                  onClick={() => setInfoModal({ type: 'vendor', data: so.vendor })}
-                                  className="flex items-center gap-2 text-xs font-bold text-gray-600 bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-100 w-fit hover:bg-emerald-50 hover:border-emerald-200 transition-all group/vinfo"
+                                  onClick={() => setInfoModal({ 
+                                    type: 'vendor', 
+                                    data: { ...so.vendor, masterOrderId: order.id } 
+                                  })}
+                                  className="flex items-center gap-2 text-xs font-bold text-gray-600 bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-100 w-fit hover:bg-emerald-50 hover:border-emerald-200 transition-all group/vinfo cursor-pointer"
                                 >
-                                  <Store className="w-3.5 h-3.5 text-emerald-500 group-hover/vinfo:scale-110 transition-transform" />
+                                  <div className="w-5 h-5 rounded overflow-hidden bg-white flex items-center justify-center shrink-0 border border-gray-100">
+                                    {so.vendor?.profile?.avatar_url ? (
+                                      <img 
+                                        src={so.vendor.profile.avatar_url} 
+                                        alt="" 
+                                        className="w-full h-full object-cover"
+                                        referrerPolicy="no-referrer"
+                                      />
+                                    ) : (
+                                      <Store className="w-3 h-3 text-emerald-500 group-hover/vinfo:scale-110 transition-transform" />
+                                    )}
+                                  </div>
                                   <span className="group-hover/vinfo:text-emerald-700">{so.vendor?.brand_name || 'متجر غير معروف'}</span>
                                   <span className="text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-lg font-bold">
                                     {so.order_items?.length || 0} منتج
                                   </span>
-                                </button>
+                                </motion.button>
                               ))}
                             </div>
                           )}
@@ -690,18 +840,20 @@ export default function OrdersList() {
                       )}
                       {visibleColumns.includes('status') && (
                         <td className="px-8 py-6 whitespace-nowrap">
-                          <button 
+                          <motion.button 
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
                             onClick={(e) => {
                               e.stopPropagation();
                               setSelectedHistoryOrder(order);
                             }}
                             className={cn(
-                              "px-4 py-2 inline-flex items-center gap-2 text-[10px] font-black rounded-2xl border uppercase tracking-[0.1em] hover:opacity-80 transition-opacity cursor-pointer",
+                              "px-4 py-2 inline-flex items-center gap-2 text-[10px] font-black rounded-2xl border uppercase tracking-[0.1em] hover:opacity-80 transition-all cursor-pointer",
                               statusColors[order.status as OrderStatus]
                             )}
                           >
                             {statusNames[order.status as OrderStatus]}
-                          </button>
+                          </motion.button>
                         </td>
                       )}
                       {visibleColumns.includes('driver') && (
@@ -719,38 +871,62 @@ export default function OrdersList() {
 
                                   return (
                                     <div key={teamMember.id} className="flex items-center gap-2 mb-2">
-                                      <button 
-                                        onClick={() => setInfoModal({ type: 'driver', data: { ...teamMember.driver?.user, location_gps: teamMember.driver?.driver_location?.location } })}
-                                        className="flex items-center gap-2 text-sm text-gray-900 font-black bg-emerald-50/50 px-4 py-2 rounded-2xl border border-emerald-100 w-fit hover:bg-emerald-100 transition-all group/dinfo"
+                                      <motion.button 
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.95 }}
+                                        onClick={() => setInfoModal({ 
+                                          type: 'driver', 
+                                          data: { 
+                                            ...teamMember.driver?.user, 
+                                            location_gps: teamMember.driver?.driver_location?.location,
+                                            zone_id: teamMember.driver?.zone_id 
+                                          } 
+                                        })}
+                                        className="flex items-center gap-2 text-sm text-gray-900 font-black bg-emerald-50/50 px-4 py-2 rounded-2xl border border-emerald-100 w-fit hover:bg-emerald-100 transition-all group/dinfo cursor-pointer"
                                       >
-                                        <Motorbike className="w-4 h-4 text-emerald-600 group-hover/dinfo:scale-110 transition-transform" />
+                                        <div className="w-6 h-6 rounded-lg bg-emerald-100 flex items-center justify-center overflow-hidden shrink-0">
+                                          {teamMember.driver?.user?.avatar_url ? (
+                                            <img 
+                                              src={teamMember.driver.user.avatar_url} 
+                                              alt="" 
+                                              className="h-full w-full object-cover"
+                                              referrerPolicy="no-referrer"
+                                            />
+                                          ) : (
+                                            <Motorbike className="w-3.5 h-3.5 text-emerald-600 group-hover/dinfo:scale-110 transition-transform" />
+                                          )}
+                                        </div>
                                         <span className="group-hover/dinfo:text-emerald-700">{teamMember.driver?.user?.full_name}</span>
                                         {activeCount > 0 && (
                                           <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-lg font-bold">
                                             {activeCount} طلب
                                           </span>
                                         )}
-                                      </button>
-                                      <button 
+                                      </motion.button>
+                                      <motion.button 
+                                        whileHover={{ scale: 1.1 }}
+                                        whileTap={{ scale: 0.9 }}
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           setAssigningDriverOrderId(order.id);
                                         }}
-                                        className="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100"
+                                        className="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 cursor-pointer"
                                         title="إضافة مندوب"
                                       >
                                         <UserPlus className="w-4 h-4" />
-                                      </button>
-                                      <button 
+                                      </motion.button>
+                                      <motion.button 
+                                        whileHover={{ scale: 1.1 }}
+                                        whileTap={{ scale: 0.9 }}
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           removeDriverMutation.mutate({ teamId: teamMember.id, driverId: teamMember.driver_id });
                                         }}
-                                        className="p-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100"
+                                        className="p-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 cursor-pointer"
                                         title="إزالة المندوب"
                                       >
                                         <Trash2 className="w-4 h-4" />
-                                      </button>
+                                      </motion.button>
                                     </div>
                                   );
                                 })}
@@ -758,29 +934,33 @@ export default function OrdersList() {
                             ) : (
                               <div className="flex flex-col gap-2">
                                 <div className="flex items-center gap-2">
-                                  <button 
+                                  <motion.button 
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       autoAssignDriverMutation.mutate(order.id);
                                     }}
                                     disabled={autoAssignDriverMutation.isPending}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-zap-gradient text-white rounded-xl text-[10px] font-black shadow-sm hover:opacity-90 transition-all disabled:opacity-50"
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-zap-gradient text-white rounded-xl text-[10px] font-black shadow-sm hover:opacity-90 transition-all disabled:opacity-50 cursor-pointer"
                                     title="تعيين تلقائي"
                                   >
                                     <Zap className="w-3 h-3" />
                                     <span>تلقائي</span>
-                                  </button>
-                                  <button 
+                                  </motion.button>
+                                  <motion.button 
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       setAssigningDriverOrderId(order.id);
                                     }}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white text-gray-700 border border-gray-200 rounded-xl text-[10px] font-black shadow-sm hover:bg-gray-50 transition-all"
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white text-gray-700 border border-gray-200 rounded-xl text-[10px] font-black shadow-sm hover:bg-gray-50 transition-all cursor-pointer"
                                     title="تعيين يدوي"
                                   >
                                     <UserPlus className="w-3 h-3" />
                                     <span>يدوي</span>
-                                  </button>
+                                  </motion.button>
                                 </div>
                               </div>
                             )}
@@ -824,24 +1004,42 @@ export default function OrdersList() {
                         <td className="px-8 py-6 whitespace-nowrap text-center">
                           <div className="flex items-center justify-center gap-2">
                             {order.status === 'Pending' && (
-                              <button 
+                              <motion.button 
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleQuickAccept(order.id);
                                 }}
-                                className="text-white bg-amber-500 hover:bg-amber-600 px-4 py-2.5 rounded-2xl font-black text-xs transition-all shadow-sm flex items-center gap-2"
+                                className="text-white bg-amber-500 hover:bg-amber-600 px-4 py-2.5 rounded-2xl font-black text-xs transition-all shadow-sm flex items-center gap-2 cursor-pointer"
                               >
                                 <Store className="w-4 h-4" />
                                 <span>قبول</span>
-                              </button>
+                              </motion.button>
                             )}
-                            <button 
+                            {order.status !== 'Pending' && order.status !== 'Delivered' && order.status !== 'Cancelled' && (
+                              <motion.button 
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                title="تتبع مباشر"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setTrackingTarget({ type: 'order', id: order.id, name: `طلب #${order.order_number}` });
+                                }}
+                                className="text-white bg-indigo-600 hover:bg-indigo-700 px-4 py-2.5 rounded-2xl font-black text-xs transition-all shadow-sm flex items-center gap-2 cursor-pointer"
+                              >
+                                <MapPin className="w-4 h-4" />
+                              </motion.button>
+                            )}
+                            <motion.button 
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
                               onClick={() => setSelectedOrderId(order.id)}
-                              className="text-emerald-600 hover:text-white hover:bg-emerald-600 bg-emerald-50 px-4 py-2.5 rounded-2xl font-black text-xs transition-all border border-emerald-100 inline-flex items-center gap-2 shadow-sm"
+                              className="text-emerald-600 hover:text-white hover:bg-emerald-600 bg-emerald-50 px-4 py-2.5 rounded-2xl font-black text-xs transition-all border border-emerald-100 inline-flex items-center gap-2 shadow-sm cursor-pointer"
                             >
                               <Eye className="w-4 h-4" />
                               <span>التفاصيل</span>
-                            </button>
+                            </motion.button>
                           </div>
                         </td>
                       )}
@@ -857,20 +1055,22 @@ export default function OrdersList() {
         {data?.count && data.count > pageSize && (
           <div className="bg-white px-8 py-6 border-t border-gray-100 flex items-center justify-between">
             <div className="flex-1 flex justify-between sm:hidden">
-              <button
+              <motion.button
+                whileTap={{ scale: 0.95 }}
                 onClick={() => setPage(p => Math.max(0, p - 1))}
                 disabled={page === 0}
-                className="relative inline-flex items-center px-6 py-3 border border-gray-200 text-sm font-bold rounded-2xl text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 transition-all"
+                className="relative inline-flex items-center px-6 py-3 border border-gray-200 text-sm font-bold rounded-2xl text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 transition-all cursor-pointer"
               >
                 السابق
-              </button>
-              <button
+              </motion.button>
+              <motion.button
+                whileTap={{ scale: 0.95 }}
                 onClick={() => setPage(p => p + 1)}
                 disabled={(page + 1) * pageSize >= data.count}
-                className="relative inline-flex items-center px-6 py-3 border border-gray-200 text-sm font-bold rounded-2xl text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 transition-all"
+                className="relative inline-flex items-center px-6 py-3 border border-gray-200 text-sm font-bold rounded-2xl text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 transition-all cursor-pointer"
               >
                 التالي
-              </button>
+              </motion.button>
             </div>
             <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
               <div>
@@ -880,20 +1080,24 @@ export default function OrdersList() {
               </div>
               <div>
                 <nav className="relative z-0 inline-flex rounded-2xl shadow-sm -space-x-px gap-2" aria-label="Pagination">
-                  <button
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                     onClick={() => setPage(p => Math.max(0, p - 1))}
                     disabled={page === 0}
-                    className="relative inline-flex items-center px-4 py-2 rounded-2xl border border-gray-200 bg-white text-sm font-bold text-gray-500 hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200 transition-all disabled:opacity-50"
+                    className="relative inline-flex items-center px-4 py-2 rounded-2xl border border-gray-200 bg-white text-sm font-bold text-gray-500 hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200 transition-all disabled:opacity-50 cursor-pointer"
                   >
                     السابق
-                  </button>
-                  <button
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                     onClick={() => setPage(p => p + 1)}
                     disabled={(page + 1) * pageSize >= data.count}
-                    className="relative inline-flex items-center px-4 py-2 rounded-2xl border border-gray-200 bg-white text-sm font-bold text-gray-500 hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200 transition-all disabled:opacity-50"
+                    className="relative inline-flex items-center px-4 py-2 rounded-2xl border border-gray-200 bg-white text-sm font-bold text-gray-500 hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200 transition-all disabled:opacity-50 cursor-pointer"
                   >
                     التالي
-                  </button>
+                  </motion.button>
                 </nav>
               </div>
             </div>
@@ -928,17 +1132,33 @@ export default function OrdersList() {
                    infoModal.type === 'vendor' ? 'بيانات المتجر' : 
                    'بيانات المندوب'}
                 </h3>
-                <button onClick={() => setInfoModal(null)} className="p-2 hover:bg-gray-100 rounded-2xl transition-colors">
+                <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => setInfoModal(null)} className="p-2 hover:bg-gray-100 rounded-2xl transition-colors cursor-pointer">
                   <X className="w-6 h-6 text-gray-400" />
-                </button>
+                </motion.button>
               </div>
 
               <div className="space-y-6">
                 <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-3xl border border-gray-100">
-                  <div className="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center">
-                    {infoModal.type === 'customer' ? <User className="w-8 h-8 text-emerald-600" /> : 
-                     infoModal.type === 'vendor' ? <Store className="w-8 h-8 text-emerald-600" /> : 
-                     <Motorbike className="w-8 h-8 text-emerald-600" />}
+                  <div className="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center overflow-hidden">
+                    {infoModal.type === 'customer' ? (
+                      infoModal.data.avatar_url ? (
+                        <img src={infoModal.data.avatar_url} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                      ) : (
+                        <User className="w-8 h-8 text-emerald-600" />
+                      )
+                    ) : infoModal.type === 'vendor' ? (
+                      infoModal.data.profile?.avatar_url ? (
+                        <img src={infoModal.data.profile.avatar_url} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                      ) : (
+                        <Store className="w-8 h-8 text-emerald-600" />
+                      )
+                    ) : (
+                      infoModal.data.avatar_url ? (
+                        <img src={infoModal.data.avatar_url} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                      ) : (
+                        <Motorbike className="w-8 h-8 text-emerald-600" />
+                      )
+                    )}
                   </div>
                   <div className="flex-1">
                     <div className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">الاسم</div>
@@ -959,12 +1179,12 @@ export default function OrdersList() {
                     <div className="flex items-center justify-between">
                       <div className="text-lg font-black text-gray-900" dir="ltr">
                         {infoModal.type === 'customer' ? infoModal.data.primary_phone : 
-                         infoModal.type === 'vendor' ? infoModal.data.profiles?.primary_phone : 
+                         infoModal.type === 'vendor' ? infoModal.data.profile?.primary_phone : 
                          infoModal.data.primary_phone}
                       </div>
                       <a 
                         href={`tel:${infoModal.type === 'customer' ? infoModal.data.primary_phone : 
-                               infoModal.type === 'vendor' ? infoModal.data.profiles?.primary_phone : 
+                               infoModal.type === 'vendor' ? infoModal.data.profile?.primary_phone : 
                                infoModal.data.primary_phone}`}
                         className="p-3 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 group/call"
                       >
@@ -989,91 +1209,63 @@ export default function OrdersList() {
                         )}
                       </div>
                       {(infoModal.type === 'customer' ? infoModal.data.address?.location_gps : infoModal.data.location_gps) && (
-                        <button
+                        <motion.button
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
                           onClick={() => {
-                            const url = (() => {
-                              const loc = infoModal.type === 'customer' ? infoModal.data.address?.location_gps : infoModal.data.location_gps;
-                              if (!loc) return '#';
-                              let lat, lng;
-                              if (typeof loc === 'string') {
-                                if (loc.startsWith('POINT')) {
-                                  const match = loc.match(/POINT\(([^ ]+) ([^)]+)\)/);
-                                  if (match) { lng = match[1]; lat = match[2]; }
-                                } else {
-                                  const parts = loc.split(',');
-                                  if (parts.length === 2) { lat = parts[0].trim(); lng = parts[1].trim(); }
-                                }
-                              } else if (typeof loc === 'object') {
-                                if (loc.lat && loc.lng) { lat = loc.lat; lng = loc.lng; }
-                                else if (loc.latitude && loc.longitude) { lat = loc.latitude; lng = loc.longitude; }
-                                else if (loc.coordinates) { lng = loc.coordinates[0]; lat = loc.coordinates[1]; }
-                              }
-                              if (lat && lng) return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
-                              return '#';
-                            })();
-                            if (url !== '#') {
-                              window.open(url, '_system');
-                            }
+                            const zoneId = infoModal.type === 'customer' ? infoModal.data.address?.zone_id : infoModal.data.zone_id;
+                            const id = infoModal.type === 'customer' ? infoModal.data.masterOrderId : (infoModal.data.user_id || infoModal.data.id);
+                            const type = infoModal.type === 'customer' ? 'order' : 'vendor';
+                            const name = infoModal.type === 'customer' ? infoModal.data.full_name : infoModal.data.brand_name;
+                            
+                            setTrackingTarget({ type, id, name });
+                            setInfoModal(null);
                           }}
-                          className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-emerald-100 text-emerald-700 rounded-xl hover:bg-emerald-200 transition-colors text-xs font-bold"
+                          className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-emerald-100 text-emerald-700 rounded-xl hover:bg-emerald-200 transition-colors text-xs font-bold cursor-pointer"
                         >
                           <MapPin className="w-4 h-4" />
-                          عرض على الخريطة
-                        </button>
+                          تتبع الموقع داخلياً
+                        </motion.button>
                       )}
                     </div>
                   </div>
                 )}
                 
-                {infoModal.type === 'driver' && infoModal.data.location_gps && (
+                {infoModal.type === 'driver' && (
                   <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-3xl border border-gray-100">
                     <div className="w-12 h-12 bg-amber-100 rounded-2xl flex items-center justify-center">
                       <MapPin className="w-6 h-6 text-amber-600" />
                     </div>
                     <div className="flex-1">
-                      <div className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">الموقع الحالي</div>
-                      <button
+                      <div className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">الموقع المباشر</div>
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
                         onClick={() => {
-                          const url = (() => {
-                            const loc = infoModal.data.location_gps;
-                            if (!loc) return '#';
-                            let lat, lng;
-                            if (typeof loc === 'string') {
-                              if (loc.startsWith('POINT')) {
-                                const match = loc.match(/POINT\(([^ ]+) ([^)]+)\)/);
-                                if (match) { lng = match[1]; lat = match[2]; }
-                              } else {
-                                const parts = loc.split(',');
-                                if (parts.length === 2) { lat = parts[0].trim(); lng = parts[1].trim(); }
-                              }
-                            } else if (typeof loc === 'object') {
-                              if (loc.lat && loc.lng) { lat = loc.lat; lng = loc.lng; }
-                              else if (loc.latitude && loc.longitude) { lat = loc.latitude; lng = loc.longitude; }
-                              else if (loc.coordinates) { lng = loc.coordinates[0]; lat = loc.coordinates[1]; }
-                            }
-                            if (lat && lng) return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
-                            return '#';
-                          })();
-                          if (url !== '#') {
-                            window.open(url, '_system');
-                          }
+                          const zoneId = infoModal.data.zone_id;
+                          const id = infoModal.data.user_id || infoModal.data.id;
+                          const name = infoModal.data.full_name;
+                          setTrackingTarget({ type: 'driver', id, name });
+                          setInfoModal(null);
                         }}
-                        className="mt-1 inline-flex items-center gap-2 px-4 py-2 bg-emerald-100 text-emerald-700 rounded-xl hover:bg-emerald-200 transition-colors text-xs font-bold"
+                        className="mt-1 inline-flex items-center gap-2 px-4 py-2 bg-emerald-100 text-emerald-700 rounded-xl hover:bg-emerald-200 transition-colors text-xs font-bold cursor-pointer"
                       >
                         <MapPin className="w-4 h-4" />
-                        عرض على الخريطة
-                      </button>
+                        تتبع السائق داخلياً
+                      </motion.button>
                     </div>
                   </div>
                 )}
               </div>
 
-              <button
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={() => setInfoModal(null)}
-                className="w-full mt-8 py-4 bg-gray-900 text-white rounded-2xl font-black tracking-widest hover:bg-gray-800 transition-all shadow-lg shadow-gray-200"
+                className="w-full mt-8 py-4 bg-gray-900 text-white rounded-2xl font-black tracking-widest hover:bg-gray-800 transition-all shadow-lg shadow-gray-200 cursor-pointer"
               >
                 إغلاق
-              </button>
+              </motion.button>
             </div>
           </div>
         </div>
@@ -1144,12 +1336,14 @@ export default function OrdersList() {
             </div>
             
             <div className="mt-10">
-              <button
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={() => setIsSettingsOpen(false)}
-                className="w-full bg-emerald-600 text-white py-5 rounded-[1.5rem] font-black text-lg shadow-xl shadow-emerald-200 hover:bg-emerald-700 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                className="w-full bg-emerald-600 text-white py-5 rounded-[1.5rem] font-black text-lg shadow-xl shadow-emerald-200 hover:bg-emerald-700 transition-all cursor-pointer"
               >
                 حفظ الإعدادات
-              </button>
+              </motion.button>
             </div>
           </div>
         </div>
@@ -1176,7 +1370,7 @@ export default function OrdersList() {
                 </div>
                 <button
                   onClick={() => setSelectedHistoryOrder(null)}
-                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
+                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-colors cursor-pointer"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -1225,6 +1419,56 @@ export default function OrdersList() {
               </div>
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+
+      {/* Map Tracking Drawer */}
+      <AnimatePresence>
+        {trackingTarget && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setTrackingTarget(null)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+            />
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: "spring", bounce: 0, duration: 0.4 }}
+              className="fixed top-0 right-0 bottom-0 w-full max-w-2xl bg-gray-50 z-50 flex flex-col shadow-2xl border-l border-gray-200"
+            >
+              <div className="p-6 border-b border-gray-200 bg-white flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center shadow-inner">
+                    <MapPin className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-black text-gray-900">تتبع مباشر</h2>
+                    <p className="text-sm text-gray-500 font-bold mt-1">
+                      {trackingTarget.name}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setTrackingTarget(null)}
+                  className="p-3 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-2xl transition-colors cursor-pointer"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+              <div className="flex-1 p-6 relative overflow-hidden">
+                <LiveMap 
+                  embedded 
+                  initialType={trackingTarget.type} 
+                  initialId={trackingTarget.id} 
+                  hideControls 
+                />
+              </div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </div>

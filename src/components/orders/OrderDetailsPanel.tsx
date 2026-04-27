@@ -80,11 +80,15 @@ export default function OrderDetailsPanel({ orderId, onClose, prepThreshold, del
           .from('master_orders')
           .select(`
             *,
-            customer:profiles!master_orders_customer_id_fkey(full_name, primary_phone),
+            customer:profiles!master_orders_customer_id_fkey(full_name, primary_phone, avatar_url),
             address:customer_details!master_orders_address_id_fkey(*),
             sub_orders (
               *,
-              vendor:vendor_details!sub_orders_vendor_id_fkey(brand_name, preparation_time_avg),
+              vendor:vendor_details!sub_orders_vendor_id_fkey(
+                brand_name, 
+                preparation_time_avg,
+                profile:profiles!vendor_details_user_id_fkey(avatar_url)
+              ),
               items:order_items(*),
               order_status_history (
                 status,
@@ -95,7 +99,7 @@ export default function OrderDetailsPanel({ orderId, onClose, prepThreshold, del
             delivery_team:order_delivery_team(
               *,
               driver:driver_details!order_delivery_team_driver_id_fkey(
-                user:profiles!driver_details_user_id_fkey(full_name, primary_phone),
+                user:profiles!driver_details_user_id_fkey(full_name, primary_phone, avatar_url),
                 active_orders:order_delivery_team(
                   master_order:master_orders!fk_order_delivery_team_master_order(status, id)
                 )
@@ -689,8 +693,17 @@ export default function OrderDetailsPanel({ orderId, onClose, prepThreshold, del
                     </div>
 
                     <div className="flex items-start gap-4 mb-6">
-                      <div className="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center text-emerald-600 shrink-0 shadow-inner">
-                        <User className="w-10 h-10" />
+                      <div className="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center text-emerald-600 shrink-0 shadow-inner overflow-hidden">
+                        {(order.customer as any)?.avatar_url ? (
+                          <img 
+                            src={(order.customer as any).avatar_url} 
+                            alt="" 
+                            className="w-full h-full object-cover"
+                            referrerPolicy="no-referrer"
+                          />
+                        ) : (
+                          <User className="w-10 h-10" />
+                        )}
                       </div>
                       <div>
                         <h4 className="text-xl font-black text-gray-900">{(order.customer as any)?.full_name}</h4>
@@ -700,6 +713,18 @@ export default function OrderDetailsPanel({ orderId, onClose, prepThreshold, del
                         </p>
                       </div>
                     </div>
+
+                    {order.notes && (
+                      <div className="mb-6 p-4 bg-amber-50 border border-amber-100 rounded-2xl">
+                        <div className="flex items-center gap-2 mb-2 text-amber-700">
+                          <Quote className="w-4 h-4" />
+                          <span className="text-xs font-black uppercase tracking-widest">تعليق العميل</span>
+                        </div>
+                        <p className="text-sm text-gray-700 font-medium leading-relaxed whitespace-pre-wrap">
+                          {order.notes}
+                        </p>
+                      </div>
+                    )}
 
                     <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex gap-4">
                       <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-emerald-600 shadow-sm shrink-0">
@@ -842,8 +867,17 @@ export default function OrderDetailsPanel({ orderId, onClose, prepThreshold, del
                           </button>
                           
                           <div className="flex items-center gap-4 flex-1">
-                            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-gray-100 shrink-0">
-                              <Store className="w-6 h-6 text-emerald-600" />
+                            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-gray-100 shrink-0 overflow-hidden">
+                              {subOrder.vendor?.profile?.avatar_url ? (
+                                <img 
+                                  src={subOrder.vendor.profile.avatar_url} 
+                                  alt="" 
+                                  className="w-full h-full object-cover"
+                                  referrerPolicy="no-referrer"
+                                />
+                              ) : (
+                                <Store className="w-6 h-6 text-emerald-600" />
+                              )}
                             </div>
                             <div className="flex-1">
                               <div className="flex items-center gap-2">
@@ -1061,8 +1095,17 @@ export default function OrderDetailsPanel({ orderId, onClose, prepThreshold, del
                         order.delivery_team.map((team: any) => (
                           <div key={team.id} className="flex items-center justify-between bg-gray-50/50 p-3 rounded-2xl border border-gray-100 group/driver">
                             <div className="flex items-center gap-4">
-                              <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-emerald-600 shadow-sm border border-gray-100">
-                                <User className="w-5 h-5" />
+                              <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-emerald-600 shadow-sm border border-gray-100 overflow-hidden">
+                                {team.driver?.user?.avatar_url ? (
+                                  <img 
+                                    src={team.driver.user.avatar_url} 
+                                    alt="" 
+                                    className="w-full h-full object-cover"
+                                    referrerPolicy="no-referrer"
+                                  />
+                                ) : (
+                                  <User className="w-5 h-5" />
+                                )}
                               </div>
                               <div>
                                 <div className="flex items-center gap-2">

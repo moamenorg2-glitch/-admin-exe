@@ -32,6 +32,10 @@ export const driverService = {
       if (filters.status === 'busy') query = query.eq('is_busy', true);
       if (filters.status === 'available') query = query.eq('is_busy', false).eq('is_online', true);
     }
+    
+    if (filters.user_id) {
+       query = query.eq('user_id', filters.user_id);
+    }
 
     // استبعاد المناديب المحذوفين منطقياً
     query = query.neq('profiles.status', 'محذوف');

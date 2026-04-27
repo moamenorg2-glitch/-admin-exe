@@ -22,7 +22,8 @@ export const orderService = {
             user_id,
             landmark,
             location_gps,
-            profiles:profiles!vendor_details_user_id_fkey(primary_phone)
+            zone_id,
+            profile:profiles!vendor_details_user_id_fkey(primary_phone, avatar_url)
           ),
           order_status_history:order_status_history(*),
           order_items:order_items(
@@ -35,7 +36,7 @@ export const orderService = {
           driver_id,
           is_lead,
           driver:driver_details!order_delivery_team_driver_id_fkey(
-            user:profiles!driver_details_user_id_fkey(full_name, primary_phone),
+            user:profiles!driver_details_user_id_fkey(full_name, primary_phone, avatar_url),
             active_orders:order_delivery_team(
               master_order:master_orders!fk_order_delivery_team_master_order(status, id)
             ),
@@ -70,6 +71,10 @@ export const orderService = {
         query = query.gte('created_at', startDate.toISOString())
                      .lte('created_at', endDate.toISOString());
       }
+    }
+
+    if (filters.orderId) {
+      query = query.eq('id', filters.orderId);
     }
 
     if (filters.searchQuery) {
