@@ -35,18 +35,18 @@ export default function Header({
   });
 
   return (
-    <header className="h-16 bg-[#0a0a0c] shadow-sm flex items-center justify-between px-6 z-20 border-b border-white/5">
+    <header className="h-16 bg-[#1E1E2D] shadow-sm flex items-center justify-between px-6 z-20 border-b border-gray-800">
       <div className="flex items-center gap-4">
         <button 
           onClick={onToggleSidebar}
-          className="p-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-md transition-colors lg:hidden"
+          className="p-2 text-gray-400 hover:text-white hover:bg-[#2B2B40] rounded-md transition-colors lg:hidden"
         >
           <Menu className="w-6 h-6" />
         </button>
 
         <button 
           onClick={onToggleCollapse}
-          className="p-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-md transition-colors hidden lg:block"
+          className="p-2 text-gray-400 hover:text-white hover:bg-[#2B2B40] rounded-md transition-colors hidden lg:block"
           title={isCollapsed ? "توسيع القائمة" : "طي القائمة"}
         >
           <Menu className="w-6 h-6" />
@@ -83,7 +83,7 @@ export default function Header({
         {/* Dark Mode Toggle */}
         <button
           onClick={onToggleDarkMode}
-          className="p-2 text-gray-400 hover:text-emerald-500 hover:bg-white/5 rounded-full transition-all duration-300"
+          className="p-2 text-gray-400 hover:text-emerald-500 hover:bg-[#2B2B40] rounded-full transition-all duration-300"
           title={isDarkMode ? "الوضع الفاتح" : "الوضع الداكن"}
         >
           {isDarkMode ? (
@@ -93,7 +93,7 @@ export default function Header({
           )}
         </button>
 
-        <Link to="/profile" className="flex items-center gap-2 text-sm text-gray-300 hover:bg-white/5 hover:text-white p-1.5 rounded-lg transition-colors">
+        <Link to="/profile" className="flex items-center gap-2 text-sm text-gray-300 hover:bg-[#2B2B40] hover:text-white p-1.5 rounded-lg transition-colors">
           <div className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center overflow-hidden border border-gray-700">
             {profile?.avatar_url ? (
               <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" />

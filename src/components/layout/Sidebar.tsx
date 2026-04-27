@@ -136,14 +136,14 @@ export default function Sidebar({ isOpen, isCollapsed, onClose }: SidebarProps) 
       )}
 
       <aside className={cn(
-        "fixed inset-y-0 right-0 z-30 bg-[#0a0a0c] flex flex-col h-full transition-all duration-300 ease-in-out lg:relative lg:translate-x-0 border-l border-white/5",
+        "fixed inset-y-0 right-0 z-30 bg-[#1E1E2D] flex flex-col h-full transition-all duration-300 ease-in-out lg:relative lg:translate-x-0",
         isOpen ? "translate-x-0" : "translate-x-full lg:translate-x-0",
         isCollapsed ? "w-20" : "w-56"
       )}>
-        <div className="h-16 flex items-center justify-between border-b border-white/5 px-6 flex-shrink-0 lg:hidden">
+        <div className="h-16 flex items-center justify-between border-b border-gray-800 px-6 flex-shrink-0 lg:hidden">
           <h1 className="text-xl font-bold text-white flex items-center gap-2">
-            <span className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center text-white font-bold text-lg">Z</span>
-            زاجل إكسبريس
+            <span className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center text-white font-bold text-lg">A</span>
+            Admin app
           </h1>
           <button onClick={onClose} className="lg:hidden p-2 text-gray-400 hover:text-white">
             <X className="w-6 h-6" />
@@ -204,7 +204,7 @@ export default function Sidebar({ isOpen, isCollapsed, onClose }: SidebarProps) 
                   {!isCollapsed ? (
                     <button
                       onClick={() => toggleGroup(group)}
-                      className="w-full flex items-center justify-between px-3 py-2 text-sm font-bold text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+                      className="w-full flex items-center justify-between px-3 py-2 text-sm font-bold text-gray-400 hover:text-white hover:bg-[#2B2B40] rounded-lg transition-colors"
                     >
                       <span>{group}</span>
                       <ChevronDown 
@@ -235,7 +235,7 @@ export default function Sidebar({ isOpen, isCollapsed, onClose }: SidebarProps) 
                           cn(
                             isActive
                               ? 'bg-emerald-500/10 text-emerald-500'
-                              : 'text-gray-400 hover:bg-white/5 hover:text-white',
+                              : 'text-gray-400 hover:bg-[#2B2B40] hover:text-white',
                             'group flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200',
                             !isCollapsed && 'mr-4',
                             isCollapsed && 'justify-center px-0'

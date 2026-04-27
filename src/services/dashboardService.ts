@@ -7,7 +7,7 @@ export const dashboardService = {
     const today = startOfDay(new Date());
     const sevenDaysAgo = subDays(today, 6);
 
-    const [statsResponse, chartDataResponse, recentOrdersResponse, driversByStatusResponse] = await Promise.all([
+    const [statsResponse, chartDataResponse, recentOrdersResponse] = await Promise.all([
       // Basic Stats
       Promise.all([
         // Total orders today
@@ -23,7 +23,7 @@ export const dashboardService = {
           .eq('status', 'Completed')
           .gte('created_at', today.toISOString()),
 
-        // Available drivers (Online & NOT Busy)
+        // Available drivers
         supabase
           .from('driver_details')
           .select('*', { count: 'exact', head: true })
@@ -56,28 +56,17 @@ export const dashboardService = {
           customer:profiles!master_orders_customer_id_fkey(full_name, avatar_url)
         `)
         .order('created_at', { ascending: false })
-        .limit(8),
-
-      // Drivers Status Counts
-      Promise.all([
-        supabase.from('driver_details').select('*', { count: 'exact', head: true }).eq('is_online', true).eq('is_busy', false),
-        supabase.from('driver_details').select('*', { count: 'exact', head: true }).eq('is_online', true).eq('is_busy', true),
-        supabase.from('driver_details').select('*', { count: 'exact', head: true }).eq('is_online', false),
-      ])
+        .limit(8)
     ]);
 
-    const [ordersTodayRes, revenueTodayRes, availableDriversRes, pendingRes] = statsResponse;
-    const [onlineAvailableRes, onlineBusyRes, offlineRes] = driversByStatusResponse;
+    const [ordersTodayRes, revenueTodayRes, driversRes, pendingRes] = statsResponse;
 
     if (ordersTodayRes.error) throw ordersTodayRes.error;
     if (revenueTodayRes.error) throw revenueTodayRes.error;
-    if (availableDriversRes.error) throw availableDriversRes.error;
+    if (driversRes.error) throw driversRes.error;
     if (pendingRes.error) throw pendingRes.error;
     if (chartDataResponse.error) throw chartDataResponse.error;
     if (recentOrdersResponse.error) throw recentOrdersResponse.error;
-    if (onlineAvailableRes.error) throw onlineAvailableRes.error;
-    if (onlineBusyRes.error) throw onlineBusyRes.error;
-    if (offlineRes.error) throw offlineRes.error;
 
     // Process Chart Data
     const chartDays = Array.from({ length: 7 }, (_, i) => {
@@ -108,10 +97,7 @@ export const dashboardService = {
       stats: {
         ordersToday: ordersTodayRes.count || 0,
         revenueToday: totalRevenueToday,
-        availableDrivers: onlineAvailableRes.count || 0,
-        busyDrivers: onlineBusyRes.count || 0,
-        offlineDrivers: offlineRes.count || 0,
-        totalDrivers: (onlineAvailableRes.count || 0) + (onlineBusyRes.count || 0) + (offlineRes.count || 0),
+        availableDrivers: driversRes.count || 0,
         pendingOrders: pendingRes.count || 0
       },
       chartData: chartDays,
