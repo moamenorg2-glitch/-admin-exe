@@ -68,7 +68,7 @@ export function useOrders(page: number, pageSize: number, filters: any) {
     const channel = supabase
       .channel('orders-realtime-comprehensive')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'master_orders' }, (payload) => {
-        console.log('New order detected:', payload);
+        console.log('Realtime INSERT master_orders:', payload);
         playNotificationSound();
         toast.success(`طلب جديد رقم #${payload.new.order_number}`, {
           icon: '🛍️',
@@ -78,7 +78,7 @@ export function useOrders(page: number, pageSize: number, filters: any) {
         invalidateOrders();
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'master_orders' }, (payload) => {
-        console.log('Order update detected:', payload);
+        console.log('Realtime UPDATE master_orders:', payload);
         if (payload.old.status !== payload.new.status) {
           toast(`تغيرت حالة الطلب #${payload.new.order_number} إلى ${payload.new.status}`, {
             icon: '📋'
@@ -86,28 +86,29 @@ export function useOrders(page: number, pageSize: number, filters: any) {
         }
         invalidateOrders();
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'sub_orders' }, () => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'sub_orders' }, (payload) => {
+        console.log('Realtime change sub_orders:', payload.eventType);
         invalidateOrders();
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'order_delivery_team' }, (payload) => {
-        console.log('Delivery team change detected:', payload);
+        console.log('Realtime change delivery_team:', payload.eventType);
         if (payload.eventType === 'INSERT') {
           toast.success('تم تعيين مندوب للطلب', { icon: '🛵' });
         }
         invalidateOrders();
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'order_items' }, () => {
-        invalidateOrders();
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'order_status_history' }, () => {
-        invalidateOrders();
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'driver_details' }, () => {
-        invalidateOrders();
-      })
-      .subscribe((status) => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'order_items' }, () => invalidateOrders())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'order_status_history' }, () => invalidateOrders())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'driver_details' }, () => invalidateOrders())
+      .subscribe((status, err) => {
         if (status === 'SUBSCRIBED') {
-          console.log('Successfully subscribed to comprehensive orders updates');
+          console.log('✅ Realtime: Subscribed to orders successfully');
+        }
+        if (status === 'CLOSED') {
+          console.warn('⚠️ Realtime: Connection closed');
+        }
+        if (status === 'CHANNEL_ERROR') {
+          console.error('❌ Realtime: Subscription error:', err);
         }
       });
 
@@ -173,11 +174,13 @@ export function useInfiniteOrders(pageSize: number, filters: any) {
     const channel = supabase
       .channel('infinite-orders-comprehensive')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'master_orders' }, (payload) => {
+        console.log('Infinite Realtime INSERT:', payload);
         playNotificationSound();
         toast.success(`طلب جديد رقم #${payload.new.order_number}`, { icon: '🛍️', duration: 5000 });
         invalidateOrders();
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'master_orders' }, (payload) => {
+        console.log('Infinite Realtime UPDATE:', payload);
         if (payload.old.status !== payload.new.status) {
            toast(`تغيرت حالة الطلب #${payload.new.order_number} إلى ${payload.new.status}`, { icon: '📋' });
         }
@@ -188,7 +191,14 @@ export function useInfiniteOrders(pageSize: number, filters: any) {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'order_items' }, () => invalidateOrders())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'order_status_history' }, () => invalidateOrders())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'driver_details' }, () => invalidateOrders())
-      .subscribe();
+      .subscribe((status, err) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ Infinite Realtime: Subscribed successfully');
+        }
+        if (err) {
+          console.error('❌ Infinite Realtime Error:', err);
+        }
+      });
 
     return () => {
       if (invalidationTimeoutRef.current) clearTimeout(invalidationTimeoutRef.current);
