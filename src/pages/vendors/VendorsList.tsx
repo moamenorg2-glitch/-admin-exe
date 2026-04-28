@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
-import { Search, Filter, Store, Edit, Star, CheckCircle, XCircle, Plus, X, Loader2, Download, Trash2, Ban, Info } from 'lucide-react';
+import { Search, Filter, Store, Edit, Star, CheckCircle, XCircle, Plus, X, Loader2, Download, Trash2, Ban, Info, MapPin } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'motion/react';
@@ -34,6 +34,7 @@ export default function VendorsList() {
     commission_rate: 10,
     min_order_value: 0,
     address: '',
+    location_gps: null as { lat: number, lng: number } | null,
     preparation_time_avg: 30,
     tax_registration_number: '',
     avatar_url: ''
@@ -151,7 +152,8 @@ export default function VendorsList() {
         address: '',
         preparation_time_avg: 30,
         tax_registration_number: '',
-        avatar_url: ''
+        avatar_url: '',
+        location_gps: null
       });
       setSelectedFile(null);
       queryClient.invalidateQueries({ queryKey: ['vendors'] }).catch(console.error);
@@ -196,7 +198,8 @@ export default function VendorsList() {
       address: '',
       preparation_time_avg: 30,
       tax_registration_number: '',
-      avatar_url: ''
+      avatar_url: '',
+      location_gps: null
     });
     setIsCreateModalOpen(true);
   };
@@ -228,6 +231,10 @@ export default function VendorsList() {
       commission_rate: vendor.commission_rate || 10,
       min_order_value: vendor.min_order_value || 0,
       address: vendor.landmark || '',
+      location_gps: vendor.location_gps ? { 
+        lat: (vendor.location_gps as any).coordinates[1], 
+        lng: (vendor.location_gps as any).coordinates[0] 
+      } : null,
       preparation_time_avg: vendor.preparation_time_avg || 30,
       tax_registration_number: vendor.tax_registration_number || '',
       avatar_url: (vendor.profile as any)?.avatar_url || ''
@@ -259,6 +266,45 @@ export default function VendorsList() {
     }
 
     updateVendorMutation.mutate({ ...formData, avatar_url: avatarUrl });
+  };
+
+  const getCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error('متصفحك لا يدعم خاصية تحديد الموقع');
+      return;
+    }
+
+    const loadingToast = toast.loading('جاري تحديد موقعك...');
+    
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setFormData(prev => ({
+          ...prev,
+          location_gps: { lat: latitude, lng: longitude }
+        }));
+        toast.success('تم تحديد الموقع بنجاح', { id: loadingToast });
+      },
+      (error) => {
+        console.error('Geolocation error:', error);
+        let message = 'فشل في تحديد الموقع';
+        
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            message = 'تم رفض الوصول للموقع. يرجى تفعيل الموقع من إعدادات المتصفح وإعادة المحاولة.';
+            break;
+          case error.POSITION_UNAVAILABLE:
+            message = 'معلومات الموقع غير متوفرة حالياً.';
+            break;
+          case error.TIMEOUT:
+            message = 'انتهت مهلة طلب الموقع. يرجى التأكد من قوة الإشارة.';
+            break;
+        }
+        
+        toast.error(message, { id: loadingToast });
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
   };
 
   const handleExport = () => {
@@ -706,6 +752,28 @@ export default function VendorsList() {
                   </div>
 
                   <div className="space-y-1">
+                    <label className="text-sm font-medium text-gray-700">الموقع الجغرافي (إحداثيات)</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        readOnly
+                        value={formData.location_gps ? `${formData.location_gps.lat}, ${formData.location_gps.lng}` : ''}
+                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 text-sm dir-ltr"
+                        placeholder="جاري انتظار السحب من الخريطة أو الـ GPS..."
+                      />
+                      <button
+                        type="button"
+                        onClick={getCurrentLocation}
+                        className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-bold"
+                        title="تحديد موقعي الحالي"
+                      >
+                        <MapPin className="w-4 h-4" />
+                        <span>تحديد موقعي</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
                     <label className="text-sm font-medium text-gray-700">متوسط وقت التحضير (بالدقائق)</label>
                     <input
                       required
@@ -912,6 +980,28 @@ export default function VendorsList() {
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
                       placeholder="أدخل عنوان المتجر"
                     />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-sm font-medium text-gray-700">الموقع الجغرافي (إحداثيات)</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        readOnly
+                        value={formData.location_gps ? `${formData.location_gps.lat}, ${formData.location_gps.lng}` : ''}
+                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 text-sm dir-ltr"
+                        placeholder="جاري انتظار السحب من الخريطة أو الـ GPS..."
+                      />
+                      <button
+                        type="button"
+                        onClick={getCurrentLocation}
+                        className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-bold"
+                        title="تحديد موقعي الحالي"
+                      >
+                        <MapPin className="w-4 h-4" />
+                        <span>تحديد موقعي</span>
+                      </button>
+                    </div>
                   </div>
 
                   <div className="space-y-1">

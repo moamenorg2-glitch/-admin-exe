@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { X, ChevronDown } from 'lucide-react';
 import { cn } from '../../lib/utils';
@@ -52,29 +52,42 @@ export default function Sidebar({ isOpen, isCollapsed, onClose }: SidebarProps) 
   const { data: counts } = useQuery({
     queryKey: ['sidebar-counts'],
     queryFn: async () => {
-      const [ticketsRes, chatsRes, disputesRes] = await Promise.all([
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const todayISO = today.toISOString();
+
+      const [ticketsRes, chatsRes, disputesRes, ordersRes, usersRes, vendorsRes, driversRes] = await Promise.all([
         supabase.from('support_tickets').select('*', { count: 'exact', head: true }).in('status', ['Open', 'In_Progress']),
         supabase.from('chat_rooms').select('*', { count: 'exact', head: true }).eq('is_active', true),
-        supabase.from('dispute_resolution').select('*', { count: 'exact', head: true }).eq('status', 'Under_Review')
+        supabase.from('dispute_resolution').select('*', { count: 'exact', head: true }).eq('status', 'Under_Review'),
+        supabase.from('master_orders').select('*', { count: 'exact', head: true }).eq('status', 'Pending'),
+        supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('user_type', 'customer').gt('created_at', todayISO),
+        supabase.from('vendor_details').select('*', { count: 'exact', head: true }).gt('created_at', todayISO),
+        supabase.from('driver_details').select('*', { count: 'exact', head: true }).gt('created_at', todayISO)
       ]);
 
       if (ticketsRes.error) throw ticketsRes.error;
       if (chatsRes.error) throw chatsRes.error;
       if (disputesRes.error) throw disputesRes.error;
+      if (ordersRes.error) throw ordersRes.error;
 
       return {
         'الدعم الفني': ticketsRes.count || 0,
         'محادثات الدعم': chatsRes.count || 0,
-        'فض النزاعات': disputesRes.count || 0
+        'فض النزاعات': disputesRes.count || 0,
+        'الطلبات': ordersRes.count || 0,
+        'العملاء': usersRes.count || 0,
+        'التجار': vendorsRes.count || 0,
+        'السائقين': driversRes.count || 0
       };
     },
-    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchInterval: 30000, 
     enabled: !!profile?.user_id,
   });
 
   useEffect(() => {
     const channel = supabase
-      .channel('sidebar-counts-realtime')
+      .channel('sidebar-counts-realtime-enhanced-v2')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'support_tickets' }, () => {
         queryClient.invalidateQueries({ queryKey: ['sidebar-counts'] }).catch(console.error);
       })
@@ -82,6 +95,18 @@ export default function Sidebar({ isOpen, isCollapsed, onClose }: SidebarProps) 
         queryClient.invalidateQueries({ queryKey: ['sidebar-counts'] }).catch(console.error);
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'dispute_resolution' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['sidebar-counts'] }).catch(console.error);
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'master_orders' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['sidebar-counts'] }).catch(console.error);
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'profiles' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['sidebar-counts'] }).catch(console.error);
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'vendor_details' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['sidebar-counts'] }).catch(console.error);
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'driver_details' }, () => {
         queryClient.invalidateQueries({ queryKey: ['sidebar-counts'] }).catch(console.error);
       })
       .subscribe();
@@ -115,6 +140,16 @@ export default function Sidebar({ isOpen, isCollapsed, onClose }: SidebarProps) 
       setOpenGroups(prev => prev.includes(currentItem.group!) ? prev : [...prev, currentItem.group!]);
     }
   }, [location.pathname, filteredNavigation, isCollapsed]);
+
+  // Calculate group-level counts
+  const groupCounts = useMemo(() => {
+    if (!counts || !groupedNavigation) return {};
+    const gc: Record<string, number> = {};
+    Object.entries(groupedNavigation).forEach(([group, items]) => {
+      gc[group] = items.reduce((sum, item) => sum + ((counts as any)[item.name] || 0), 0);
+    });
+    return gc;
+  }, [counts, groupedNavigation]);
 
   const toggleGroup = (group: string) => {
     if (isCollapsed) return;
@@ -204,9 +239,16 @@ export default function Sidebar({ isOpen, isCollapsed, onClose }: SidebarProps) 
                   {!isCollapsed ? (
                     <button
                       onClick={() => toggleGroup(group)}
-                      className="w-full flex items-center justify-between px-3 py-2 text-sm font-bold text-gray-400 hover:text-white hover:bg-[#2B2B40] rounded-lg transition-colors"
+                      className="w-full flex items-center justify-between px-3 py-2 text-sm font-bold text-gray-400 hover:text-white hover:bg-[#2B2B40] rounded-lg transition-colors group/header"
                     >
-                      <span>{group}</span>
+                      <div className="flex items-center gap-2">
+                        <span>{group}</span>
+                        {groupCounts[group] > 0 && (
+                          <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-black text-white shadow-lg shadow-red-500/20">
+                            {groupCounts[group]}
+                          </span>
+                        )}
+                      </div>
                       <ChevronDown 
                         className={cn(
                           "w-4 h-4 transition-transform duration-200",

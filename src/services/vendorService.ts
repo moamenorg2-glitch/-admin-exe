@@ -127,6 +127,11 @@ export const vendorService = {
     });
 
     // Upsert vendor details
+    const locationGeoJSON = formData.location_gps ? {
+      type: 'Point',
+      coordinates: [formData.location_gps.lng, formData.location_gps.lat]
+    } : null;
+
     const { error: vendorError } = await supabaseAdmin.from('vendor_details').upsert({
       user_id: userId,
       brand_name: formData.brand_name,
@@ -135,6 +140,7 @@ export const vendorService = {
       commission_rate: formData.commission_rate,
       min_order_value: formData.min_order_value,
       landmark: formData.address,
+      location_gps: locationGeoJSON,
       preparation_time_avg: formData.preparation_time_avg,
       tax_registration_number: formData.tax_registration_number,
       is_open: true,
@@ -172,6 +178,11 @@ export const vendorService = {
       primary_phone: formattedPhone
     }).eq('user_id', userId);
 
+    const locationGeoJSON = data.location_gps ? {
+      type: 'Point',
+      coordinates: [data.location_gps.lng, data.location_gps.lat]
+    } : null;
+
     const { error: vendorError } = await supabaseAdmin.from('vendor_details').update({
       brand_name: data.brand_name,
       category_id: data.category_id,
@@ -179,6 +190,7 @@ export const vendorService = {
       commission_rate: data.commission_rate,
       min_order_value: data.min_order_value,
       landmark: data.address,
+      location_gps: locationGeoJSON,
       preparation_time_avg: data.preparation_time_avg,
       tax_registration_number: data.tax_registration_number,
     }).eq('user_id', userId);

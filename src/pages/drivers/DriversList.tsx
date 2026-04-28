@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
-import { Search, Filter, Car, Edit, Star, MapPin, Power, PowerOff, Plus, X, Loader2, Download, Eye, Trash2, User, Ban, CheckCircle, Info } from 'lucide-react';
+import { Search, Filter, Car, Edit, Star, MapPin, Power, PowerOff, Plus, X, Loader2, Download, Eye, Trash2, User, Ban, CheckCircle, Info, MessageSquare, Phone } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'motion/react';
@@ -975,7 +975,27 @@ export default function DriversList() {
                     </div>
                     <div>
                       <span className="text-sm text-gray-500 block">رقم الهاتف</span>
-                      <span className="font-medium" dir="ltr">{selectedDriver.profile?.primary_phone}</span>
+                      <div className="flex items-center gap-3">
+                        <span className="font-medium" dir="ltr">{selectedDriver.profile?.primary_phone}</span>
+                        <div className="flex items-center gap-2">
+                          <a 
+                            href={`https://wa.me/${selectedDriver.profile?.primary_phone?.toString().replace(/\D/g, '')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-1.5 bg-emerald-100 text-emerald-600 rounded-lg hover:bg-emerald-200 transition-colors"
+                            title="واتساب"
+                          >
+                            <MessageSquare className="w-4 h-4" />
+                          </a>
+                          <a 
+                            href={`tel:${selectedDriver.profile?.primary_phone}`}
+                            className="p-1.5 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors"
+                            title="اتصال"
+                          >
+                            <Phone className="w-4 h-4" />
+                          </a>
+                        </div>
+                      </div>
                     </div>
                     <div>
                       <span className="text-sm text-gray-500 block">المنطقة</span>

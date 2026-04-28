@@ -1,11 +1,47 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { orderService } from '../services/orderService';
 import { handleGlobalError } from '../utils/errorHandler';
 import toast from 'react-hot-toast';
 
+// Helper for notification sound
+let audioContextUnlocked = false;
+const playNotificationSound = () => {
+  try {
+    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+    audio.volume = 0.6;
+    const playPromise = audio.play();
+    
+    if (playPromise !== undefined) {
+      playPromise.catch(err => {
+        console.warn('Audio playback blocked or failed:', err);
+      });
+    }
+  } catch (err) {
+    console.error('Failed to play notification sound:', err);
+  }
+};
+
+// Global click listener to unlock audio on first interaction
+if (typeof window !== 'undefined') {
+  const unlockAudio = () => {
+    if (audioContextUnlocked) return;
+    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+    audio.volume = 0;
+    audio.play().then(() => {
+      audioContextUnlocked = true;
+      window.removeEventListener('click', unlockAudio);
+      window.removeEventListener('touchstart', unlockAudio);
+      console.log('Audio system unlocked');
+    }).catch(() => {});
+  };
+  window.addEventListener('click', unlockAudio);
+  window.addEventListener('touchstart', unlockAudio);
+}
+
 export function useOrders(page: number, pageSize: number, filters: any) {
+
   const queryClient = useQueryClient();
   const [now, setNow] = useState(new Date());
 
@@ -33,6 +69,7 @@ export function useOrders(page: number, pageSize: number, filters: any) {
       .channel('orders-realtime-comprehensive')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'master_orders' }, (payload) => {
         console.log('New order detected:', payload);
+        playNotificationSound();
         toast.success(`طلب جديد رقم #${payload.new.order_number}`, {
           icon: '🛍️',
           duration: 5000,
@@ -110,4 +147,71 @@ export function useOrders(page: number, pageSize: number, filters: any) {
     ...query,
     now,
   };
+}
+
+export function useInfiniteOrders(pageSize: number, filters: any) {
+  const queryClient = useQueryClient();
+  const [now, setNow] = useState(new Date());
+
+  useEffect(() => {
+    const interval = setInterval(() => setNow(new Date()), 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const invalidationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const invalidateOrders = useCallback(() => {
+    if (invalidationTimeoutRef.current) {
+      clearTimeout(invalidationTimeoutRef.current);
+    }
+    invalidationTimeoutRef.current = setTimeout(() => {
+      queryClient.invalidateQueries({ queryKey: ['infinite-orders'] }).catch(console.error);
+    }, 1500);
+  }, [queryClient]);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('infinite-orders-comprehensive')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'master_orders' }, (payload) => {
+        playNotificationSound();
+        toast.success(`طلب جديد رقم #${payload.new.order_number}`, { icon: '🛍️', duration: 5000 });
+        invalidateOrders();
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'master_orders' }, (payload) => {
+        if (payload.old.status !== payload.new.status) {
+           toast(`تغيرت حالة الطلب #${payload.new.order_number} إلى ${payload.new.status}`, { icon: '📋' });
+        }
+        invalidateOrders();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'sub_orders' }, () => invalidateOrders())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'order_delivery_team' }, () => invalidateOrders())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'order_items' }, () => invalidateOrders())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'order_status_history' }, () => invalidateOrders())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'driver_details' }, () => invalidateOrders())
+      .subscribe();
+
+    return () => {
+      if (invalidationTimeoutRef.current) clearTimeout(invalidationTimeoutRef.current);
+      supabase.removeChannel(channel).catch(console.error);
+    };
+  }, [invalidateOrders]);
+
+  const query = useInfiniteQuery({
+    queryKey: ['infinite-orders', filters],
+    queryFn: async ({ pageParam = 0 }) => {
+      const result = await orderService.fetchOrders(pageParam, pageSize, filters);
+      return { 
+        orders: result.data, 
+        count: result.count,
+        nextPage: (pageParam + 1) * pageSize < result.count ? pageParam + 1 : undefined
+      };
+    },
+    initialPageParam: 0,
+    getNextPageParam: (lastPage) => lastPage.nextPage,
+    staleTime: 10000,
+    retry: 2,
+    refetchOnWindowFocus: true,
+  });
+
+  return { ...query, now };
 }

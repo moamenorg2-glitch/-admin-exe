@@ -12,7 +12,7 @@ export const orderService = {
       .from('master_orders')
       .select(`
         *,
-        customer:profiles!master_orders_customer_id_fkey(full_name, primary_phone, avatar_url),
+        customer:profiles!master_orders_customer_id_fkey(full_name, primary_phone, avatar_url, order_history:master_orders!master_orders_customer_id_fkey(status)),
         address:customer_details!master_orders_address_id_fkey(*),
         sub_orders:sub_orders(
           *,

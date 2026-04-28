@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Motorbike, Phone } from 'lucide-react';
+import { X, Motorbike, Phone, MessageSquare } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
 import { handleGlobalError } from '../../utils/errorHandler';
@@ -106,14 +106,26 @@ export default function AssignDriverModal({ isOpen, onClose, onAssign, isAssigni
                     </div>
                   </div>
                 </div>
-                <a 
-                  href={`tel:${driver.user?.primary_phone}`}
-                  onClick={(e) => e.stopPropagation()}
-                  className="p-2 bg-emerald-100 text-emerald-600 rounded-full hover:bg-emerald-200 transition-colors shrink-0"
-                  title="اتصال"
-                >
-                  <Phone className="w-4 h-4" />
-                </a>
+                <div className="flex items-center gap-2">
+                  <a 
+                    href={`https://wa.me/${driver.user?.primary_phone?.toString().replace(/\D/g, '')}`}
+                    onClick={(e) => e.stopPropagation()}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-2 bg-emerald-100 text-emerald-600 rounded-full hover:bg-emerald-200 transition-colors shrink-0"
+                    title="واتساب"
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                  </a>
+                  <a 
+                    href={`tel:${driver.user?.primary_phone}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="p-2 bg-blue-100 text-blue-600 rounded-full hover:bg-blue-200 transition-colors shrink-0"
+                    title="اتصال"
+                  >
+                    <Phone className="w-4 h-4" />
+                  </a>
+                </div>
               </div>
             ))
           ) : (
