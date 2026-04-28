@@ -75,13 +75,16 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
-      - name: Fix Corrupt Assets
-        run: |
-          mkdir -p assets
-          node -e "const fs=require('fs'); const b=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', 'base64'); fs.writeFileSync('assets/icon.png', b); fs.writeFileSync('assets/splash.png', b);"
+      - name: Ensure Assets Folder
+        run: mkdir -p assets
 
       - name: Generate Scaled Assets
-        run: npx -y @capacitor/assets generate --android --iconBackgroundColor '#10b981' --splashBackgroundColor '#10b981'
+        run: |
+          if [ -f "assets/icon.png" ] && [ -f "assets/splash.png" ]; then
+            npx -y @capacitor/assets generate --android --iconBackgroundColor '#10b981' --splashBackgroundColor '#10b981'
+          else
+            echo "Assets missing, skipping generation."
+          fi
 
       - name: Build APKs
         run: |
