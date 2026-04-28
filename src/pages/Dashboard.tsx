@@ -238,9 +238,9 @@ export default function Dashboard() {
       {/* System Health Alerts */}
       {healthAlerts && healthAlerts.length > 0 && (
         <div className="space-y-3">
-          {healthAlerts.map((alert, idx) => (
+          {healthAlerts.map((alert) => (
             <motion.div
-              key={alert.id || `alert-${idx}`}
+              key={alert.id}
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               className={cn(
@@ -273,8 +273,8 @@ export default function Dashboard() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {statCards.map((item, idx) => (
-          <div key={`stat-${item.name}-${idx}`} className="group bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+        {statCards.map((item) => (
+          <div key={`stat-${item.name}`} className="group bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
             <div className="flex items-center justify-between mb-5">
               <div className={cn(`p-3.5 rounded-2xl group-hover:scale-110 transition-transform`, item.colorClass)}>
                 <item.icon className="h-6 w-6" />

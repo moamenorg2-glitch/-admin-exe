@@ -187,11 +187,11 @@ export default function Sidebar({ isOpen, isCollapsed, onClose }: SidebarProps) 
         
         <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-2 custom-scrollbar">
           {Object.entries(groupedNavigation).map(([group, items]) => (
-            <div key={group} className="space-y-1">
+            <div key={`nav-group-${group}`} className="space-y-1">
               {group === 'الرئيسية' ? (
-                items.map((item, idx) => (
+                items.map((item) => (
                   <NavLink
-                    key={`${item.name}-${item.href}-${idx}`}
+                    key={`nav-item-${item.href}`}
                     to={item.href}
                     title={isCollapsed ? item.name : undefined}
                     onClick={() => window.innerWidth < 1024 && onClose()}
@@ -267,9 +267,9 @@ export default function Sidebar({ isOpen, isCollapsed, onClose }: SidebarProps) 
                       isCollapsed && "max-h-none opacity-100"
                     )}
                   >
-                    {items.map((item, idx) => (
+                    {items.map((item) => (
                       <NavLink
-                        key={`${item.name}-${item.href}-${idx}`}
+                        key={`nav-sub-item-${item.href}`}
                         to={item.href}
                         title={isCollapsed ? item.name : undefined}
                         onClick={() => window.innerWidth < 1024 && onClose()}

@@ -125,82 +125,107 @@ export default function NotificationBell() {
         )}
       </button>
 
-      <AnimatePresence>
+      <AnimatePresence mode="popLayout">
         {isOpen && (
-          <>
-            <div 
-              className="fixed inset-0 z-30" 
-              onClick={() => setIsOpen(false)} 
-            />
-            <motion.div
-              initial={{ opacity: 0, y: 10, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 10, scale: 0.95 }}
-              className="fixed md:absolute left-1/2 -translate-x-1/2 md:left-auto md:right-0 md:translate-x-0 top-20 md:top-full mt-2 w-[calc(100vw-2rem)] md:w-80 bg-[#1E1E2D] border border-gray-800 rounded-xl shadow-2xl z-40 overflow-hidden"
-            >
-              <div className="p-4 border-b border-gray-800 flex items-center justify-between bg-[#2B2B40]/30">
-                <h3 className="text-sm font-bold text-white">الإشعارات</h3>
+          <motion.div
+            key="notifications-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-30 bg-black/60 backdrop-blur-md"
+            onClick={() => setIsOpen(false)}
+          />
+        )}
+        {isOpen && (
+          <motion.div
+            key="notifications-dropdown-content"
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[95%] max-w-2xl bg-[#1E1E2D] border border-gray-800 rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.5)] z-40 overflow-hidden flex flex-col max-h-[85vh]"
+          >
+              <div className="p-6 border-b border-gray-800 flex items-center justify-between bg-[#2B2B40]/30">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-emerald-500/10 rounded-xl">
+                    <Bell className="w-5 h-5 text-emerald-500" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-white">مركز الإشعارات</h3>
+                    <p className="text-xs text-gray-400">لديك {unreadCount} إشعارات غير مقروءة</p>
+                  </div>
+                </div>
                 {unreadCount > 0 && (
                   <button
                     onClick={markAllAsRead}
-                    className="text-[10px] text-emerald-500 hover:text-emerald-400 font-medium transition-colors"
+                    className="text-xs text-emerald-500 hover:bg-emerald-500/10 px-4 py-2 rounded-xl font-bold transition-all"
                   >
                     تحديد الكل كمقروء
                   </button>
                 )}
               </div>
 
-              <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
+              <div className="flex-1 overflow-y-auto custom-scrollbar p-2">
                 {isLoading ? (
-                  <div className="p-8 text-center text-gray-500 text-sm">جاري التحميل...</div>
+                  <div className="p-12 text-center text-gray-500 text-sm">جاري التحميل...</div>
                 ) : notifications.length === 0 ? (
-                  <div className="p-8 text-center text-gray-500 text-sm">لا توجد إشعارات حالياً</div>
+                  <div className="p-12 flex flex-col items-center gap-4 text-center">
+                    <div className="p-4 bg-gray-800/30 rounded-full">
+                      <Bell className="w-8 h-8 text-gray-600" />
+                    </div>
+                    <p className="text-gray-500 text-sm">لا توجد إشعارات حالياً</p>
+                  </div>
                 ) : (
-                  <div className="divide-y divide-gray-800/50">
+                  <div className="space-y-2">
                     {notifications.map((notification) => (
                       <div
                         key={notification.id}
                         className={cn(
-                          "p-4 hover:bg-[#2B2B40]/50 transition-colors relative group",
-                          !notification.is_read && "bg-emerald-500/5"
+                          "p-5 rounded-2xl transition-all relative group border border-transparent",
+                          !notification.is_read ? "bg-emerald-500/5 border-emerald-500/10" : "hover:bg-white/5"
                         )}
                       >
-                        <div className="flex gap-3">
-                          <div className="mt-1">
+                        <div className="flex gap-4">
+                          <div className={cn(
+                            "mt-1 p-2.5 rounded-xl shrink-0",
+                            !notification.is_read ? "bg-emerald-500/10" : "bg-gray-800/50"
+                          )}>
                             {getIcon((notification.data as any)?.type)}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className={cn(
-                              "text-sm font-medium text-gray-200 truncate",
-                              !notification.is_read && "text-white"
-                            )}>
-                              {notification.title}
-                            </p>
-                            <p className="text-xs text-gray-400 mt-1 line-clamp-2">
+                            <div className="flex items-center justify-between gap-4 mb-1">
+                              <p className={cn(
+                                "text-base font-bold text-gray-200",
+                                !notification.is_read && "text-white"
+                              )}>
+                                {notification.title}
+                              </p>
+                              <p className="text-[10px] text-gray-500 shrink-0">
+                                {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true, locale: ar })}
+                              </p>
+                            </div>
+                            <p className="text-sm text-gray-400 leading-relaxed">
                               {notification.content}
-                            </p>
-                            <p className="text-[10px] text-gray-500 mt-2">
-                              {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true, locale: ar })}
                             </p>
                           </div>
                         </div>
                         
-                        <div className="absolute left-2 top-1/2 -translate-y-1/2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                           {!notification.is_read && (
                             <button
                               onClick={() => markAsRead(notification.id)}
-                              className="p-1.5 text-emerald-500 hover:bg-emerald-500/10 rounded-md transition-colors"
+                              className="p-2 text-emerald-500 hover:bg-emerald-500/10 rounded-xl transition-all shadow-sm bg-[#1E1E2D]"
                               title="تحديد كمقروء"
                             >
-                              <Check className="w-3.5 h-3.5" />
+                              <Check className="w-4 h-4" />
                             </button>
                           )}
                           <button
                             onClick={() => deleteNotification(notification.id)}
-                            className="p-1.5 text-red-400 hover:bg-red-400/10 rounded-md transition-colors"
+                            className="p-2 text-red-400 hover:bg-red-400/10 rounded-xl transition-all shadow-sm bg-[#1E1E2D]"
                             title="حذف"
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
                       </div>
@@ -209,13 +234,18 @@ export default function NotificationBell() {
                 )}
               </div>
 
-              <div className="p-3 border-t border-gray-800 bg-[#2B2B40]/30 text-center">
-                <button className="text-xs text-gray-400 hover:text-white transition-colors">
-                  عرض كل الإشعارات
+              <div className="p-4 border-t border-gray-800 bg-[#2B2B40]/30 flex justify-between items-center">
+                <button 
+                  onClick={() => setIsOpen(false)}
+                  className="text-xs font-bold text-gray-500 hover:text-white transition-colors"
+                >
+                  إغلاق
+                </button>
+                <button className="text-xs font-bold text-emerald-500 hover:text-emerald-400 transition-colors bg-emerald-500/5 px-4 py-2 rounded-lg">
+                  عرض الأرشيف الكامل
                 </button>
               </div>
             </motion.div>
-          </>
         )}
       </AnimatePresence>
     </div>

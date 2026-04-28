@@ -648,11 +648,11 @@ export default function OrdersList() {
             </div>
           </div>
         ) : (
-          sortedOrders.map((order, idx) => {
+          sortedOrders.map((order) => {
             const delay = getDelayStatusForOrder(order);
             return (
               <div 
-                key={order.id || `order-${idx}`} 
+                key={order.id} 
                 className={cn(
                   "bg-white dark:bg-slate-800 rounded-3xl border shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] hover:shadow-xl transition-all duration-300 flex flex-col overflow-hidden relative group/card",
                   delay.isDelayed ? "border-red-200 dark:border-red-900/50" : "border-gray-100 dark:border-slate-700"
@@ -774,9 +774,9 @@ export default function OrdersList() {
                                 exit={{ opacity: 0, y: -5, height: 0 }}
                                 className="overflow-hidden bg-white dark:bg-slate-800 rounded-b-xl border-x border-b border-emerald-100 dark:border-emerald-800/50 flex flex-col shadow-lg absolute w-full z-10"
                               >
-                                {order.sub_orders.map((so: any, idx: number) => (
+                                {order.sub_orders.map((so: any) => (
                                   <motion.button 
-                                    key={so.id || `so-${idx}`} 
+                                    key={so.id} 
                                     onClick={() => { setInfoModal({ type: 'vendor', data: { ...so.vendor, masterOrderId: order.id } }); setOpenVendorDropdownId(null); }}
                                     className="flex items-center justify-between text-xs font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 px-3 py-2.5 transition-colors w-full text-right cursor-pointer border-t border-gray-50 dark:border-slate-700/50"
                                   >
@@ -801,9 +801,9 @@ export default function OrdersList() {
                         </div>
                       ) : (
                         <div className="flex flex-col gap-1.5">
-                          {order.sub_orders?.map((so: any, idx: number) => (
+                          {order.sub_orders?.map((so: any) => (
                             <motion.button 
-                              key={so.id || `so-${idx}`} 
+                              key={so.id} 
                               onClick={() => setInfoModal({ type: 'vendor', data: { ...so.vendor, masterOrderId: order.id } })}
                               className="flex items-center gap-2 text-xs font-bold text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-slate-700/30 px-3 py-2.5 rounded-xl border border-gray-100 dark:border-slate-700/60 w-full hover:bg-emerald-50 dark:hover:bg-slate-700 hover:border-emerald-200 dark:hover:border-slate-600 transition-all group/vinfo cursor-pointer shadow-sm"
                             >
@@ -1373,7 +1373,7 @@ export default function OrdersList() {
                   return (
                     <div className="space-y-6 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-gray-200 before:to-transparent">
                       {sortedHistory.map((h: any, idx: number) => (
-                        <div key={idx} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+                        <div key={h.id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
                           <div className={cn(
                             "flex items-center justify-center w-10 h-10 rounded-full border-4 border-white shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow-sm",
                             idx === 0 ? "bg-emerald-500 text-white" : "bg-gray-200 text-gray-500"

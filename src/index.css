@@ -232,3 +232,41 @@ input, textarea, [contenteditable="true"], .selectable-text {
 .electron-no-drag {
   -webkit-app-region: no-drag;
 }
+
+/* Global protection for DOM stabilization */
+#root {
+  isolation: isolate;
+  position: relative;
+}
+
+/* Stabilize toast containers and global portals */
+.react-hot-toast-container, 
+#portal-root,
+[data-radix-portal] {
+  pointer-events: none;
+  z-index: 9999;
+}
+
+.react-hot-toast-container > div,
+#portal-root > div,
+[data-radix-portal] > div {
+  pointer-events: auto;
+}
+
+/* Hide any unwanted Chrome/Electron error popups that might appear at bottom */
+.__web-inspector-hide-shortcut__,
+#webpack-dev-server-client-overlay,
+[data-overlay-container] {
+  display: none !important;
+}
+
+/* Transition improvements for smooth navigation */
+.page-transition-enter {
+  opacity: 0;
+  transform: translateY(5px);
+}
+.page-transition-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 200ms, transform 200ms;
+}

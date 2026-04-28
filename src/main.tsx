@@ -61,33 +61,38 @@ const queryClient = new QueryClient({
 });
 
 createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <App />
-        <Toaster 
-          position="top-center" 
-          toastOptions={{
-            className: 'font-bold text-sm select-none',
-            duration: 4000,
-            success: {
-              duration: 3000,
-              iconTheme: {
-                primary: '#10b981',
-                secondary: '#fff',
-              },
+  <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <App />
+      <Toaster 
+        position="top-center" 
+        containerClassName="toast-container"
+        gutter={8}
+        toastOptions={{
+          className: 'font-bold text-sm select-none shadow-2xl border border-gray-800 bg-[#1E1E2D] text-white',
+          duration: 4000,
+          style: {
+            background: '#1E1E2D',
+            color: '#fff',
+            border: '1px solid #374151',
+          },
+          success: {
+            duration: 3000,
+            iconTheme: {
+              primary: '#10b981',
+              secondary: '#fff',
             },
-            error: {
-              duration: 5000,
-              iconTheme: {
-                primary: '#ef4444',
-                secondary: '#fff',
-              },
+          },
+          error: {
+            duration: 5000,
+            iconTheme: {
+              primary: '#ef4444',
+              secondary: '#fff',
             },
-          }}
-        />
-      </QueryClientProvider>
-    </ErrorBoundary>
-  </StrictMode>,
+          },
+        }}
+      />
+    </QueryClientProvider>
+  </ErrorBoundary>
 );
 
