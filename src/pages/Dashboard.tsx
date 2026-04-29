@@ -1,476 +1,433 @@
-import { useEffect } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { 
-  ShoppingBag, 
-  DollarSign, 
-  Users, 
-  Clock, 
-  TrendingUp, 
-  ArrowRight, 
-  Package, 
-  Truck, 
-  Activity,
-  ChevronLeft,
-  AlertCircle
+import { ShoppingCart, Users, Store, Bike, AlertCircle, Download, Calendar, Filter,
+  ChevronDown, MoreHorizontal, Activity, TrendingUp, DollarSign, ArrowUpRight, ArrowDownRight, Package, XCircle
 } from 'lucide-react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer, 
-  AreaChart,
-  Area
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
+  PieChart, Pie, Cell
 } from 'recharts';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { Link } from 'react-router-dom';
-import { useAuthStore } from '../store/authStore';
 import { cn } from '../lib/utils';
-import { dashboardService } from '../services/dashboardService';
-import { handleGlobalError } from '../utils/errorHandler';
-import { supabase } from '../lib/supabase';
+import { useDashboard } from '../hooks/useDashboard';
+import LiveMap from './zones/LiveMap';
 
 export default function Dashboard() {
-  const queryClient = useQueryClient();
-  const { profile } = useAuthStore();
-  const isSuperAdmin = profile?.email === 'moamen.org2@gmail.com';
+  const {
+    dashboardData,
+    isLoading,
+    quickFilter,
+    setQuickFilter,
+    dateFilter,
+    setDateFilter,
+    categoryData,
+    productData,
+    vendorData,
+    conflicts
+  } = useDashboard();
 
-  const { data: permissions } = useQuery({
-    queryKey: ['permissions', profile?.user_id],
-    queryFn: async () => {
-      try {
-        return await dashboardService.fetchPermissions(profile?.user_id || '', isSuperAdmin);
-      } catch (error) {
-        handleGlobalError(error, 'Fetch Permissions');
-        throw error;
-      }
-    },
-    enabled: !!profile?.user_id && !isSuperAdmin,
-  });
+  const handleDownload = async () => {
+    try {
+      const XLSX = await import('xlsx');
+      const exportData = (dashboardData?.recentOrders || []).map((order: any) => ({
+        'رقم الطلب': order.order_number,
+        'العميل': order.customer?.full_name || '-',
+        'إجمالي التكلفة': `${order.grand_total} ج.م`,
+        'الحالة': order.status,
+        'التاريخ': format(new Date(order.created_at || new Date()), 'dd/MM/yyyy HH:mm', { locale: ar }),
+      }));
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'DashboardData');
+      XLSX.writeFile(wb, `dashboard_export_${format(new Date(), 'yyyyMMdd_HHmmss')}.xlsx`);
+    } catch (error) {
+      console.error('Error generating Excel file:', error);
+    }
+  };
 
-  // Only super admin or those with 'all_access' permission get full access
-  const hasFullAccess = isSuperAdmin || permissions?.includes('all_access');
-
-  // Fetch basic stats and chart data
-  const { data: dashboardData, isLoading } = useQuery({
-    queryKey: ['dashboard-data'],
-    queryFn: async () => {
-      try {
-        return await dashboardService.fetchDashboardData();
-      } catch (error) {
-        handleGlobalError(error, 'Fetch Dashboard Data');
-        throw error;
-      }
-    },
-    refetchInterval: 30000,
-  });
-
-  const { data: healthAlerts } = useQuery({
-    queryKey: ['system-health'],
-    queryFn: async () => {
-      const alerts: { id: string; type: 'warning' | 'error'; message: string; action?: string }[] = [];
-      
-      // 1. Orders stuck in Pending
-      const thirtyMinsAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
-      const { data: stuckOrders } = await supabase
-        .from('master_orders')
-        .select('order_number')
-        .eq('status', 'Pending')
-        .lt('created_at', thirtyMinsAgo);
-      
-      if (stuckOrders && stuckOrders.length > 0) {
-        alerts.push({
-          id: 'stuck-orders',
-          type: 'warning',
-          message: `هناك ${stuckOrders.length} طلبات معلقة منذ أكثر من 30 دقيقة.`,
-          action: 'عرض الطلبات'
-        });
-      }
-
-      // 2. Paid orders without driver
-      const { data: paidNoDriver } = await supabase
-        .from('master_orders')
-        .select('id')
-        .eq('payment_status', 'Paid')
-        .eq('status', 'Pending');
-      
-      if (paidNoDriver && paidNoDriver.length > 0) {
-        alerts.push({
-          id: 'paid-no-driver',
-          type: 'error',
-          message: `يوجد ${paidNoDriver.length} طلبات مدفوعة لم يتم تعيين مندوب لها بعد.`,
-          action: 'تعيين الآن'
-        });
-      }
-
-      // 3. Inactive online drivers
-      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-      const { data: inactiveDrivers } = await supabase
-        .from('driver_details')
-        .select('user_id')
-        .eq('is_online', true)
-        .lt('updated_at', oneHourAgo);
-      
-      if (inactiveDrivers && inactiveDrivers.length > 0) {
-        alerts.push({
-          id: 'inactive-drivers',
-          type: 'warning',
-          message: `هناك ${inactiveDrivers.length} مناديب "متصلين" لم يحدثوا موقعهم منذ ساعة.`,
-        });
-      }
-
-      return alerts;
-    },
-    refetchInterval: 60000
-  });
-
-  // Set up real-time subscriptions
-  useEffect(() => {
-    const ordersChannel = supabase
-      .channel('dashboard-changes')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'master_orders' },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['dashboard-data'] }).catch(console.error);
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'driver_details' },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['dashboard-data'] }).catch(console.error);
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(ordersChannel).catch(err => {
-        console.error('Error removing dashboard channel:', err);
-      });
-    };
-  }, [queryClient]);
+  const revenueChartData = dashboardData?.chartData || [];
 
   const statCards = [
     { 
-      name: 'طلبات اليوم', 
-      value: dashboardData?.stats?.ordersToday || 0, 
-      icon: Package, 
-      colorClass: 'bg-blue-50 text-blue-600',
-      trend: '+12%',
-      description: 'إجمالي الطلبات المستلمة اليوم'
+      name: 'إجمالي الطلبات', 
+      value: dashboardData?.stats?.totalOrders || 0, 
+      icon: ShoppingCart, 
+      iconBg: 'bg-red-50 text-red-500',
+      subInfo: dateFilter || quickFilter !== 'all' ? 'النطاق المختار' : 'إجمالي المنصة',
     },
     { 
-      name: 'إيرادات اليوم', 
-      value: `${dashboardData?.stats?.revenueToday.toFixed(2) || 0} ج.م`, 
-      icon: DollarSign, 
-      colorClass: 'bg-emerald-50 text-emerald-600',
-      trend: '+5%',
-      description: 'المبيعات المكتملة بنجاح'
-    },
-    { 
-      name: 'سائقين متاحين', 
-      value: dashboardData?.stats?.availableDrivers || 0, 
-      icon: Truck, 
-      colorClass: 'bg-indigo-50 text-indigo-600',
-      trend: 'نشط',
-      description: 'المناديب الجاهزون للاستلام'
-    },
-    { 
-      name: 'طلبات معلقة', 
+      name: 'الطلبات المعلقة', 
       value: dashboardData?.stats?.pendingOrders || 0, 
-      icon: Clock, 
-      colorClass: 'bg-amber-50 text-amber-600',
-      trend: 'تنبيه',
-      description: 'طلبات بانتظار الموافقة'
+      icon: AlertCircle, 
+      iconBg: 'bg-orange-50 text-orange-500',
+      subInfo: 'بانتظار الموافقة',
+    },
+    { 
+      name: 'الجاري تجهيزها', 
+      value: dashboardData?.stats?.activeOrders || 0, 
+      icon: Store, 
+      iconBg: 'bg-blue-50 text-blue-500',
+      subInfo: 'قيد التحضير بالمتاجر',
+    },
+    { 
+      name: 'الجاري توصيلها', 
+      value: dashboardData?.stats?.onTheWayOrders || 0, 
+      icon: Bike, 
+      iconBg: 'bg-purple-50 text-purple-500',
+      subInfo: 'مع المندوبين',
+    },
+    { 
+      name: 'الطلبات المكتملة', 
+      value: dashboardData?.stats?.completedOrders || 0, 
+      icon: Package, 
+      iconBg: 'bg-emerald-50 text-emerald-500',
+      subInfo: 'تم التسليم بنجاح',
+    },
+    { 
+      name: 'الطلبات الملغية', 
+      value: dashboardData?.stats?.cancelledOrders || 0, 
+      icon: XCircle, 
+      iconBg: 'bg-red-50 text-red-500',
+      subInfo: 'تم إلغاؤها أو رفضها',
     },
   ];
 
-  const statusColors: Record<string, string> = {
-    Pending: 'bg-amber-100 text-amber-700 border-amber-200',
-    Active: 'bg-blue-100 text-blue-700 border-blue-200',
-    OnTheWay: 'bg-purple-100 text-purple-700 border-purple-200',
-    Completed: 'bg-emerald-100 text-emerald-700 border-emerald-200',
-    Cancelled: 'bg-red-100 text-red-700 border-red-200',
-    Rejected: 'bg-slate-100 text-slate-700 border-slate-200',
-  };
+  if (isLoading) {
+    return (
+      <div className="min-h-[400px] flex flex-col items-center justify-center">
+        <div className="relative w-16 h-16 mb-4">
+          <div className="absolute inset-0 border-4 border-emerald-100 dark:border-emerald-900/30 rounded-full"></div>
+          <div className="absolute inset-0 border-4 border-emerald-600 rounded-full border-t-transparent animate-spin"></div>
+        </div>
+        <p className="text-sm text-slate-400 font-bold animate-pulse">جاري جلب أحدث البيانات...</p>
+      </div>
+    );
+  }
 
-  const statusNames: Record<string, string> = {
-    Pending: 'قيد الانتظار',
-    Active: 'جاري التحضير',
-    OnTheWay: 'في الطريق',
-    Completed: 'تم التوصيل',
-    Cancelled: 'ملغي',
-    Rejected: 'مرفوض',
-  };
-
-  const canViewOrders = hasFullAccess || permissions?.includes('الطلبات');
 
   return (
-    <div className="space-y-8 pb-12" dir="rtl">
-      {/* Header Section */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+    <div className="w-full pb-10" dir="rtl">
+      {/* Top Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 border-b border-slate-100 pb-6 dark:border-slate-800">
         <div>
-          <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">نظرة عامة على النظام</h2>
-          <p className="mt-2 text-gray-500 text-lg">مرحباً بك مجدداً. إليك ما يحدث في منصتك اليوم.</p>
+          <h2 className="text-[22px] font-black text-slate-900 dark:text-white">زاجل إكسبريس</h2>
+          <p className="text-[13px] text-slate-400 font-medium tracking-wide">لوحة تحكم إدارة الخدمات اللوجستية</p>
         </div>
         
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl border border-gray-100 shadow-sm">
-            <Activity className="w-4 h-4 text-emerald-500 animate-pulse" />
-            <span className="text-sm font-medium text-gray-600">
-              آخر تحديث: {format(new Date(), 'HH:mm:ss')}
-            </span>
+        <div className="flex flex-row items-center gap-2 w-full md:w-auto overflow-x-auto no-scrollbar scroll-smooth pb-0.5 sm:pb-0">
+          {/* Quick Filters Dropdown */}
+          <div className="relative flex items-center bg-white dark:bg-slate-800 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm hover:bg-slate-50 transition-colors cursor-pointer shrink-0 min-w-[120px]">
+            <Filter className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+            <div className="flex flex-col items-start leading-none mr-2 flex-grow overflow-hidden">
+              <span className="text-[9px] text-slate-400 font-bold uppercase tracking-tighter block truncate">فلتر سريع</span>
+              <span className="text-[11px] font-black text-slate-700 dark:text-slate-200 whitespace-nowrap block truncate">
+                {dateFilter ? 'تاريخ مخصص' : (
+                  quickFilter === 'today' ? 'اليوم' : 
+                  quickFilter === 'week' ? 'الأسبوع' : 
+                  quickFilter === 'month' ? 'الشهر' : 'جميع البيانات'
+                )}
+              </span>
+            </div>
+            <ChevronDown className="w-3.5 h-3.5 text-slate-400 mr-1 shrink-0" />
+            <select
+              value={dateFilter ? '' : quickFilter}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val !== '') {
+                  setQuickFilter(val as any);
+                  setDateFilter(undefined);
+                }
+              }}
+              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+            >
+              <option value="all">جميع البيانات</option>
+              <option value="today">اليوم</option>
+              <option value="week">الأسبوع</option>
+              <option value="month">الشهر</option>
+            </select>
           </div>
-          <button 
-            onClick={() => queryClient.invalidateQueries({ queryKey: ['dashboard-data'] }).catch(console.error)}
-            className="inline-flex items-center px-5 py-2.5 bg-gray-900 text-white text-sm font-bold rounded-xl hover:bg-gray-800 transition-all shadow-lg shadow-gray-200 active:scale-95"
-          >
-            تحديث البيانات
+
+          <div className="relative flex items-center bg-white dark:bg-slate-800 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm hover:bg-slate-50 transition-colors cursor-pointer shrink-0 min-w-[120px]">
+            <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+            <div className="flex flex-col items-start leading-none mr-2 flex-grow overflow-hidden">
+              <span className="text-[9px] text-slate-400 font-bold uppercase tracking-tighter block truncate">فلتر التاريخ</span>
+              <span className="text-[11px] font-black text-slate-700 dark:text-slate-200 whitespace-nowrap block truncate">{dateFilter ? format(dateFilter, "dd MMM yyyy", { locale: ar }) : 'تاريخ مخصص'}</span>
+            </div>
+            <input 
+              type="date" 
+              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+              onChange={(e) => {
+                const val = e.target.value ? new Date(e.target.value) : undefined;
+                setDateFilter(val);
+                if (val) setQuickFilter('all' as any);
+              }}
+              value={dateFilter ? format(dateFilter, 'yyyy-MM-dd') : ''}
+            />
+          </div>
+          
+          <button onClick={handleDownload} className="flex items-center justify-center w-[42px] h-[42px] bg-slate-900 dark:bg-slate-700 text-white rounded-lg hover:bg-slate-800 transition-all shrink-0 shadow-sm group">
+            <Download className="w-4 h-4 group-hover:scale-110 transition-transform" />
           </button>
         </div>
       </div>
 
-      {/* System Health Alerts */}
-      {healthAlerts && healthAlerts.length > 0 && (
-        <div className="space-y-3">
-          {healthAlerts.map((alert) => (
-            <motion.div
-              key={alert.id}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className={cn(
-                "p-4 rounded-2xl border flex items-center justify-between shadow-sm",
-                alert.type === 'error' 
-                  ? "bg-red-50 border-red-100 text-red-800" 
-                  : "bg-amber-50 border-amber-100 text-amber-800"
-              )}
-            >
-              <div className="flex items-center gap-3">
-                <AlertCircle className={cn("w-5 h-5", alert.type === 'error' ? "text-red-500" : "text-amber-500")} />
-                <span className="text-sm font-bold">{alert.message}</span>
+      {/* Logic Conflict Alerts (Self-Healing) */}
+      <AnimatePresence>
+        {conflicts.length > 0 && (
+          <motion.div 
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="mb-6 overflow-hidden"
+          >
+            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 rounded-xl p-4 flex items-start gap-4">
+              <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-800/40 flex items-center justify-center shrink-0">
+                <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
               </div>
-              {alert.action && (
-                <button 
-                  onClick={() => {
-                    if (alert.id === 'stuck-orders' || alert.id === 'paid-no-driver') {
-                      window.location.href = '/orders';
-                    }
-                  }}
-                  className="text-xs font-black underline underline-offset-4 decoration-2 hover:opacity-70 transition-opacity"
-                >
-                  {alert.action}
-                </button>
-              )}
-            </motion.div>
-          ))}
-        </div>
-      )}
-
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {statCards.map((item) => (
-          <div key={`stat-${item.name}`} className="group bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-            <div className="flex items-center justify-between mb-5">
-              <div className={cn(`p-3.5 rounded-2xl group-hover:scale-110 transition-transform`, item.colorClass)}>
-                <item.icon className="h-6 w-6" />
-              </div>
-              <div className={cn(`flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full`, item.colorClass)}>
-                {item.trend}
+              <div className="flex-1">
+                <h4 className="text-sm font-bold text-amber-900 dark:text-amber-200 mb-1">تنبيهات جودة البيانات (ذكاء اصطناعي)</h4>
+                <div className="space-y-2">
+                  {conflicts.map((order: any) => (
+                    <div key={order.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2 bg-white/50 dark:bg-black/20 rounded-lg border border-amber-100 dark:border-amber-800/20">
+                      <p className="text-[11px] text-amber-800 dark:text-amber-300 font-medium">الطلب <span className="font-mono">#{order.order_number || order.id.substring(0, 6)}</span> قيمته مرتفعة جداً ({order.grand_total} ج.م) ولم يتم تأكيده بعد.</p>
+                      <button className="text-[10px] font-black bg-amber-600 text-white px-3 py-1 rounded-md hover:bg-amber-700 transition-colors whitespace-nowrap">اقتراح معالجة الـ AI</button>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-            <div>
-              <p className="text-sm font-bold text-gray-400 mb-1">{item.name}</p>
-              <div className="text-3xl font-black text-gray-900 tracking-tight">
-                {isLoading ? (
-                  <div className="h-9 w-24 bg-gray-100 animate-pulse rounded-lg"></div>
-                ) : item.value}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Row 1: 6 Stats Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+        {statCards.map((card, i) => (
+          <div key={i} className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-100 dark:border-slate-700/50 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow group">
+            <div className="flex items-start gap-4 mb-2">
+              <div className={cn("w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-transform group-hover:scale-110", card.iconBg)}>
+                <card.icon className="w-5 h-5" />
               </div>
-              <p className="mt-2 text-xs text-gray-400 font-medium">{item.description}</p>
+              <div className="overflow-hidden">
+                <h3 className="text-xl font-black text-slate-900 dark:text-white leading-none mb-1">{card.value.toLocaleString()}</h3>
+                <span className="text-[10px] font-bold text-slate-400 whitespace-nowrap block truncate">{card.name}</span>
+              </div>
+            </div>
+            <div className="flex items-center justify-between mt-3">
+               <div className="text-[9px] text-slate-400 flex items-center gap-1.5 h-4">
+                  <span className="w-1 h-1 rounded-full bg-emerald-500"></span>
+                  {card.subInfo}
+               </div>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Orders Chart */}
-        <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
-          <div className="flex items-center justify-between mb-10">
-            <div>
-              <h3 className="text-xl font-bold text-gray-900">تحليل الطلبات</h3>
-              <p className="text-sm text-gray-400 mt-1">تطور حجم الطلبات خلال الأسبوع</p>
-            </div>
-            <div className="p-2 bg-emerald-50 rounded-lg">
-              <TrendingUp className="w-5 h-5 text-emerald-500" />
-            </div>
+      {/* Row 2: Full Width Map */}
+      <div className="w-full bg-white dark:bg-slate-800 rounded-xl overflow-hidden shadow-sm mb-6 h-[450px]">
+        <LiveMap embedded={true} hideControls={true} />
+      </div>
+
+      {/* Row 3: Most Active Categories & Revenue */}
+      <div className="flex flex-col lg:flex-row gap-6 mb-6">
+        {/* Most Active Categories (1/3) */}
+        <div className="w-full lg:w-1/3 bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-100 dark:border-slate-700/50 shadow-sm">
+          <div className="mb-8">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">الفئات الأكثر نشاطاً</h3>
+            <p className="text-[10px] text-slate-400">تحليل أداء الأقسام</p>
           </div>
-          <div className="h-80 w-full min-h-[320px]">
-            {isLoading ? (
-              <div className="w-full h-full bg-gray-50 animate-pulse rounded-2xl"></div>
-            ) : dashboardData?.chartData && dashboardData.chartData.length > 0 ? (
-              <ResponsiveContainer width="99%" height="100%">
-                <BarChart data={dashboardData?.chartData} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <XAxis 
-                    dataKey="label" 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 500 }}
-                    dy={15}
-                  />
-                  <YAxis 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 500 }}
-                  />
-                  <Tooltip 
-                    contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', padding: '12px' }}
-                    cursor={{ fill: '#f8fafc' }}
-                  />
-                  <Bar dataKey="orders" fill="#f97316" radius={[6, 6, 0, 0]} barSize={32} />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-gray-400">لا توجد بيانات للرسم البياني</div>
+
+          <div className="space-y-6">
+            {categoryData.length > 0 ? categoryData.map((cat, i) => (
+              <div key={i}>
+                <div className="flex justify-between text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-2">
+                  <span>{cat.name}</span>
+                  <span className="text-[10px] font-bold text-slate-400" dir="ltr">{cat.value}%</span>
+                </div>
+                <div className="w-full h-3 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden flex">
+                  <div className="h-full" style={{ width: `${cat.value}%`, backgroundColor: cat.color }}></div>
+                </div>
+              </div>
+            )) : (
+               <div className="text-center py-10 text-slate-400 text-xs font-medium">لا توجد بيانات متاحة</div>
             )}
           </div>
         </div>
 
-        {/* Revenue Chart */}
-        <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
-          <div className="flex items-center justify-between mb-10">
+        {/* Total Revenue (2/3) */}
+        <div className="w-full lg:w-2/3 bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-100 dark:border-slate-700/50 shadow-sm flex flex-col justify-between">
+          <div className="flex justify-between items-start mb-6 border-b border-slate-50 dark:border-slate-700/50 pb-4">
             <div>
-              <h3 className="text-xl font-bold text-gray-900">نمو الإيرادات</h3>
-              <p className="text-sm text-gray-400 mt-1">إجمالي المبيعات المحققة بالجنيه المصري</p>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">إجمالي الإيرادات</h3>
+              <p className="text-[10px] text-slate-400 leading-tight">ملخص مبيعات المنصة</p>
             </div>
-            <div className="p-2 bg-emerald-50 rounded-lg">
-              <DollarSign className="w-5 h-5 text-emerald-500" />
+            <div className="text-left" dir="ltr">
+               <div className="text-lg font-black text-slate-900 dark:text-white">{dashboardData?.stats?.revenue?.toLocaleString() || 0} ج.م</div>
+               <div className="text-[10px] text-slate-400 font-medium">إجمالي المبيعات المكتملة</div>
             </div>
           </div>
-          <div className="h-80 w-full min-h-[320px]">
-            {isLoading ? (
-              <div className="w-full h-full bg-gray-50 animate-pulse rounded-2xl"></div>
-            ) : dashboardData?.chartData && dashboardData.chartData.length > 0 ? (
+          
+          <div className="h-64 mt-4 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={revenueChartData} margin={{ top: 10, right: 0, left: 10, bottom: 0 }} barSize={16}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b', fontWeight: 600 }} dy={10} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b', fontWeight: 600 }} width={45} tickFormatter={(val) => val.toLocaleString() + ' ج'} />
+                <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', direction: 'rtl' }}/>
+                <Bar dataKey="revenue" fill="#3b82f6" radius={[4, 4, 4, 4]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
+      {/* Row 4: Top Vendors, Top Products, Drivers */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+        {/* Top Vendors (1/3) */}
+        <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-100 dark:border-slate-700/50 shadow-sm">
+          <div className="mb-8">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">المتاجر الأكثر طلباً</h3>
+            <p className="text-[10px] text-slate-400">حصة المبيعات لكل متجر</p>
+          </div>
+
+          <div className="space-y-6">
+            {vendorData.length > 0 ? vendorData.map((vendor, i) => (
+              <div key={i}>
+                <div className="flex justify-between text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-2">
+                  <span>{vendor.name}</span>
+                  <span className="text-[10px] font-bold text-slate-400" dir="ltr">{vendor.value}%</span>
+                </div>
+                <div className="w-full h-3 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden flex">
+                  <div className="h-full" style={{ width: `${vendor.value}%`, backgroundColor: vendor.color }}></div>
+                </div>
+              </div>
+            )) : (
+              <div className="text-center py-10 text-slate-400 text-xs font-medium">لا توجد بيانات متاحة</div>
+            )}
+          </div>
+        </div>
+
+        {/* Top Products (1/3) */}
+        <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-100 dark:border-slate-700/50 shadow-sm">
+          <div className="mb-6">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">المنتجات الأكثر طلباً</h3>
+            <p className="text-[10px] text-slate-400">توزيع الطلبات على المنتجات</p>
+          </div>
+          <div className="flex flex-col items-center">
+            <div className="w-40 h-40 relative mb-6">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={dashboardData?.chartData} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
-                  <defs>
-                    <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.15}/>
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <XAxis 
-                    dataKey="label" 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 500 }}
-                    dy={15}
-                  />
-                  <YAxis 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 500 }}
-                  />
-                  <Tooltip 
-                    contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', padding: '12px' }}
-                  />
-                  <Area 
-                    type="monotone" 
-                    dataKey="revenue" 
-                    stroke="#10b981" 
-                    strokeWidth={4}
-                    fillOpacity={1} 
-                    fill="url(#colorRevenue)" 
-                  />
-                </AreaChart>
+                <PieChart>
+                  <Pie data={productData} innerRadius={45} outerRadius={75} paddingAngle={2} dataKey="value" stroke="none">
+                    {productData.map((entry, index) => <Cell key={index} fill={entry.color} />)}
+                  </Pie>
+                </PieChart>
               </ResponsiveContainer>
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-gray-400">لا توجد بيانات للرسم البياني</div>
+            </div>
+            <div className="w-full space-y-2">
+              {productData.length > 0 ? productData.map((item, i) => (
+                <div key={i} className="flex justify-between items-center bg-slate-50 dark:bg-slate-700/50 rounded-lg p-2 border border-slate-100 dark:border-slate-700">
+                  <div className="flex items-center gap-2 overflow-hidden">
+                    <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: item.color }}></div>
+                    <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 truncate">{item.name}</span>
+                  </div>
+                  <span className="text-[10px] font-black text-slate-800 dark:text-white bg-white dark:bg-slate-800 px-1.5 py-0.5 rounded shadow-sm leading-none">{item.value}</span>
+                </div>
+              )) : (
+                <div className="text-center py-4 text-slate-400 text-xs font-medium">لا توجد بيانات متاحة</div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Delivery Drivers (1/3) */}
+        <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-100 dark:border-slate-700/50 shadow-sm">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">مناديب التوصيل</h3>
+            <Link to="/drivers" className="text-[10px] font-bold text-slate-400 cursor-pointer hover:text-blue-500">عرض الكل</Link>
+          </div>
+          <div className="space-y-4">
+            {(dashboardData?.recentDrivers?.length ? dashboardData.recentDrivers : []).slice(0, 5).length > 0 ? (dashboardData?.recentDrivers || []).slice(0, 5).map((driver: any, i: number) => {
+              const isOnline = driver.is_online;
+              return (
+              <div key={driver.user_id || i} className="flex items-center justify-between pb-3 border-b border-slate-50 dark:border-slate-800 last:border-b-0 last:pb-0">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-slate-100 overflow-hidden shrink-0 border border-slate-200">
+                    <img src={driver.profile?.avatar_url || `https://api.dicebear.com/7.x/notionists/svg?seed=${driver.user_id}`} className="w-full h-full object-cover" alt="driver" referrerPolicy="no-referrer" />
+                  </div>
+                  <div className="overflow-hidden">
+                     <p className="text-[12px] font-bold text-slate-800 dark:text-white truncate">{driver.profile?.full_name || 'سائق غير معروف'}</p>
+                     <p className="text-[10px] font-medium text-slate-400">انضم {format(new Date(driver.created_at || new Date()), "d MMM yyyy", { locale: ar })}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-700 px-2 py-1 rounded">
+                   {isOnline ? (
+                      <><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span> <span className="text-[10px] text-slate-700 dark:text-slate-300 font-bold">متصل</span></>
+                   ) : (
+                      <><span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span> <span className="text-[10px] text-slate-400 font-bold">غير متصل</span></>
+                   )}
+                </div>
+              </div>
+            )}) : (
+              <div className="text-center py-10 text-slate-400 text-xs font-medium">لا يوجد سائقين حالياً</div>
             )}
           </div>
         </div>
       </div>
 
-      {/* Recent Orders Table */}
-      <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="px-8 py-7 border-b border-gray-50 flex items-center justify-between bg-white">
-          <div>
-            <h3 className="text-xl font-bold text-gray-900">الطلبات الأخيرة</h3>
-            <p className="text-sm text-gray-400 mt-1">متابعة فورية لأحدث العمليات على المنصة</p>
-          </div>
-          {canViewOrders && (
-            <Link to="/orders" className="group inline-flex items-center gap-2 px-4 py-2 bg-gray-50 text-gray-700 text-sm font-bold rounded-xl hover:bg-gray-100 transition-all">
-              عرض كافة الطلبات
-              <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-            </Link>
-          )}
+      {/* Row 5: Active Orders Table */}
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700/50 shadow-sm overflow-hidden">
+        <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-white dark:bg-slate-800">
+          <h3 className="text-base font-bold text-slate-900 dark:text-white">الطلبات النشطة</h3>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-right">
+        <div className="overflow-x-auto w-full">
+          <table className="w-full text-right whitespace-nowrap min-w-max">
             <thead>
-              <tr className="bg-gray-50/50 text-gray-400 text-xs font-bold uppercase tracking-widest">
-                <th className="px-8 py-5">رقم الطلب</th>
-                <th className="px-8 py-5">العميل</th>
-                <th className="px-8 py-5">الحالة التشغيلية</th>
-                <th className="px-8 py-5">القيمة الإجمالية</th>
-                <th className="px-8 py-5">توقيت الطلب</th>
+              <tr className="bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700 text-[11px] text-slate-900 dark:text-white font-black">
+                <th className="py-4 px-6 text-right">رقم الطلب</th>
+                <th className="py-4 px-6 text-right">العميل</th>
+                <th className="py-4 px-6 text-right">تاريخ الطلب</th>
+                <th className="py-4 px-6 text-right">المبلغ الإجمالي</th>
+                <th className="py-4 px-6 text-right">حالة الطلب</th>
+                <th className="py-4 px-6 text-center"></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
-              {isLoading ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={`skeleton-row-${i}`} className="animate-pulse">
-                    <td className="px-8 py-5"><div className="h-5 w-20 bg-gray-100 rounded-lg"></div></td>
-                    <td className="px-8 py-5"><div className="h-5 w-32 bg-gray-100 rounded-lg"></div></td>
-                    <td className="px-8 py-5"><div className="h-5 w-24 bg-gray-100 rounded-lg"></div></td>
-                    <td className="px-8 py-5"><div className="h-5 w-24 bg-gray-100 rounded-lg"></div></td>
-                    <td className="px-8 py-5"><div className="h-5 w-32 bg-gray-100 rounded-lg"></div></td>
-                  </tr>
-                ))
-              ) : dashboardData?.recentOrders?.map((order: any, idx: number) => (
-                <tr key={order.id || `order-${idx}`} className="group hover:bg-gray-50/50 transition-colors cursor-default">
-                  <td className="px-8 py-5 font-bold text-gray-900">
-                    <span className="bg-gray-100 px-2.5 py-1 rounded-lg text-gray-600 group-hover:bg-emerald-100 group-hover:text-emerald-700 transition-colors">
-                      #{order.order_number}
-                    </span>
-                  </td>
-                  <td className="px-8 py-5">
+            <tbody className="divide-y divide-slate-50 dark:divide-slate-700/50 text-xs font-medium">
+              {(dashboardData?.recentOrders?.length ? dashboardData.recentOrders : []).map((order: any) => (
+                <tr key={order.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors bg-white dark:bg-slate-800">
+                  <td className="py-5 px-6 text-slate-400 font-mono">#{order.order_number || order.id.substring(0, 6)}</td>
+                  <td className="py-5 px-6">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center overflow-hidden border border-emerald-200">
-                        {order.customer?.avatar_url ? (
-                          <img 
-                            src={order.customer.avatar_url} 
-                            alt="" 
-                            className="w-full h-full object-cover rounded-full"
-                            referrerPolicy="no-referrer"
-                          />
-                        ) : (
-                          <span className="text-emerald-600 font-bold text-xs">
-                             {order.customer?.full_name?.charAt(0) || 'ع'}
-                          </span>
-                        )}
+                      <div className="w-8 h-8 rounded-full bg-slate-100 overflow-hidden shrink-0 border border-slate-100">
+                         <img src={order.customer?.avatar_url || `https://api.dicebear.com/7.x/notionists/svg?seed=${order.id}`} className="w-full h-full object-cover" alt="customer" referrerPolicy="no-referrer" />
                       </div>
-                      <span className="text-gray-700 font-medium">{order.customer?.full_name || 'عميل مجهول'}</span>
+                      <span className="text-slate-800 dark:text-slate-200 font-bold">{order.customer?.full_name || 'عميل غير معروف'}</span>
                     </div>
                   </td>
-                  <td className="px-8 py-5">
-                    <span className={`inline-flex items-center px-3 py-1.5 rounded-xl text-xs font-bold border ${statusColors[order.status] || 'bg-gray-100 text-gray-600 border-gray-200'}`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ml-2 ${order.status === 'Completed' ? 'bg-emerald-500' : order.status === 'Pending' ? 'bg-amber-500' : 'bg-blue-500'}`}></span>
-                      {statusNames[order.status] || order.status}
+                  <td className="py-5 px-6 text-slate-400">{format(new Date(order.created_at || new Date()), "dd MMMM yyyy", { locale: ar })}</td>
+                  <td className="py-5 px-6 text-slate-800 dark:text-white font-bold">{order.grand_total?.toLocaleString() || 0} ج.م</td>
+                  <td className="py-5 px-6">
+                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                      order.status === 'Pending' ? 'bg-amber-100 text-amber-700' :
+                      ['OnTheWay', 'Active', 'Arrived'].includes(order.status) ? 'bg-blue-100 text-blue-700' :
+                      order.status === 'Completed' ? 'bg-emerald-100 text-emerald-700' :
+                      order.status === 'Cancelled' ? 'bg-red-100 text-red-700' :
+                      'bg-slate-100 text-slate-700'
+                    }`}>
+                      {order.status === 'Pending' ? 'قيد الانتظار' :
+                       ['OnTheWay', 'Active', 'Arrived'].includes(order.status) ? 'جاري التوصيل' :
+                       order.status === 'Completed' ? 'مكتمل' :
+                       order.status === 'Cancelled' ? 'ملغي' : order.status || 'غير معروف'}
                     </span>
                   </td>
-                  <td className="px-8 py-5 font-black text-gray-900">{order.grand_total} ج.م</td>
-                  <td className="px-8 py-5 text-sm text-gray-400 font-medium">
-                    {format(new Date(order.created_at), 'dd MMM yyyy, HH:mm', { locale: ar })}
-                  </td>
+                  <td className="py-5 px-6 text-center"><MoreHorizontal className="w-5 h-5 text-slate-300 cursor-pointer hover:text-slate-600 inline-block"/></td>
                 </tr>
               ))}
+              {!(dashboardData?.recentOrders?.length) && (
+                <tr className="bg-white dark:bg-slate-800">
+                  <td colSpan={6} className="py-12 text-center text-slate-500 font-medium italic">لا توجد طلبات نشطة حالياً</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

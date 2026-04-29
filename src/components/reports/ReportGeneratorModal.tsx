@@ -4,7 +4,6 @@ import { supabase } from '../../lib/supabase';
 import { X, FileText, Calendar, Loader2, CheckCircle2, Download, Eye, ArrowRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
-import * as XLSX from 'xlsx';
 import { cn } from '../../lib/utils';
 
 interface ReportGeneratorModalProps {
@@ -184,14 +183,20 @@ export default function ReportGeneratorModal({ onClose }: ReportGeneratorModalPr
     }
   });
 
-  const downloadExcel = () => {
+  const downloadExcel = async () => {
     if (!previewData) return;
-    const ws = XLSX.utils.json_to_sheet(previewData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Report");
-    const fileName = `report_${reportType}_${Date.now()}.xlsx`;
-    XLSX.writeFile(wb, fileName);
-    toast.success('تم تحميل الملف بنجاح');
+    try {
+      const XLSX = await import('xlsx');
+      const ws = XLSX.utils.json_to_sheet(previewData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Report");
+      const fileName = `report_${reportType}_${Date.now()}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+      toast.success('تم تحميل الملف بنجاح');
+    } catch (error: any) {
+      console.error('Error exporting to Excel:', error);
+      toast.error('حدث خطأ أثناء تصدير الملف');
+    }
   };
 
   return (

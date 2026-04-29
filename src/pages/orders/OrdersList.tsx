@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from '../../lib/supabase';
@@ -10,7 +10,6 @@ import { getDelayStatus } from '../../utils/orderUtils';
 import OrderDetailsPanel from '../../components/orders/OrderDetailsPanel';
 import AssignDriverModal from '../../components/orders/AssignDriverModal';
 import LiveMap from '../zones/LiveMap';
-import * as XLSX from 'xlsx';
 import { orderService } from '../../services/orderService';
 import { handleGlobalError } from '../../utils/errorHandler';
 import toast from 'react-hot-toast';
@@ -66,6 +65,10 @@ const statusOrder: Record<OrderStatus, number> = {
 };
 
 
+const CURRENT_AVAILABLE_STATUSES: OrderStatus[] = ['Pending', 'Active', 'OnTheWay'];
+const COMPLETED_AVAILABLE_STATUSES: OrderStatus[] = ['Completed'];
+const CANCELLED_AVAILABLE_STATUSES: OrderStatus[] = ['Cancelled', 'Rejected'];
+
 export default function OrdersList() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -106,26 +109,34 @@ export default function OrdersList() {
 
   const pageSize = 20;
 
-  const currentAvailableStatuses: OrderStatus[] = ['Pending', 'Active', 'OnTheWay'];
-  const completedAvailableStatuses: OrderStatus[] = ['Completed'];
-  const cancelledAvailableStatuses: OrderStatus[] = ['Cancelled', 'Rejected'];
+  const availableStatusesToShow = useMemo(() => {
+    if (activeTab === 'current') return CURRENT_AVAILABLE_STATUSES;
+    if (activeTab === 'completed') return COMPLETED_AVAILABLE_STATUSES;
+    return CANCELLED_AVAILABLE_STATUSES;
+  }, [activeTab]);
 
-  const availableStatusesToShow = activeTab === 'current' 
-    ? currentAvailableStatuses 
-    : activeTab === 'completed'
-      ? completedAvailableStatuses
-      : cancelledAvailableStatuses;
+  const resolvedStatusesForQuery = useMemo(() => 
+    selectedStatuses.length > 0 ? selectedStatuses : availableStatusesToShow,
+    [selectedStatuses, availableStatusesToShow]
+  );
 
-  const resolvedStatusesForQuery = selectedStatuses.length > 0 
-    ? selectedStatuses 
-    : availableStatusesToShow;
-
-  const { data, isLoading, isFetching, fetchNextPage, hasNextPage, isFetchingNextPage, refetch, now } = useInfiniteOrders(pageSize, {
+  const filters = useMemo(() => ({
     selectedStatuses: resolvedStatusesForQuery,
     dateRange,
     customDateRange,
     searchQuery: debouncedSearchQuery
-  });
+  }), [resolvedStatusesForQuery, dateRange, customDateRange, debouncedSearchQuery]);
+
+  const { 
+    data, 
+    isLoading, 
+    isFetching, 
+    fetchNextPage, 
+    hasNextPage, 
+    isFetchingNextPage, 
+    refetch, 
+    now 
+  } = useInfiniteOrders(pageSize, filters);
 
   const { ref: loadMoreRef, inView } = useInView({
     threshold: 0.1,
@@ -251,7 +262,7 @@ export default function OrdersList() {
     }
   };
 
-  const handleExport = () => {
+  const handleExport = async () => {
     if (!allOrders.length) return;
     
     const exportData = allOrders.map(order => ({
@@ -267,10 +278,16 @@ export default function OrdersList() {
       'المندوبين': order.sub_orders?.flatMap((so: any) => so.delivery_team?.map((dt: any) => dt.driver?.user?.full_name)).filter(Boolean).join(', ') || 'لم يتم التعيين'
     }));
 
-    const ws = XLSX.utils.json_to_sheet(exportData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Orders');
-    XLSX.writeFile(wb, `orders_export_${format(new Date(), 'yyyyMMdd_HHmmss')}.xlsx`);
+    try {
+      const XLSX = await import('xlsx');
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Orders');
+      XLSX.writeFile(wb, `orders_export_${format(new Date(), 'yyyyMMdd_HHmmss')}.xlsx`);
+    } catch (error) {
+      console.error('Error generating Excel file:', error);
+      toast.error('حدث خطأ أثناء تصدير الملف');
+    }
   };
 
   const toggleStatusFilter = useCallback((status: OrderStatus) => {
@@ -403,7 +420,7 @@ export default function OrdersList() {
       {/* Unified Orders Control Center */}
       <div className="bg-white dark:bg-slate-800 rounded-[2rem] shadow-sm border border-gray-100 dark:border-slate-700 overflow-visible mb-6 z-10 relative">
         
-        {/* Top Header: Tabs & Quick Actions */}
+        {/* Top Header: Tabs */}
         <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center p-4 xl:p-5 border-b border-gray-100/80 dark:border-slate-700/80 bg-gray-50/30 dark:bg-slate-800/50 gap-4">
           {/* Tabs */}
           <div className="flex bg-gray-100/80 dark:bg-slate-900/50 p-1.5 rounded-2xl border border-gray-200/50 dark:border-slate-700/50 w-full xl:w-fit">
@@ -451,34 +468,9 @@ export default function OrdersList() {
             </button>
           </div>
 
-          {/* Quick Actions */}
-          <div className="flex flex-wrap items-center gap-2.5 w-full xl:w-auto">
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={handleExport}
-              className="inline-flex items-center justify-center px-4 py-2.5 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 shadow-sm text-xs font-black rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-600 hover:border-gray-300 transition-all cursor-pointer h-[42px]"
-            >
-              <Download className="w-4 h-4 ml-1.5 text-blue-500 dark:text-blue-400" />
-              تصدير
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => setIsSettingsOpen(true)}
-              className="inline-flex items-center justify-center px-4 py-2.5 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 shadow-sm text-xs font-black rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-600 hover:border-gray-300 transition-all cursor-pointer h-[42px]"
-            >
-              <Clock className="w-4 h-4 ml-1.5 text-amber-500 dark:text-amber-400" />
-              إعدادات الوقت
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => refetch().catch(console.error)}
-              className="inline-flex items-center justify-center w-[42px] h-[42px] bg-emerald-600 border border-emerald-500 shadow-md shadow-emerald-500/20 text-white rounded-xl hover:bg-emerald-700 hover:border-emerald-600 transition-all cursor-pointer"
-            >
-              <RefreshCw className={cn("w-4 h-4", (isFetching || isLoading) && "animate-spin")} />
-            </motion.button>
+          <div className="hidden xl:flex items-center gap-2 text-gray-400 text-xs font-bold">
+            <Hash className="w-3.5 h-3.5" />
+            <span>عرض {sortedOrders.length} من {statsData.count} طلب</span>
           </div>
         </div>
 
@@ -558,8 +550,8 @@ export default function OrdersList() {
             )}
           </AnimatePresence>
 
-          {/* Lower Filters: Status & Sort joined into one grid/flex row */}
-          <div className="flex flex-col xl:flex-row gap-4 p-4 bg-gray-50/80 dark:bg-slate-800/80 rounded-2xl border border-gray-200/50 dark:border-slate-700/50">
+          {/* Unified Actions Row: Status, Sort, and Quick Actions */}
+          <div className="flex flex-col xl:flex-row xl:items-end gap-5 p-5 bg-gray-50/80 dark:bg-slate-800/80 rounded-2xl border border-gray-200/50 dark:border-slate-700/50">
             {activeTab === 'current' && (
               <>
                 <div className="flex-1 space-y-2.5">
@@ -588,17 +580,17 @@ export default function OrdersList() {
                   </div>
                 </div>
 
-                <div className="w-px bg-gray-200 dark:bg-slate-600 hidden xl:block mx-1"></div>
+                <div className="w-px h-12 bg-gray-200 dark:bg-slate-600 hidden xl:block mx-1"></div>
               </>
             )}
 
-            <div className={cn("space-y-2.5 flex-1", activeTab === 'current' && "xl:w-2/5 xl:flex-none")}>
+            <div className="space-y-2.5 flex-1 xl:flex-none">
               <span className="flex items-center gap-1.5 text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest pl-1">
                 <ArrowDown className="w-3.5 h-3.5" /> ترتيب بواسطة
               </span>
               <div className="flex flex-wrap gap-2">
                 {[
-                  { key: 'order_number', label: 'رقم الطلب' },
+                  { key: 'order_number', label: 'رقم' },
                   { key: 'date', label: 'التاريخ' },
                   { key: 'total', label: 'الإجمالي' },
                   { key: 'status', label: 'الحالة' }
@@ -623,13 +615,49 @@ export default function OrdersList() {
                 ))}
               </div>
             </div>
+
+            <div className="w-px h-12 bg-gray-200 dark:bg-slate-600 hidden xl:block mx-1"></div>
+
+            <div className="space-y-2.5 flex-1 xl:flex-none">
+              <span className="flex items-center gap-1.5 text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest pl-1">
+                <Settings className="w-3.5 h-3.5" /> إجراءات
+              </span>
+              <div className="flex flex-wrap items-center gap-2.5">
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={handleExport}
+                  className="inline-flex items-center justify-center px-4 py-1.5 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 shadow-sm text-[10px] font-black rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-600 hover:border-gray-300 transition-all cursor-pointer h-[34px]"
+                >
+                  <Download className="w-3.5 h-3.5 ml-1.5 text-blue-500 dark:text-blue-400" />
+                  تصدير
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setIsSettingsOpen(true)}
+                  className="inline-flex items-center justify-center px-4 py-1.5 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 shadow-sm text-[10px] font-black rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-600 hover:border-gray-300 transition-all cursor-pointer h-[34px]"
+                >
+                  <Clock className="w-3.5 h-3.5 ml-1.5 text-amber-500 dark:text-amber-400" />
+                  الوقت
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => refetch().catch(console.error)}
+                  className="inline-flex items-center justify-center w-[34px] h-[34px] bg-emerald-600 border border-emerald-500 shadow-md shadow-emerald-500/20 text-white rounded-xl hover:bg-emerald-700 hover:border-emerald-600 transition-all cursor-pointer"
+                >
+                  <RefreshCw className={cn("w-3.5 h-3.5", (isFetching || isLoading) && "animate-spin")} />
+                </motion.button>
+              </div>
+            </div>
           </div>
         </div>
 
       </div>
 
       {/* Cards Grid */}
-      <div className={cn("grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6 transition-opacity duration-300", isFetching && !isLoading ? "opacity-60" : "")}>
+      <div className={cn("grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 transition-opacity duration-300", isFetching && !isLoading ? "opacity-60" : "")}>
         {isLoading ? (
           Array.from({ length: 6 }).map((_, index) => (
             <div key={`orders-skeleton-${index}`} className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 animate-pulse flex flex-col gap-4">

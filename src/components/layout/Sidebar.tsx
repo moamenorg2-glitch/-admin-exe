@@ -175,12 +175,16 @@ export default function Sidebar({ isOpen, isCollapsed, onClose }: SidebarProps) 
         isOpen ? "translate-x-0" : "translate-x-full lg:translate-x-0",
         isCollapsed ? "w-20" : "w-56"
       )}>
-        <div className="h-16 flex items-center justify-between border-b border-gray-800 px-6 flex-shrink-0 lg:hidden">
-          <h1 className="text-xl font-bold text-white flex items-center gap-2">
-            <span className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center text-white font-bold text-lg">A</span>
-            Admin app
-          </h1>
-          <button onClick={onClose} className="lg:hidden p-2 text-gray-400 hover:text-white">
+        <div className="h-16 flex items-center justify-between border-b border-gray-800/50 px-6 flex-shrink-0 lg:hidden">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 bg-emerald-600 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-emerald-500/20 rotate-3">
+              Z
+            </div>
+            <h1 className="text-lg font-black text-white uppercase tracking-tight">
+              زاجل
+            </h1>
+          </div>
+          <button onClick={onClose} className="lg:hidden p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg">
             <X className="w-6 h-6" />
           </button>
         </div>
@@ -198,27 +202,27 @@ export default function Sidebar({ isOpen, isCollapsed, onClose }: SidebarProps) 
                     className={({ isActive }) =>
                       cn(
                         isActive
-                          ? 'bg-emerald-500 text-white shadow-md'
-                          : 'text-gray-400 hover:bg-[#2B2B40] hover:text-white',
-                        'group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200',
-                        isCollapsed && 'justify-center px-0'
+                          ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20'
+                          : 'text-gray-400 hover:bg-emerald-500/10 hover:text-white',
+                        'group flex items-center px-3 py-2.5 text-sm font-bold rounded-xl transition-all duration-300 mb-1',
+                        isCollapsed && 'justify-center px-0 mx-2'
                       )
                     }
                   >
                     {({ isActive }) => (
                       <>
-                        <div className="relative flex-shrink-0">
+                        <div className="relative flex-shrink-0 flex items-center justify-center">
                           <item.icon
                             className={cn(
-                              'h-5 w-5',
+                              'h-5 w-5 transition-transform duration-300 group-hover:scale-110',
                               !isCollapsed && 'ml-3',
-                              isActive ? 'text-white' : 'text-gray-400 group-hover:text-white'
+                              isActive ? 'text-white' : 'text-gray-500 group-hover:text-emerald-400'
                             )}
                             aria-hidden="true"
                           />
                           {counts && (counts as any)[item.name] > 0 && (
                             <span className={cn(
-                              "absolute -top-2 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-black text-white shadow-lg shadow-red-500/20",
+                              "absolute -top-2 flex h-[18px] min-w-[18px] items-center justify-center rounded-lg bg-red-500 px-1 text-[10px] font-black text-white shadow-lg shadow-red-500/20 border-2 border-[#1E1E2D]",
                               isCollapsed ? "-right-2" : "right-1"
                             )}>
                               {(counts as any)[item.name]}
@@ -227,7 +231,7 @@ export default function Sidebar({ isOpen, isCollapsed, onClose }: SidebarProps) 
                         </div>
                         {!isCollapsed && (
                           <div className="flex items-center justify-between flex-1">
-                            <span>{item.name}</span>
+                            <span className="tracking-tight">{item.name}</span>
                           </div>
                         )}
                       </>
@@ -276,28 +280,28 @@ export default function Sidebar({ isOpen, isCollapsed, onClose }: SidebarProps) 
                         className={({ isActive }) =>
                           cn(
                             isActive
-                              ? 'bg-emerald-500/10 text-emerald-500'
-                              : 'text-gray-400 hover:bg-[#2B2B40] hover:text-white',
-                            'group flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200',
-                            !isCollapsed && 'mr-4',
-                            isCollapsed && 'justify-center px-0'
+                              ? 'bg-emerald-600/10 text-emerald-500 font-bold'
+                              : 'text-gray-400 hover:bg-emerald-500/5 hover:text-white',
+                            'group flex items-center px-4 py-2 text-sm rounded-xl transition-all duration-300',
+                            !isCollapsed && 'mr-4 mb-0.5',
+                            isCollapsed && 'justify-center px-0 mb-1'
                           )
                         }
                       >
                         {({ isActive }) => (
                           <>
-                            <div className="relative flex-shrink-0">
+                            <div className="relative flex-shrink-0 flex items-center justify-center">
                               <item.icon
                                 className={cn(
-                                  'h-4 w-4',
+                                  'h-4 w-4 transition-transform duration-300 group-hover:scale-110',
                                   !isCollapsed && 'ml-3',
-                                  isActive ? 'text-emerald-500' : 'text-gray-500 group-hover:text-gray-300'
+                                  isActive ? 'text-emerald-500' : 'text-gray-500 group-hover:text-emerald-400'
                                 )}
                                 aria-hidden="true"
                               />
                               {counts && (counts as any)[item.name] > 0 && (
                                 <span className={cn(
-                                  "absolute -top-2 flex h-[16px] min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-black text-white shadow-lg shadow-red-500/20",
+                                  "absolute -top-2 flex h-[16px] min-w-[16px] items-center justify-center rounded-md bg-red-500 px-1 text-[9px] font-black text-white shadow-lg shadow-red-500/20 border-2 border-[#1E1E2D]",
                                   isCollapsed ? "-right-2" : "right-1"
                                 )}>
                                   {(counts as any)[item.name]}
@@ -306,7 +310,7 @@ export default function Sidebar({ isOpen, isCollapsed, onClose }: SidebarProps) 
                             </div>
                             {!isCollapsed && (
                               <div className="flex items-center justify-between flex-1">
-                                <span>{item.name}</span>
+                                <span className="tracking-tight">{item.name}</span>
                               </div>
                             )}
                           </>

@@ -8,7 +8,11 @@ if (!supabaseAnonKey) {
   console.warn('VITE_SUPABASE_ANON_KEY is missing. Auth features will not work.');
 }
 
-export const supabase = createClient<Database>(
+const globalForSupabase = globalThis as unknown as {
+  supabase: ReturnType<typeof createClient<Database>> | undefined
+}
+
+export const supabase = globalForSupabase.supabase ?? createClient<Database>(
   supabaseUrl, 
   supabaseAnonKey || 'dummy_key_please_add_vite_supabase_anon_key_to_github_secrets', 
   {
@@ -19,3 +23,7 @@ export const supabase = createClient<Database>(
     },
   }
 );
+
+if (process.env.NODE_ENV !== 'production') {
+  globalForSupabase.supabase = supabase;
+}

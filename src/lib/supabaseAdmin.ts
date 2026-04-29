@@ -53,8 +53,12 @@ export const getSupabaseAdmin = () => {
   return supabaseAdminInstance;
 };
 
+const globalForSupabaseAdmin = globalThis as unknown as {
+  supabaseAdmin: ReturnType<typeof createClient<Database>> | undefined
+}
+
 // For backward compatibility while encouraging lazy loading
-export const supabaseAdmin = createClient<Database>(
+export const supabaseAdmin = globalForSupabaseAdmin.supabaseAdmin ?? createClient<Database>(
   supabaseUrl, 
   isAdminKeyAvailable ? finalServiceRoleKey : 'placeholder-key',
   {
@@ -70,3 +74,7 @@ export const supabaseAdmin = createClient<Database>(
     }
   }
 );
+
+if (process.env.NODE_ENV !== 'production') {
+  globalForSupabaseAdmin.supabaseAdmin = supabaseAdmin;
+}

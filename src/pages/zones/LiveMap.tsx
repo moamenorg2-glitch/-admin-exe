@@ -383,7 +383,7 @@ export default function LiveMap({ embedded = false, initialType = 'all', initial
 
 
   return (
-    <div className="space-y-6 pb-12 h-full flex flex-col" dir="rtl">
+    <div className={cn("w-full h-full relative overflow-hidden", !hideControls && "space-y-6 pb-12 flex flex-col")} dir="rtl">
       {/* Header */}
       {!hideControls && (
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 shrink-0">
@@ -485,7 +485,7 @@ export default function LiveMap({ embedded = false, initialType = 'all', initial
       )}
 
       {/* Map Container */}
-      <div className={cn("flex-1 w-full rounded-2xl bg-white shadow-xl overflow-hidden border border-gray-100 flex items-center justify-center relative", hideControls ? "min-h-[400px]" : "min-h-[600px]")}>
+      <div className={cn("w-full h-full relative", !hideControls && "flex-1 rounded-2xl bg-white shadow-xl overflow-hidden border border-gray-100 flex items-center justify-center")}>
          <OpenLayerMap 
             markers={filteredMarkers} 
             center={activeCenter} 
