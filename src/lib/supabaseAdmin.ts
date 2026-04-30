@@ -41,6 +41,7 @@ export const getSupabaseAdmin = () => {
           autoRefreshToken: false,
           persistSession: false,
           detectSessionInUrl: false,
+          storageKey: 'supabase-admin-auth-token',
           storage: {
             getItem: (key) => null,
             setItem: (key, value) => {},
@@ -66,6 +67,7 @@ export const supabaseAdmin = globalForSupabaseAdmin.supabaseAdmin ?? createClien
       autoRefreshToken: false,
       persistSession: false,
       detectSessionInUrl: false,
+      storageKey: 'supabase-admin-auth-token',
       storage: {
         getItem: (key) => null,
         setItem: (key, value) => {},

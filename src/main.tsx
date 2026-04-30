@@ -6,6 +6,7 @@ import App from './App';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { handleGlobalError } from './utils/errorHandler';
 import './index.css';
+import 'ol/ol.css';
 
 // Global error listeners for unhandled exceptions outside React
 window.addEventListener('unhandledrejection', (event) => {

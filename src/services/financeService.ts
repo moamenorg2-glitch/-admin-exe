@@ -2,7 +2,7 @@
 import { supabase } from '../lib/supabase';
 
 export const financeService = {
-  async adjustWalletBalance(userId: string, amount: number, type: 'admin_adjustment' | 'topup' | 'refund' | 'penalty', description: string, referenceId?: string) {
+  async adjustWalletBalance(userId: string, amount: number, type: 'admin_adjustment' | 'topup' | 'refund' | 'penalty' | 'delivery_earnings' | 'driver_collection_from_customer' | 'driver_payment_to_vendor' | 'vendor_cash_payment', description: string, referenceId?: string) {
     const { data: wallet, error: walletError } = await supabase
       .from('wallets')
       .select('current_balance')

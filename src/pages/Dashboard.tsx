@@ -268,16 +268,20 @@ export default function Dashboard() {
             </div>
           </div>
           
-          <div className="h-64 mt-4 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={revenueChartData} margin={{ top: 10, right: 0, left: 10, bottom: 0 }} barSize={16}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b', fontWeight: 600 }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b', fontWeight: 600 }} width={45} tickFormatter={(val) => val.toLocaleString() + ' ج'} />
-                <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', direction: 'rtl' }}/>
-                <Bar dataKey="revenue" fill="#3b82f6" radius={[4, 4, 4, 4]} />
-              </BarChart>
-            </ResponsiveContainer>
+          <div className="h-64 mt-4 w-full" style={{ minHeight: '256px' }}>
+            {revenueChartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={revenueChartData} margin={{ top: 10, right: 0, left: 10, bottom: 0 }} barSize={16}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b', fontWeight: 600 }} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b', fontWeight: 600 }} width={45} tickFormatter={(val) => val.toLocaleString() + ' ج'} />
+                  <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', direction: 'rtl' }}/>
+                  <Bar dataKey="revenue" fill="#3b82f6" radius={[4, 4, 4, 4]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center text-slate-400 text-xs font-medium">لا توجد بيانات للرسم البياني</div>
+            )}
           </div>
         </div>
       </div>
@@ -315,14 +319,20 @@ export default function Dashboard() {
             <p className="text-[10px] text-slate-400">توزيع الطلبات على المنتجات</p>
           </div>
           <div className="flex flex-col items-center">
-            <div className="w-40 h-40 relative mb-6">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={productData} innerRadius={45} outerRadius={75} paddingAngle={2} dataKey="value" stroke="none">
-                    {productData.map((entry, index) => <Cell key={index} fill={entry.color} />)}
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
+            <div className="w-40 h-40 relative mb-6" style={{ minWidth: '160px', minHeight: '160px' }}>
+              {productData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={productData} innerRadius={45} outerRadius={75} paddingAngle={2} dataKey="value" stroke="none">
+                      {productData.map((entry, index) => <Cell key={index} fill={entry.color} />)}
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="w-full h-full rounded-full border-4 border-slate-50 dark:border-slate-700/50 flex items-center justify-center">
+                   <Package className="w-10 h-10 text-slate-200 dark:text-slate-700" />
+                </div>
+              )}
             </div>
             <div className="w-full space-y-2">
               {productData.length > 0 ? productData.map((item, i) => (

@@ -1,493 +1,626 @@
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import * as React from 'react';
 import { supabase } from '../../lib/supabase';
+import { useQuery } from '@tanstack/react-query';
 import { 
-  Search, 
-  Filter, 
-  FileText, 
   Download, 
   Calendar, 
-  Plus, 
-  TrendingUp, 
-  BarChart3, 
-  PieChart, 
-  Activity,
-  ArrowUpRight,
-  Clock,
-  Trash2,
-  AlertTriangle
+  ShoppingBag,
+  Users,
+  Car,
+  Wallet,
+  Store,
+  RefreshCw,
+  TrendingUp,
+  AlertCircle,
+  CheckCircle2,
+  FileText
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
-import { ar } from 'date-fns/locale';
-import toast from 'react-hot-toast';
-import { useQueryClient, useMutation } from '@tanstack/react-query';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer,
-  Cell
-} from 'recharts';
-import ReportGeneratorModal from '../../components/reports/ReportGeneratorModal';
+import { format, subDays, startOfDay, endOfDay } from 'date-fns';
+import ReportsAIAssistant from '../../components/reports/ReportsAIAssistant';
+
+interface DateRange {
+  start: Date;
+  end: Date;
+}
 
 export default function ReportsDashboard() {
-  const queryClient = useQueryClient();
-  const [page, setPage] = useState(0);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [typeFilter, setTypeFilter] = useState<'All' | string>('All');
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [reportToDelete, setReportToDelete] = useState<string | null>(null);
-  const [isDeletingAll, setIsDeletingAll] = useState(false);
-  const pageSize = 10;
+  const [dateRange, setDateRange] = React.useState<DateRange>({
+    start: startOfDay(subDays(new Date(), 30)),
+    end: endOfDay(new Date())
+  });
+  const [selectedVendor, setSelectedVendor] = React.useState<string>('all');
+  const [selectedDriver, setSelectedDriver] = React.useState<string>('all');
+  const [refreshKey, setRefreshKey] = React.useState(0);
 
-  // Fetch Reports List
-  const { data, isLoading } = useQuery({
-    queryKey: ['reports', page, searchQuery, typeFilter],
+  // Fetch Vendors for Filter
+  const { data: vendors } = useQuery({
+    queryKey: ['filter-vendors'],
     queryFn: async () => {
-      let query = supabase
-        .from('performance_reports')
-        .select(`
-          *,
-          profiles:generated_by (full_name)
-        `, { count: 'exact' })
-        .order('created_at', { ascending: false })
-        .range(page * pageSize, (page + 1) * pageSize - 1);
-
-      if (searchQuery) {
-        query = query.or(`summary.ilike.%${searchQuery}%`);
-      }
-
-      if (typeFilter !== 'All') {
-        query = query.eq('report_type', 'custom').contains('data', { sub_type: typeFilter });
-      }
-
-      const { data, count, error } = await query;
+      const { data, error } = await supabase.from('vendor_details').select('user_id, brand_name').order('brand_name');
       if (error) throw error;
-      return { reports: data as any[], count };
-    },
+      return data;
+    }
   });
 
-  // Fetch Stats for KPIs
-  const { data: stats } = useQuery({
-    queryKey: ['reports-stats'],
+  // Fetch Drivers for Filter
+  const { data: drivers } = useQuery({
+    queryKey: ['filter-drivers'],
     queryFn: async () => {
-      const { data: reports, error } = await supabase
-        .from('performance_reports')
-        .select('report_type, created_at, data');
-      
+      const { data, error } = await supabase.from('profiles').select('user_id, full_name').eq('user_type', 'driver').order('full_name');
       if (error) throw error;
-      if (!reports) return null;
+      return data;
+    }
+  });
 
-      const total = reports.length;
-      const financial = reports.filter(r => (r.data as any)?.sub_type === 'Financial' || (r.data as any)?.sub_type === 'Driver_Payouts' || (r.data as any)?.sub_type === 'Vendor_Payouts').length;
-      const performance = reports.filter(r => (r.data as any)?.sub_type === 'Driver_Performance' || (r.data as any)?.sub_type === 'Vendor_Performance').length;
-      
-      // Group by month for chart
-      const last6Months = Array.from({ length: 6 }, (_, i) => {
-        const date = subMonths(new Date(), 5 - i);
-        return {
-          name: format(date, 'MMM', { locale: ar }),
-          count: reports.filter(r => {
-            const d = new Date(r.created_at);
-            return d.getMonth() === date.getMonth() && d.getFullYear() === date.getFullYear();
-          }).length
+  // 1. Platform Profit Stats (Direct Query to bypass broken RPC)
+  const { data: profitStats, isLoading: loadingProfits } = useQuery({
+    queryKey: ['platform-profits', dateRange, selectedVendor, selectedDriver, refreshKey],
+    queryFn: async () => {
+      try {
+        let query = supabase
+          .from('master_orders')
+          .select(`
+            id, 
+            service_fee, 
+            platform_discount, 
+            delivery_discount,
+            sub_orders:sub_orders!sub_orders_master_order_id_fkey(
+              sub_total,
+              vendor_commission,
+              vendor:vendor_details!sub_orders_vendor_id_fkey(commission_rate)
+            )
+          `)
+          .eq('status', 'Completed')
+          .gte('created_at', format(dateRange.start, "yyyy-MM-dd'T'HH:mm:ss"))
+          .lte('created_at', format(dateRange.end, "yyyy-MM-dd'T'HH:mm:ss"));
+
+        if (selectedVendor !== 'all') {
+            // Filter is applied later in the reduction if needed or we could add join filter
+        }
+
+        const { data, error } = await query;
+        if (error) throw error;
+
+        const ordersData = (data as any[]) || [];
+        const stats = {
+          total_orders: ordersData.length,
+          total_commissions: ordersData.reduce((sum, o) => {
+            const subOrders = o.sub_orders as any[] || [];
+            return sum + subOrders.reduce((s: number, sub: any) => {
+              // Calculate for past orders if 0 or use vendor value
+              const commRate = Number(sub.vendor?.commission_rate || 0);
+              const comm = Number(sub.vendor_commission) || 
+                ((Number(sub.sub_total) * commRate) / 100);
+              return s + comm;
+            }, 0);
+          }, 0),
+          total_service_fees: ordersData.reduce((sum, o) => sum + (Number(o.service_fee) || 0), 0),
+          total_discounts: ordersData.reduce((sum, o) => sum + (Number(o.platform_discount) || 0) + (Number(o.delivery_discount) || 0), 0),
+          net_profit: 0
         };
-      });
+        stats.net_profit = stats.total_commissions + stats.total_service_fees - stats.total_discounts;
 
-      return { total, financial, performance, chartData: last6Months };
+        return stats;
+      } catch (err) {
+        console.error("Platform Profits Exception:", err);
+        return { total_orders: 0, total_commissions: 0, total_service_fees: 0, total_discounts: 0, net_profit: 0 };
+      }
     }
   });
 
-  const getReportTypeLabel = (report: any) => {
-    const type = report.report_type;
-    const subType = report.data?.sub_type;
-    
-    const types: Record<string, string> = {
-      Financial: 'تقرير مالي',
-      Driver_Payouts: 'مستحقات المناديب',
-      Vendor_Payouts: 'مستحقات التجار',
-      Driver_Performance: 'أداء السائقين',
-      Vendor_Performance: 'أداء التجار',
-      User_Activity: 'نشاط المستخدمين',
-      System_Health: 'حالة النظام',
-    };
-    
-    return types[subType] || types[type] || type;
-  };
+  // 2. Vendor Report (Direct Query)
+  const { data: vendorReport, isLoading: loadingVendors } = useQuery({
+    queryKey: ['vendor-dues', dateRange, selectedVendor, refreshKey],
+    queryFn: async () => {
+      try {
+        let query = supabase
+          .from('sub_orders')
+          .select(`
+            vendor_id,
+            sub_total,
+            vendor_commission,
+            vendor:vendor_details!sub_orders_vendor_id_fkey(brand_name, commission_rate),
+            master_order:master_orders!sub_orders_master_order_id_fkey(payment_method)
+          `)
+          .eq('sub_status', 'Delivered')
+          .gte('created_at', format(dateRange.start, "yyyy-MM-dd'T'HH:mm:ss"))
+          .lte('created_at', format(dateRange.end, "yyyy-MM-dd'T'HH:mm:ss"));
 
-  const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'];
+        if (selectedVendor !== 'all') {
+          query = query.eq('vendor_id', selectedVendor);
+        }
 
-  // Delete Single Report
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('performance_reports')
-        .delete()
-        .eq('id', id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['reports'] }).catch(console.error);
-      queryClient.invalidateQueries({ queryKey: ['reports-stats'] }).catch(console.error);
-      toast.success('تم حذف التقرير بنجاح');
-    },
-    onError: (error: any) => {
-      toast.error('خطأ في حذف التقرير: ' + error.message);
+        const { data, error } = await query;
+        if (error) throw error;
+
+        // Group by vendor
+        const grouped = (data as any[]).reduce((acc, curr) => {
+          const vId = curr.vendor_id;
+          if (!acc[vId]) {
+            acc[vId] = { 
+              vendor_id: vId, 
+              brand_name: curr.vendor?.brand_name || 'غير معروف',
+              cash_sales_amount: 0,
+              digital_sales_amount: 0,
+              cash_orders_count: 0,
+              digital_orders_count: 0,
+              total_sales: 0,
+              total_commission: 0,
+              net_due: 0
+            };
+          }
+          
+          // Calculate for past orders if 0 or use vendor value
+          const commRate = Number(curr.vendor?.commission_rate || 0);
+          const comm = Number(curr.vendor_commission) || 
+            ((Number(curr.sub_total) * commRate) / 100);
+
+          const subTotal = Number(curr.sub_total) || 0;
+          if (curr.master_order?.payment_method === 'cash') {
+            acc[vId].cash_sales_amount += subTotal;
+            acc[vId].cash_orders_count++;
+          } else {
+            acc[vId].digital_sales_amount += subTotal;
+            acc[vId].digital_orders_count++;
+          }
+          acc[vId].total_sales += subTotal;
+          acc[vId].total_commission += comm;
+          acc[vId].net_due = acc[vId].digital_sales_amount - acc[vId].total_commission;
+          return acc;
+        }, {});
+
+        return Object.values(grouped);
+      } catch (err) {
+        console.error("Vendor Report Exception:", err);
+        return [];
+      }
     }
   });
 
-  // Delete All Reports
-  const deleteAllMutation = useMutation({
-    mutationFn: async () => {
-      const { error } = await supabase
-        .from('performance_reports')
-        .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['reports'] }).catch(console.error);
-      queryClient.invalidateQueries({ queryKey: ['reports-stats'] }).catch(console.error);
-      toast.success('تم حذف جميع التقارير بنجاح');
-    },
-    onError: (error: any) => {
-      toast.error('خطأ في حذف التقارير: ' + error.message);
+  // 3. Driver Report (Fetched from order activity + transactions for accuracy)
+  const { data: driverReport, isLoading: loadingDrivers } = useQuery({
+    queryKey: ['driver-performance', dateRange, selectedDriver, refreshKey],
+    queryFn: async () => {
+      try {
+        // Fetch all drivers to ensure names are available
+        const { data: driversList } = await supabase
+          .from('profiles')
+          .select('user_id, full_name')
+          .eq('user_type', 'driver');
+        
+        const driversMap: Record<string, string> = {};
+        driversList?.forEach(d => {
+          driversMap[d.user_id] = d.full_name || 'غير معروف';
+        });
+
+        // Fetch activity from order_delivery_team (Performance)
+        let activityQuery = supabase
+          .from('order_delivery_team')
+          .select(`
+            driver_id,
+            master_order:master_orders!fk_order_delivery_team_master_order!inner(
+              status,
+              delivery_fee,
+              driver_tip,
+              created_at
+            )
+          `)
+          .eq('master_order.status', 'Completed')
+          .gte('master_order.created_at', dateRange.start.toISOString())
+          .lte('master_order.created_at', dateRange.end.toISOString());
+
+        if (selectedDriver !== 'all') {
+          activityQuery = activityQuery.eq('driver_id', selectedDriver);
+        }
+
+        const { data: activity, error: activityError } = await activityQuery;
+        if (activityError) throw activityError;
+
+        // Group activity by driver to identify active drivers
+        const groupedMap: Record<string, any> = {};
+        for (const item of (activity as any[])) {
+          const dId = item.driver_id;
+          if (!dId) continue;
+          if (!groupedMap[dId]) {
+            groupedMap[dId] = { 
+              driver_id: dId, 
+              driver_name: driversMap[dId] || 'سائق #' + dId.slice(0,4),
+              delivery_count: 0,
+              actual_paid_earnings: 0
+            };
+          }
+          groupedMap[dId].delivery_count++;
+        }
+
+        // Fetch actual earnings from wallets (Financial Dues) for identified drivers
+        const driverIds = Object.keys(groupedMap);
+        let walletData: any[] = [];
+        if (driverIds.length > 0) {
+          const { data: wallets } = await supabase
+            .from('wallets')
+            .select('user_id, current_balance')
+            .in('user_id', driverIds);
+          walletData = wallets || [];
+        }
+
+        // 2. Process financial balances from wallets
+        for (const w of (walletData as any[])) {
+          const dId = w.user_id;
+          if (!groupedMap[dId]) continue; 
+          groupedMap[dId].actual_paid_earnings = Number(w.current_balance) || 0;
+        }
+
+        return Object.values(groupedMap);
+      } catch (err) {
+        console.error("Driver Report Exception:", err);
+        return [];
+      }
     }
   });
 
-  const confirmDeleteAll = () => {
-    setIsDeletingAll(true);
+  // 4. Penalties Report
+  const { data: penaltiesReport } = useQuery({
+    queryKey: ['penalties-report', dateRange, refreshKey],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('admin_penalties')
+        .select('*, profile:profiles!target_user_id(user_type)')
+        .gte('created_at', dateRange.start.toISOString())
+        .lte('created_at', dateRange.end.toISOString())
+        .order('created_at', { ascending: false });
+      if (error) {
+        console.error("Penalties Query Error:", error);
+        return [];
+      }
+      return data;
+    }
+  });
+
+  // 5. Support Tickets Report
+  const { data: supportTickets } = useQuery({
+    queryKey: ['support-tickets-report', dateRange, refreshKey],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('support_tickets')
+        .select('*')
+        .gte('created_at', dateRange.start.toISOString())
+        .lte('created_at', dateRange.end.toISOString())
+        .order('created_at', { ascending: false });
+      if (error) {
+        console.error("Support Tickets Error:", error);
+        return [];
+      }
+      return data;
+    }
+  });
+
+  const exportToCSV = (data: any[], filename: string) => {
+    if (!data.length) return;
+    const header = Object.keys(data[0]).join(',');
+    const rows = data.map(obj => Object.values(obj).map(val => `"${val}"`).join(','));
+    const csvContent = "\uFEFF" + [header, ...rows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `${filename}_${format(new Date(), 'yyyyMMdd')}.csv`;
+    link.click();
   };
 
-  const confirmDelete = (id: string) => {
-    setReportToDelete(id);
-  };
+  const handleRefresh = () => setRefreshKey(prev => prev + 1);
 
   return (
-    <div className="space-y-8 pb-12" dir="rtl">
-      {/* Delete Confirmation Modal */}
-      {(reportToDelete || isDeletingAll) && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl border border-gray-100 animate-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-center w-16 h-16 bg-red-50 rounded-2xl mb-6 mx-auto">
-              <AlertTriangle className="w-8 h-8 text-red-500" />
+    <div className="space-y-8 pb-20 p-4 md:p-8 bg-gray-50/30 min-h-screen" dir="rtl">
+      {/* Header & Main Filters */}
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-[2rem] border border-gray-100 dark:border-gray-700 shadow-xl shadow-gray-100/50 dark:shadow-none">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 bg-emerald-600 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-200 dark:shadow-emerald-900/20">
+              <TrendingUp className="w-8 h-8 text-white" />
             </div>
-            
-            <h3 className="text-2xl font-black text-gray-900 text-center mb-2">
-              {isDeletingAll ? 'حذف جميع التقارير؟' : 'حذف التقرير؟'}
-            </h3>
-            <p className="text-gray-500 text-center mb-8 leading-relaxed">
-              {isDeletingAll 
-                ? 'هل أنت متأكد من رغبتك في حذف جميع التقارير المسجلة؟ لا يمكن التراجع عن هذا الإجراء بعد تنفيذه.'
-                : 'هل أنت متأكد من رغبتك في حذف هذا التقرير؟ سيتم إزالة كافة البيانات المرتبطة به نهائياً.'}
-            </p>
-            
-            <div className="flex gap-3">
-              <button
-                disabled={deleteAllMutation.isPending || deleteMutation.isPending}
-                onClick={() => {
-                  if (isDeletingAll) {
-                    deleteAllMutation.mutate();
-                    setIsDeletingAll(false);
-                  } else if (reportToDelete) {
-                    deleteMutation.mutate(reportToDelete);
-                    setReportToDelete(null);
-                  }
-                }}
-                className="flex-1 py-4 bg-red-600 text-white font-bold rounded-2xl hover:bg-red-700 transition-all shadow-lg shadow-red-100 disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {(deleteAllMutation.isPending || deleteMutation.isPending) && (
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                )}
-                تأكيد الحذف
-              </button>
-              <button
-                onClick={() => {
-                  setReportToDelete(null);
-                  setIsDeletingAll(false);
-                }}
-                className="flex-1 py-4 bg-gray-50 text-gray-600 font-bold rounded-2xl hover:bg-gray-100 transition-all"
-              >
-                إلغاء
-              </button>
+            <div>
+              <h2 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">مركز القيادة والتقارير المالية</h2>
+              <p className="text-gray-500 dark:text-gray-400 font-medium mt-1">تقارير لحظية دقيقة بناءً على أحدث بيانات النظام.</p>
             </div>
           </div>
-        </div>
-      )}
+          
+          <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+             <button 
+               onClick={handleRefresh}
+               className="p-3 bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-600 transition-all active:scale-95"
+               title="تحديث البيانات"
+             >
+               <RefreshCw className={cn("w-5 h-5", (loadingProfits || loadingVendors) && "animate-spin")} />
+             </button>
+             
+             <div className="flex items-center gap-2 px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-100 dark:border-gray-600 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-emerald-500/20">
+               <Calendar className="w-4 h-4 text-gray-400" />
+               <input 
+                 type="date"
+                 value={format(dateRange.start, 'yyyy-MM-dd')}
+                 onChange={(e) => setDateRange(prev => ({ ...prev, start: startOfDay(new Date(e.target.value)) }))}
+                 className="bg-transparent border-none outline-none text-sm font-bold text-gray-700 dark:text-gray-200"
+               />
+               <span className="text-gray-300">|</span>
+               <input 
+                 type="date"
+                 value={format(dateRange.end, 'yyyy-MM-dd')}
+                 onChange={(e) => setDateRange(prev => ({ ...prev, end: endOfDay(new Date(e.target.value)) }))}
+                 className="bg-transparent border-none outline-none text-sm font-bold text-gray-700 dark:text-gray-200"
+               />
+             </div>
 
-      {/* Header */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-        <div>
-          <h2 className="text-3xl font-black text-gray-900 tracking-tight">مركز التقارير والتحليلات</h2>
-          <p className="text-gray-500 mt-2 text-lg">استخرج البيانات، حلل الأداء، واتخذ قرارات مبنية على الأرقام.</p>
+             <select 
+               value={selectedVendor}
+               onChange={(e) => setSelectedVendor(e.target.value)}
+               className="px-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-100 dark:border-gray-600 rounded-xl text-sm font-bold shadow-sm outline-none focus:ring-2 focus:ring-emerald-500/20 dark:text-white"
+             >
+                <option value="all">كل المتاجر</option>
+                {vendors?.map(v => <option key={v.user_id} value={v.user_id}>{v.brand_name}</option>)}
+             </select>
+
+             <select 
+               value={selectedDriver}
+               onChange={(e) => setSelectedDriver(e.target.value)}
+               className="px-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-100 dark:border-gray-600 rounded-xl text-sm font-bold shadow-sm outline-none focus:ring-2 focus:ring-emerald-500/20 dark:text-white"
+             >
+                <option value="all">كل السائقين</option>
+                {drivers?.map(d => <option key={d.user_id} value={d.user_id}>{d.full_name}</option>)}
+             </select>
+          </div>
         </div>
+      </div>
+
+      {/* Profit Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm relative overflow-hidden group transition-colors">
+          <div className="relative z-10">
+            <div className="p-3 bg-blue-50 dark:bg-blue-900/20 w-fit rounded-xl mb-4 group-hover:scale-110 transition-transform">
+              <ShoppingBag className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+            </div>
+            <p className="text-sm font-bold text-gray-500 dark:text-gray-400">إجمالي الطلبات</p>
+            <h4 className="text-2xl font-black text-gray-900 dark:text-white mt-1">{profitStats?.total_orders || 0}</h4>
+          </div>
+          <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-blue-50/30 dark:bg-blue-900/10 rounded-full blur-2xl" />
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm relative overflow-hidden group transition-colors">
+          <div className="relative z-10">
+            <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 w-fit rounded-xl mb-4 group-hover:scale-110 transition-transform">
+              <Store className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <p className="text-sm font-bold text-gray-500 dark:text-gray-400">عمولات المتاجر</p>
+            <h4 className="text-2xl font-black text-emerald-700 dark:text-emerald-400 mt-1">{profitStats?.total_commissions || 0} ج.م</h4>
+          </div>
+          <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-emerald-50/30 dark:bg-emerald-900/10 rounded-full blur-2xl" />
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm relative overflow-hidden group transition-colors">
+          <div className="relative z-10">
+            <div className="p-3 bg-purple-50 dark:bg-purple-900/20 w-fit rounded-xl mb-4 group-hover:scale-110 transition-transform">
+              <Wallet className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+            </div>
+            <p className="text-sm font-bold text-gray-500 dark:text-gray-400">رسوم الخدمة</p>
+            <h4 className="text-2xl font-black text-purple-700 dark:text-purple-400 mt-1">{profitStats?.total_service_fees || 0} ج.م</h4>
+          </div>
+          <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-purple-50/30 dark:bg-purple-900/10 rounded-full blur-2xl" />
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm relative overflow-hidden group transition-colors">
+          <div className="relative z-10">
+            <div className="p-3 bg-rose-50 dark:bg-rose-900/20 w-fit rounded-xl mb-4 group-hover:scale-110 transition-transform">
+              <AlertCircle className="w-6 h-6 text-rose-600 dark:text-rose-400" />
+            </div>
+            <p className="text-sm font-bold text-gray-500 dark:text-gray-400">إجمالي الخصومات</p>
+            <h4 className="text-2xl font-black text-rose-700 dark:text-rose-400 mt-1">{profitStats?.total_discounts || 0} ج.م</h4>
+          </div>
+          <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-rose-50/30 dark:bg-rose-900/10 rounded-full blur-2xl" />
+        </div>
+
+        <div className="bg-emerald-600 dark:bg-emerald-700 p-6 rounded-3xl shadow-xl shadow-emerald-100 dark:shadow-none relative overflow-hidden group">
+          <div className="relative z-10">
+            <div className="p-3 bg-white/20 w-fit rounded-xl mb-4">
+              <TrendingUp className="w-6 h-6 text-white" />
+            </div>
+            <p className="text-sm font-bold text-emerald-100 dark:text-emerald-200">صافي الربح</p>
+            <h4 className="text-3xl font-black text-white mt-1">{profitStats?.net_profit || 0} ج.م</h4>
+          </div>
+          <div className="absolute top-0 right-0 p-4 opacity-10">
+             <CheckCircle2 className="w-24 h-24 text-white" />
+          </div>
+        </div>
+      </div>
+
+      {/* Tables Section */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
         
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={confirmDeleteAll}
-            disabled={deleteAllMutation.isPending || !data?.count}
-            className="inline-flex items-center justify-center px-6 py-3 bg-red-50 text-red-600 font-bold rounded-2xl border border-red-100 hover:bg-red-100 transition-all disabled:opacity-50"
-          >
-            <Trash2 className="w-5 h-5 ml-2" />
-            حذف الكل
-          </button>
-          
-          <button 
-            onClick={() => setIsModalOpen(true)}
-            className="inline-flex items-center justify-center px-6 py-3 bg-emerald-600 text-white font-bold rounded-2xl shadow-lg shadow-emerald-100 hover:bg-emerald-700 transition-all transform hover:scale-[1.02] active:scale-[0.98]"
-          >
-            <Plus className="w-5 h-5 ml-2" />
-            إنشاء تقرير جديد
-          </button>
-        </div>
-      </div>
-
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex items-center gap-5">
-          <div className="p-4 bg-blue-50 rounded-2xl">
-            <FileText className="w-6 h-6 text-blue-600" />
+        {/* Vendor Dues Table */}
+        <div className="bg-white dark:bg-gray-800 rounded-[2rem] border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden flex flex-col transition-colors">
+          <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between bg-white dark:bg-gray-800 sticky top-0 z-10 transition-colors">
+             <div className="flex items-center gap-3">
+               <Store className="w-5 h-5 text-emerald-500" />
+               <h3 className="font-black text-lg text-gray-900 dark:text-white">مستحقات وأداء المتاجر</h3>
+             </div>
+             <button 
+               onClick={() => exportToCSV(vendorReport || [], 'vendor_dues')}
+               className="text-emerald-700 dark:text-emerald-400 font-bold text-sm hover:underline flex items-center gap-1"
+             >
+                <Download className="w-4 h-4" /> تصدير
+             </button>
           </div>
-          <div>
-            <p className="text-sm font-bold text-gray-400">إجمالي التقارير</p>
-            <h4 className="text-2xl font-black text-gray-900">{stats?.total || 0}</h4>
-          </div>
-        </div>
-        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex items-center gap-5">
-          <div className="p-4 bg-emerald-50 rounded-2xl">
-            <TrendingUp className="w-6 h-6 text-emerald-600" />
-          </div>
-          <div>
-            <p className="text-sm font-bold text-gray-400">تقارير مالية</p>
-            <h4 className="text-2xl font-black text-gray-900">{stats?.financial || 0}</h4>
-          </div>
-        </div>
-        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex items-center gap-5">
-          <div className="p-4 bg-purple-50 rounded-2xl">
-            <Activity className="w-6 h-6 text-purple-600" />
-          </div>
-          <div>
-            <p className="text-sm font-bold text-gray-400">تقارير الأداء</p>
-            <h4 className="text-2xl font-black text-gray-900">{stats?.performance || 0}</h4>
-          </div>
-        </div>
-      </div>
-
-      {/* Analytics Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Chart */}
-        <div className="lg:col-span-2 bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
-          <div className="flex items-center justify-between mb-8">
-            <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-              <BarChart3 className="w-5 h-5 text-emerald-500" />
-              نشاط توليد التقارير
-            </h3>
-            <span className="text-xs font-bold text-gray-400">آخر 6 أشهر</span>
-          </div>
-          <div className="h-64">
-            <ResponsiveContainer width="99%" height="100%" minWidth={0} minHeight={0}>
-              <BarChart data={stats?.chartData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} />
-                <Tooltip 
-                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                />
-                <Bar dataKey="count" fill="#10b981" radius={[4, 4, 0, 0]} barSize={40}>
-                  {stats?.chartData?.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+          <div className="overflow-x-auto max-h-[400px]">
+             <table className="w-full text-right text-sm">
+                <thead className="bg-gray-100 dark:bg-gray-700/50 sticky top-0 z-10 transition-colors">
+                   <tr className="text-gray-900 dark:text-gray-400 font-bold">
+                      <th className="px-6 py-4">المتجر</th>
+                      <th className="px-6 py-4">طلبات كاش</th>
+                      <th className="px-6 py-4">مبيعات كاش</th>
+                      <th className="px-6 py-4">طلبات إلكتروني</th>
+                      <th className="px-6 py-4">مبيعات إلكتروني</th>
+                      <th className="px-6 py-4">المبيعات</th>
+                      <th className="px-6 py-4">العمولة</th>
+                      <th className="px-6 py-4">الصافي للمتجر</th>
+                   </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                   {vendorReport?.map((row: any) => (
+                     <tr key={row.vendor_id} className="hover:bg-gray-50/80 dark:hover:bg-gray-700/30 transition-colors">
+                        <td className="px-6 py-4 font-bold text-gray-900 dark:text-white">{row.brand_name}</td>
+                        <td className="px-6 py-4 text-gray-900 dark:text-gray-300 font-black">{row.cash_orders_count}</td>
+                        <td className="px-6 py-4 text-gray-900 dark:text-gray-300 font-black">{row.cash_sales_amount.toFixed(2)} ج.م</td>
+                        <td className="px-6 py-4 text-gray-900 dark:text-gray-300 font-black">{row.digital_orders_count}</td>
+                        <td className="px-6 py-4 text-gray-900 dark:text-gray-300 font-black">{row.digital_sales_amount.toFixed(2)} ج.م</td>
+                        <td className="px-6 py-4 font-black text-gray-900 dark:text-gray-100">{row.total_sales.toFixed(2)} ج.م</td>
+                        <td className="px-6 py-4 text-rose-700 dark:text-rose-400 font-black">{row.total_commission.toFixed(2)} ج.م</td>
+                        <td className="px-6 py-4 text-emerald-800 dark:text-emerald-400 font-black">{row.net_due.toFixed(2)} ج.م</td>
+                     </tr>
+                   ))}
+                   {(!vendorReport || vendorReport.length === 0) && (
+                     <tr><td colSpan={8} className="py-10 text-center text-gray-500 dark:text-gray-400 italic">لا توجد بيانات متاحة</td></tr>
+                   )}
+                </tbody>
+             </table>
           </div>
         </div>
 
-        {/* Quick Filters */}
-        <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm space-y-6">
-          <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-            <Filter className="w-5 h-5 text-emerald-500" />
-            تصفية النتائج
-          </h3>
-          
-          <div className="space-y-4">
-            <div>
-              <label className="block text-xs font-bold text-gray-400 mb-2 uppercase tracking-wider">البحث بالنص</label>
-              <div className="relative">
-                <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="ابحث في الملخص..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pr-10 py-3 border border-gray-100 rounded-xl bg-gray-50 focus:bg-white focus:ring-2 focus:ring-emerald-500 transition-all outline-none"
-                />
+        {/* Driver Dues Table */}
+        <div className="bg-white dark:bg-gray-800 rounded-[2rem] border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden flex flex-col transition-colors">
+          <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between bg-white dark:bg-gray-800 sticky top-0 z-10 transition-colors">
+             <div className="flex items-center gap-3">
+               <Car className="w-5 h-5 text-blue-500" />
+               <h3 className="font-black text-lg text-gray-900 dark:text-white">مستحقات وأداء السائقين</h3>
+             </div>
+             <button 
+               onClick={() => exportToCSV(driverReport || [], 'driver_dues')}
+               className="text-blue-700 dark:text-blue-400 font-bold text-sm hover:underline flex items-center gap-1"
+             >
+                <Download className="w-4 h-4" /> تصدير
+             </button>
+          </div>
+          <div className="overflow-x-auto max-h-[400px]">
+             <table className="w-full text-right text-sm">
+                <thead className="bg-gray-100 dark:bg-gray-700/50 sticky top-0 z-10 transition-colors">
+                   <tr className="text-gray-900 dark:text-gray-400 font-bold">
+                      <th className="px-6 py-4">السائق</th>
+                      <th className="px-6 py-4">عدد التوصيلات</th>
+                      <th className="px-6 py-4">إجمالي الأرباح</th>
+                   </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                   {driverReport?.map((row: any) => (
+                     <tr key={row.driver_id} className="hover:bg-gray-50/80 dark:hover:bg-gray-700/30 transition-colors">
+                        <td className="px-6 py-4 font-bold text-gray-900 dark:text-white">{row.driver_name}</td>
+                        <td className="px-6 py-4 text-gray-900 dark:text-gray-300 font-black">{row.delivery_count}</td>
+                        <td className="px-6 py-4 text-blue-800 dark:text-blue-400 font-black">{row.actual_paid_earnings} ج.م</td>
+                     </tr>
+                   ))}
+                   {(!driverReport || driverReport.length === 0) && (
+                     <tr><td colSpan={3} className="py-10 text-center text-gray-500 dark:text-gray-400 italic">لا توجد بيانات متاحة</td></tr>
+                   )}
+                </tbody>
+             </table>
+          </div>
+        </div>
+
+        {/* Penalties & Support Section */}
+        <div className="bg-white dark:bg-gray-800 rounded-[2rem] border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden flex flex-col xl:col-span-1 transition-colors">
+           <div className="p-6 border-b border-gray-50 dark:border-gray-700 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <AlertCircle className="w-5 h-5 text-rose-500" />
+                <h3 className="font-black text-lg dark:text-white">الجزاءات المالية</h3>
               </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-gray-400 mb-2 uppercase tracking-wider">نوع التقرير</label>
-              <select
-                value={typeFilter}
-                onChange={(e) => setTypeFilter(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-100 rounded-xl bg-gray-50 focus:bg-white focus:ring-2 focus:ring-emerald-500 transition-all outline-none appearance-none"
-              >
-                <option value="All">جميع الأنواع</option>
-                <option value="Financial">تقرير مالي</option>
-                <option value="Driver_Payouts">مستحقات المناديب</option>
-                <option value="Vendor_Payouts">مستحقات التجار</option>
-                <option value="Driver_Performance">أداء السائقين</option>
-                <option value="Vendor_Performance">أداء التجار</option>
-                <option value="User_Activity">نشاط المستخدمين</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="pt-4 border-t border-gray-50">
-            <div className="flex items-center gap-3 text-sm text-gray-500">
-              <Clock className="w-4 h-4" />
-              <span>إجمالي السجلات: {data?.count || 0}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Reports Table */}
-      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-right">
-            <thead>
-              <tr className="bg-gray-50/50 text-gray-400 text-xs font-bold uppercase tracking-widest">
-                <th className="px-8 py-5">التقرير والمسؤول</th>
-                <th className="px-8 py-5">الفترة الزمنية</th>
-                <th className="px-8 py-5">الملخص التنفيذي</th>
-                <th className="px-8 py-5">تاريخ الإصدار</th>
-                <th className="px-8 py-5 text-center">الملف</th>
-                <th className="px-8 py-5 text-center">إجراءات</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {isLoading ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={`report-skeleton-${i}`} className="animate-pulse">
-                    <td colSpan={6} className="px-8 py-6"><div className="h-12 bg-gray-50 rounded-2xl w-full"></div></td>
-                  </tr>
-                ))
-              ) : data?.reports?.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-8 py-20 text-center">
-                    <div className="flex flex-col items-center gap-3">
-                      <FileText className="w-12 h-12 text-gray-200" />
-                      <p className="text-gray-400 font-bold">لا توجد تقارير متاحة حالياً</p>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                data?.reports?.map((report, idx) => (
-                  <tr key={report.id || `report-${idx}`} className="group hover:bg-gray-50/50 transition-colors">
-                    <td className="px-8 py-6">
-                      <div className="flex items-center gap-4">
-                        <div className={cn(
-                          "w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110",
-                          ((report.data as any)?.sub_type === 'Financial' || (report.data as any)?.sub_type === 'Driver_Payouts' || (report.data as any)?.sub_type === 'Vendor_Payouts') ? "bg-emerald-100 text-emerald-600" : "bg-blue-100 text-blue-600"
-                        )}>
-                          <FileText className="w-6 h-6" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-black text-gray-900">{getReportTypeLabel(report)}</p>
-                          <p className="text-xs text-gray-400 mt-1">بواسطة: {report.profiles?.full_name || 'النظام'}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-8 py-6">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2 text-xs font-bold text-gray-600">
-                          <Calendar className="w-3 h-3 text-emerald-500" />
-                          <span>من: {format(new Date(report.period_start), 'dd MMM yyyy', { locale: ar })}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-xs font-bold text-gray-600">
-                          <Calendar className="w-3 h-3 text-red-400" />
-                          <span>إلى: {format(new Date(report.period_end), 'dd MMM yyyy', { locale: ar })}</span>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-8 py-6">
-                      <p className="text-sm text-gray-600 leading-relaxed max-w-xs line-clamp-2">
-                        {report.summary || 'لا يوجد ملخص متاح'}
-                      </p>
-                    </td>
-                    <td className="px-8 py-6">
-                      <div className="flex items-center gap-2 text-sm text-gray-400 font-medium">
-                        <Clock className="w-4 h-4" />
-                        {format(new Date(report.created_at), 'PPp', { locale: ar })}
-                      </div>
-                    </td>
-                    <td className="px-8 py-6 text-center">
-                      <div className="flex items-center justify-center gap-2">
-                        {report.file_url ? (
-                          <button 
-                            onClick={() => window.open(report.file_url!, '_system')}
-                            className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-700 text-xs font-black rounded-xl hover:bg-emerald-100 transition-all"
-                          >
-                            <Download className="w-4 h-4" />
-                            تحميل EXCEL
-                          </button>
-                        ) : (
-                          <span className="text-gray-300 text-xs font-bold ml-2">غير متاح</span>
-                        )}
-                        
-                        <button
-                          onClick={() => confirmDelete(report.id)}
-                          disabled={deleteMutation.isPending}
-                          className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                          title="حذف التقرير"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+           </div>
+           <div className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                 <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-2xl border border-orange-100 dark:border-orange-900/30">
+                    <p className="text-xs font-bold text-orange-600 dark:text-orange-400 uppercase mb-1">جزاءات السائقين</p>
+                    <h5 className="text-xl font-black text-gray-900 dark:text-white">
+                       {penaltiesReport?.filter((p: any) => p.profile?.user_type === 'driver').reduce((sum: number, p: any) => sum + (p.penalty_amount || 0), 0) || 0} ج.م
+                    </h5>
+                 </div>
+                 <div className="p-4 bg-rose-50 dark:bg-rose-900/20 rounded-2xl border border-rose-100 dark:border-rose-900/30">
+                    <p className="text-xs font-bold text-rose-600 dark:text-rose-400 uppercase mb-1">جزاءات المتاجر</p>
+                    <h5 className="text-xl font-black text-gray-900 dark:text-white">
+                       {penaltiesReport?.filter((p: any) => p.profile?.user_type === 'vendor').reduce((sum: number, p: any) => sum + (p.penalty_amount || 0), 0) || 0} ج.م
+                    </h5>
+                 </div>
+              </div>
+              <div className="overflow-x-auto">
+                 <table className="w-full text-right text-xs">
+                    <thead>
+                       <tr className="text-gray-600 dark:text-gray-400 font-bold border-b border-gray-100 dark:border-gray-700">
+                          <th className="py-3">الفئة</th>
+                          <th className="py-3">النوع</th>
+                          <th className="py-3 text-left">المبلغ</th>
+                       </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
+                       {penaltiesReport?.slice(0, 5).map((p: any, idx: number) => (
+                         <tr key={p.id || idx}>
+                            <td className="py-3 font-medium dark:text-gray-300">{p.penalty_category}</td>
+                            <td className="py-3 dark:text-gray-400">{p.profile?.user_type === 'driver' ? 'سائق' : 'متجر'}</td>
+                            <td className="py-3 text-left font-black text-rose-500 dark:text-rose-400">{p.penalty_amount} ج.م</td>
+                         </tr>
+                       ))}
+                    </tbody>
+                 </table>
+              </div>
+           </div>
         </div>
 
-        {/* Pagination */}
-        {data?.count && data.count > pageSize && (
-          <div className="px-8 py-5 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between">
-            <p className="text-sm text-gray-500 font-medium">
-              عرض <span className="text-gray-900 font-black">{page * pageSize + 1}</span> - <span className="text-gray-900 font-black">{Math.min((page + 1) * pageSize, data.count)}</span> من <span className="text-gray-900 font-black">{data.count}</span> تقرير
-            </p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setPage(p => Math.max(0, p - 1))}
-                disabled={page === 0}
-                className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-all"
-              >
-                السابق
-              </button>
-              <button
-                onClick={() => setPage(p => p + 1)}
-                disabled={(page + 1) * pageSize >= data.count}
-                className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-all"
-              >
-                التالي
-              </button>
-            </div>
+        {/* Support Tickets Table */}
+        <div className="bg-white dark:bg-gray-800 rounded-[2rem] border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden flex flex-col xl:col-span-1 transition-colors">
+          <div className="p-6 border-b border-gray-50 dark:border-gray-700 flex items-center justify-between bg-white dark:bg-gray-800 sticky top-0 z-10">
+             <div className="flex items-center gap-3">
+               <Users className="w-5 h-5 text-purple-500" />
+               <h3 className="font-black text-lg dark:text-white">الشكاوي والنزاعات</h3>
+             </div>
+             <span className="bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 px-3 py-1 rounded-full text-xs font-bold">
+                {supportTickets?.length || 0} تذكرة
+             </span>
           </div>
-        )}
+          <div className="overflow-x-auto max-h-[300px]">
+             <table className="w-full text-right text-xs">
+                <thead className="bg-gray-100 dark:bg-gray-700/50 sticky top-0 z-10 transition-colors">
+                   <tr className="text-gray-900 dark:text-gray-400 font-bold border-b border-gray-200 dark:border-gray-700">
+                      <th className="px-6 py-4">الموضوع</th>
+                      <th className="px-6 py-4">الحالة</th>
+                      <th className="px-6 py-4">الأولوية</th>
+                      <th className="px-6 py-4">التاريخ</th>
+                   </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                   {supportTickets?.map((t: any) => (
+                     <tr key={t.id} className="hover:bg-gray-50/80 dark:hover:bg-gray-700/30 transition-colors">
+                        <td className="px-6 py-4 font-black text-gray-900 dark:text-gray-200 max-w-[200px] truncate">{t.subject}</td>
+                        <td className="px-6 py-4 text-center">
+                           <span className={cn(
+                             "px-2 py-0.5 rounded-full font-black text-[10px]",
+                             t.status === 'resolved' ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-400" : "bg-orange-100 text-orange-900 dark:bg-orange-900/20 dark:text-orange-400"
+                           )}>
+                              {t.status === 'resolved' ? 'تم الحل' : 'قيد المعالجة'}
+                           </span>
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                           <span className={cn(
+                             "font-black",
+                             t.priority === 'urgent' ? "text-red-700 dark:text-red-400" : "text-gray-900 dark:text-gray-500"
+                           )}>
+                              {t.priority}
+                           </span>
+                        </td>
+                        <td className="px-6 py-4 text-gray-900 dark:text-gray-400 font-black">{format(new Date(t.created_at), 'MM/dd')}</td>
+                     </tr>
+                   ))}
+                </tbody>
+             </table>
+          </div>
+        </div>
+
       </div>
 
-      {/* Modals */}
-      {isModalOpen && (
-        <ReportGeneratorModal onClose={() => setIsModalOpen(false)} />
-      )}
+      {/* AI Assistant */}
+      <ReportsAIAssistant />
     </div>
   );
 }
-

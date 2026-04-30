@@ -334,6 +334,8 @@ export default function LiveMap({ embedded = false, initialType = 'all', initial
               lat: customerCoords.lat,
               lng: customerCoords.lng,
               type: 'order',
+              status: o.status,
+              isDelayed: o.status === 'Pending' || o.status === 'Active', // Simplifying logic for map indicator
               title: `${o.customer?.full_name || 'عميل غير معروف'} (#${o.order_number})`,
               phone: o.customer?.primary_phone,
               address: [
@@ -383,43 +385,43 @@ export default function LiveMap({ embedded = false, initialType = 'all', initial
 
 
   return (
-    <div className={cn("w-full h-full relative overflow-hidden", !hideControls && "space-y-6 pb-12 flex flex-col")} dir="rtl">
+    <div className={cn("w-full relative overflow-hidden flex flex-col", hideControls ? "h-full" : "min-h-screen lg:min-h-[calc(100vh-120px)] pb-6")} dir="rtl">
       {/* Header */}
       {!hideControls && (
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 shrink-0">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 px-4 lg:px-0 shrink-0 py-4 lg:py-0">
           <div className="flex items-center gap-4">
-            <div className="p-3.5 bg-blue-100 rounded-2xl shadow-sm">
-              <Activity className="w-7 h-7 text-blue-600" />
+            <div className="p-2.5 lg:p-3.5 bg-blue-100 rounded-2xl shadow-sm">
+              <Activity className="w-5 h-5 lg:w-7 lg:h-7 text-blue-600" />
             </div>
             <div>
-              <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">الخريطة المباشرة</h2>
-              <p className="mt-1 text-gray-500 font-medium">تتبع حي للمتاجر، الطلبات النشطة، وأسطول السائقين.</p>
+              <h2 className="text-xl lg:text-3xl font-extrabold text-gray-900 tracking-tight">الخريطة المباشرة</h2>
+              <p className="hidden lg:block mt-1 text-gray-500 font-medium text-sm">تتبع حي للمتاجر، الطلبات النشطة، وأسطول السائقين.</p>
             </div>
           </div>
           
-          {/* Quick Stats */}
-          <div className="flex gap-4">
-             <div className="bg-white border border-gray-100 p-3 rounded-xl shadow-sm text-center flex-1 min-w-[100px]">
-               <div className="text-xl font-black text-blue-600 font-mono">
+          {/* Quick Stats - More compact on mobile */}
+          <div className="flex gap-2 lg:gap-4 overflow-x-auto no-scrollbar pb-1 lg:pb-0">
+             <div className="bg-white border border-gray-100 p-2 lg:p-3 rounded-xl shadow-sm text-center flex-1 min-w-[80px] lg:min-w-[100px]">
+               <div className="text-lg lg:text-xl font-black text-blue-600 font-mono">
                  {markers.filter(m => m.type === 'driver').length}
                </div>
-               <div className="text-xs text-gray-500 font-bold mt-1 flex items-center justify-center gap-1">
+               <div className="text-[10px] lg:text-xs text-gray-500 font-bold flex items-center justify-center gap-1">
                  <Car className="w-3 h-3" /> متصل
                </div>
              </div>
-               <div className="bg-white border border-gray-100 p-3 rounded-xl shadow-sm text-center flex-1 min-w-[100px]">
-                 <div className="text-xl font-black text-red-600 font-mono">
+               <div className="bg-white border border-gray-100 p-2 lg:p-3 rounded-xl shadow-sm text-center flex-1 min-w-[80px] lg:min-w-[100px]">
+                 <div className="text-lg lg:text-xl font-black text-red-600 font-mono">
                    {markers.filter(m => m.type === 'order').length}
                  </div>
-                 <div className="text-xs text-gray-500 font-bold mt-1 flex items-center justify-center gap-1">
+                 <div className="text-[10px] lg:text-xs text-gray-500 font-bold flex items-center justify-center gap-1">
                    <MapIcon className="w-3 h-3" /> عملاء
                  </div>
                </div>
-             <div className="bg-white border border-gray-100 p-3 rounded-xl shadow-sm text-center flex-1 min-w-[100px]">
-               <div className="text-xl font-black text-emerald-600 font-mono">
+             <div className="bg-white border border-gray-100 p-2 lg:p-3 rounded-xl shadow-sm text-center flex-1 min-w-[80px] lg:min-w-[100px]">
+               <div className="text-lg lg:text-xl font-black text-emerald-600 font-mono">
                  {markers.filter(m => m.type === 'vendor').length}
                </div>
-               <div className="text-xs text-gray-500 font-bold mt-1 flex items-center justify-center gap-1">
+               <div className="text-[10px] lg:text-xs text-gray-500 font-bold flex items-center justify-center gap-1">
                  <Users className="w-3 h-3" /> متاجر
                </div>
              </div>
@@ -427,10 +429,10 @@ export default function LiveMap({ embedded = false, initialType = 'all', initial
         </div>
       )}
 
-      {/* Filters Container */}
+      {/* Filters Container - Sticky on mobile? No, just more compact */}
       {!hideControls && (
-        <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 shrink-0 mt-4 overflow-x-auto">
-          <label className="text-sm font-semibold text-gray-700 whitespace-nowrap">المنطقة:</label>
+        <div className="bg-white p-3 lg:p-4 rounded-xl lg:rounded-2xl shadow-sm border border-gray-100 flex items-center gap-3 lg:gap-4 shrink-0 mx-4 lg:mx-0 mt-2 lg:mt-4 overflow-x-auto no-scrollbar mb-4">
+          <label className="text-xs lg:text-sm font-semibold text-gray-700 whitespace-nowrap">المنطقة:</label>
           <select 
             value={selectedZoneId} 
             onChange={(e) => {
@@ -438,7 +440,7 @@ export default function LiveMap({ embedded = false, initialType = 'all', initial
               setSelectedZoneId(val);
               updateFilters(filterType, filterId, val);
             }}
-            className="border border-gray-200 rounded-lg p-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+            className="border border-gray-200 rounded-lg p-1.5 lg:p-2 text-xs lg:text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
           >
             <option value="all">كل المناطق</option>
             {zones.map(z => (
@@ -446,9 +448,9 @@ export default function LiveMap({ embedded = false, initialType = 'all', initial
             ))}
           </select>
 
-          <div className="h-6 w-px bg-gray-200 mx-2"></div>
+          <div className="h-4 lg:h-6 w-px bg-gray-200 mx-1 lg:mx-2"></div>
 
-          <label className="text-sm font-semibold text-gray-700 whitespace-nowrap">تتبع مباشر:</label>
+          <label className="text-xs lg:text-sm font-semibold text-gray-700 whitespace-nowrap">تتبع:</label>
           <select 
             value={filterType} 
             onChange={(e) => {
@@ -457,12 +459,12 @@ export default function LiveMap({ embedded = false, initialType = 'all', initial
               setFilterId('');
               updateFilters(val, '', selectedZoneId);
             }}
-            className="border border-gray-200 rounded-lg p-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+            className="border border-gray-200 rounded-lg p-1.5 lg:p-2 text-xs lg:text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
           >
-            <option value="all">عرض الكل</option>
-            <option value="driver">سائق معين</option>
-            <option value="order">عميل أو طلب معين</option>
-            <option value="vendor">متجر معين</option>
+            <option value="all">الكل</option>
+            <option value="driver">سائق</option>
+            <option value="order">طلب</option>
+            <option value="vendor">متجر</option>
           </select>
 
           {filterType !== 'all' && (
@@ -473,9 +475,9 @@ export default function LiveMap({ embedded = false, initialType = 'all', initial
                 setFilterId(val);
                 updateFilters(filterType, val, selectedZoneId);
               }}
-              className="border border-gray-200 rounded-lg p-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none min-w-[200px]"
+              className="border border-gray-200 rounded-lg p-1.5 lg:p-2 text-xs lg:text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none min-w-[120px] lg:min-w-[200px]"
             >
-              <option value="">-- اختر للتتبع --</option>
+              <option value="">-- اختر --</option>
               {markers.filter(m => m.type === filterType).map(m => (
                 <option key={m.id} value={m.id}>{m.title}</option>
               ))}
@@ -484,16 +486,24 @@ export default function LiveMap({ embedded = false, initialType = 'all', initial
         </div>
       )}
 
-      {/* Map Container */}
-      <div className={cn("w-full h-full relative", !hideControls && "flex-1 rounded-2xl bg-white shadow-xl overflow-hidden border border-gray-100 flex items-center justify-center")}>
-         <OpenLayerMap 
-            markers={filteredMarkers} 
-            center={activeCenter} 
-            trackingId={filterId || selectedZoneId} 
-            zoom={filterId && filterType !== 'order' ? 17 : 13} 
-            zones={activeZones} 
-            autoFit={!filterId || filterType === 'order'} 
-          />
+      {/* Map Container - Must have enough height/flex to show up */}
+      <div className={cn(
+        "w-full relative flex-1 min-h-[400px]", 
+        !hideControls && "px-4 lg:px-0"
+      )}>
+        <div className={cn(
+          "w-full h-full relative overflow-hidden",
+          !hideControls && "rounded-2xl bg-white shadow-xl border border-gray-100"
+        )}>
+           <OpenLayerMap 
+              markers={filteredMarkers} 
+              center={activeCenter} 
+              trackingId={filterId || selectedZoneId} 
+              zoom={filterId && filterType !== 'order' ? 17 : 13} 
+              zones={activeZones} 
+              autoFit={!filterId || filterType === 'order'} 
+            />
+        </div>
       </div>
     </div>
   );

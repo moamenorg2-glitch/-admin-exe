@@ -47,6 +47,28 @@ export default function OpenLayerMap({ markers, center = [31.2357, 30.0444], zoo
   const [isFollowing, setIsFollowing] = useState(true);
   const lastPropsRef = useRef({ center, zoom, autoFit });
 
+  // Update map size when container is resized
+  useEffect(() => {
+    if (!mapRef.current || !mapElement.current) return;
+    
+    const map = mapRef.current;
+    const observer = new ResizeObserver(() => {
+      map.updateSize();
+    });
+    
+    observer.observe(mapElement.current);
+    
+    // Initial size update after a short delay to account for animations
+    const timer = setTimeout(() => {
+      map.updateSize();
+    }, 300);
+
+    return () => {
+      observer.disconnect();
+      clearTimeout(timer);
+    };
+  }, []);
+
   // Detect manual movement to disable following
   useEffect(() => {
     if (!mapRef.current) return;
@@ -121,12 +143,21 @@ export default function OpenLayerMap({ markers, center = [31.2357, 30.0444], zoo
     });
     overlayRef.current = overlay;
 
+    const isMobile = window.innerWidth < 768;
+
     const initialMap = new Map({
       target: mapElement.current,
-      controls: defaultControls({ attribution: false }),
+      controls: defaultControls({ 
+        attribution: true,
+        rotate: false,
+        zoom: !isMobile
+      }),
       layers: [
         new TileLayer({
-          source: new OSM(),
+          source: new OSM({
+            attributions: '© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors',
+            crossOrigin: 'anonymous'
+          }),
         }),
         vectorLayer,
       ],
@@ -197,6 +228,7 @@ export default function OpenLayerMap({ markers, center = [31.2357, 30.0444], zoo
   useEffect(() => {
     if (!vectorSourceRef.current || !mapRef.current) return;
     
+    const isMobile = window.innerWidth < 768;
     vectorSourceRef.current.clear();
     
     const zoneFeatures: Feature[] = [];
@@ -223,12 +255,12 @@ export default function OpenLayerMap({ markers, center = [31.2357, 30.0444], zoo
           feature.setStyle(
             new Style({
               stroke: new Stroke({
-                color: '#ef4444', // red
-                width: 3,
-                lineDash: [10, 10], // dashed line
+                color: '#dc2626', // red-600
+                width: 2,
+                lineDash: [8, 8],
               }),
               fill: new Fill({
-                color: 'rgba(239, 68, 68, 0.05)', // light red fill
+                color: 'transparent',
               })
             })
           );
@@ -326,9 +358,9 @@ export default function OpenLayerMap({ markers, center = [31.2357, 30.0444], zoo
          const extent = vectorSourceRef.current?.getExtent();
          if (extent && !extent.every(v => v === Infinity || v === -Infinity) && mapRef.current) {
             mapRef.current.getView().fit(extent, {
-              padding: [80, 80, 80, 80],
+              padding: isMobile ? [40, 40, 40, 40] : [80, 80, 80, 80],
               duration: 1000,
-              maxZoom: 16
+              maxZoom: isMobile ? 15 : 16
             });
          }
       }, 100);
@@ -336,8 +368,8 @@ export default function OpenLayerMap({ markers, center = [31.2357, 30.0444], zoo
   }, [markers, zones, autoFit, isFollowing]);
 
   return (
-    <div className="w-full h-full relative border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
-      <div ref={mapElement} className="absolute inset-0 z-0" />
+    <div className="w-full h-full min-h-[400px] relative border border-gray-200 rounded-2xl overflow-hidden shadow-sm bg-slate-50">
+      <div ref={mapElement} className="absolute inset-0 z-0 h-full w-full" />
       
       {/* Follow Toggle Button */}
       {!isFollowing && (

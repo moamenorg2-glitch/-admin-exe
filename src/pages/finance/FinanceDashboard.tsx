@@ -197,7 +197,7 @@ export default function FinanceDashboard() {
             <div>
               <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">إجمالي الأرصدة</p>
               <h3 className="text-2xl font-black text-gray-900 mt-1">
-                {isStatsLoading ? '...' : `${stats?.total?.toLocaleString() || 0} ج.م`}
+                {isStatsLoading ? '...' : `${(stats?.total || 0).toLocaleString()} ج.م`}
               </h3>
             </div>
           </div>
@@ -211,7 +211,7 @@ export default function FinanceDashboard() {
             <div>
               <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">الأرصدة المعلقة</p>
               <h3 className="text-2xl font-black text-gray-900 mt-1">
-                {isStatsLoading ? '...' : `${stats?.pending?.toLocaleString() || 0} ج.م`}
+                {isStatsLoading ? '...' : `${(stats?.pending || 0).toLocaleString()} ج.م`}
               </h3>
             </div>
           </div>

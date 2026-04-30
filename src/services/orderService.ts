@@ -165,6 +165,17 @@ export const orderService = {
 
     if (['Completed', 'Cancelled', 'Rejected'].includes(status)) {
       try {
+        // Fetch order details for financial processing if completed
+        let orderDetails = null;
+        if (status === 'Completed') {
+          const { data } = await supabase
+            .from('master_orders')
+            .select('delivery_fee, driver_tip, order_number')
+            .eq('id', orderId)
+            .single();
+          orderDetails = data;
+        }
+
         // Fetch all drivers associated with this master order
         const { data: deliveryTeam } = await supabase
           .from('order_delivery_team')
@@ -176,6 +187,23 @@ export const orderService = {
           const uniqueDriverIds = Array.from(new Set(driverIds)) as string[];
           
           for (const driverId of uniqueDriverIds) {
+            // If completed, credit the driver's wallet
+            if (status === 'Completed' && orderDetails) {
+              const earnings = Number(orderDetails.delivery_fee || 0) + Number(orderDetails.driver_tip || 0);
+              if (earnings > 0) {
+                // If there are multiple drivers, we might need a policy (split or full)
+                // For now, let's credit the full amount to the driver(s) as a simple implementation
+                // In a real scenario, you might split the delivery fee if there's a team
+                await financeService.adjustWalletBalance(
+                  driverId,
+                  earnings,
+                  'delivery_earnings',
+                  `أرباح توصيل الطلب رقم #${orderDetails.order_number}`,
+                  orderId
+                );
+              }
+            }
+
             // Check if driver has other active orders
             const { data: otherOrders } = await supabase
               .from('order_delivery_team')
@@ -493,9 +521,38 @@ export const orderService = {
       }
 
       const subTax = subTotal * (taxRate / 100);
+      
+      // Calculate vendor commission from zone
+      let vendorCommission = 0;
+      try {
+        const { data: subOrderData } = await supabase
+          .from('sub_orders')
+          .select('vendor_id')
+          .eq('id', subOrder.id)
+          .single();
+          
+        if (subOrderData?.vendor_id) {
+          const { data: vendor } = await supabase
+            .from('vendor_details')
+            .select('commission_rate')
+            .eq('user_id', subOrderData.vendor_id)
+            .single();
+            
+          if (vendor?.commission_rate) {
+            vendorCommission = subTotal * (Number(vendor.commission_rate) / 100);
+          }
+        }
+      } catch (err) {
+        console.error('Error calculating vendor commission:', err);
+      }
+
       await supabase
         .from('sub_orders')
-        .update({ sub_total: subTotal, sub_tax: subTax })
+        .update({ 
+          sub_total: subTotal, 
+          sub_tax: subTax,
+          vendor_commission: vendorCommission 
+        })
         .eq('id', subOrder.id);
 
       masterItemsTotal += subTotal;
