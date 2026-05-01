@@ -221,7 +221,7 @@ export default function CategoriesList() {
 
       {/* Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#000000B3] ">
           <div className="bg-white rounded-3xl shadow-xl w-full max-w-md overflow-hidden">
             <div className="flex items-center justify-between p-6 border-b border-gray-100">
               <h2 className="text-xl font-extrabold text-gray-900">
@@ -294,7 +294,7 @@ export default function CategoriesList() {
       )}
       {/* Delete Confirmation Modal */}
       {categoryToDelete && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-[#000000B3] ">
           <div className="bg-white rounded-3xl shadow-xl w-full max-w-sm overflow-hidden text-right relative z-[10000]">
             <div className="p-6 border-b border-gray-100 flex items-center justify-between">
               <h3 className="text-xl font-extrabold text-gray-900">تأكيد الحذف</h3>

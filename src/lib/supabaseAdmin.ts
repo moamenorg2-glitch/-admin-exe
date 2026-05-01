@@ -77,6 +77,6 @@ export const supabaseAdmin = globalForSupabaseAdmin.supabaseAdmin ?? createClien
   }
 );
 
-if (process.env.NODE_ENV !== 'production') {
+if (import.meta.env.DEV) {
   globalForSupabaseAdmin.supabaseAdmin = supabaseAdmin;
 }

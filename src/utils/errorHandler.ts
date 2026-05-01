@@ -52,28 +52,47 @@ export const handleGlobalError = (error: any, context?: string) => {
   (async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { supabaseAdmin, isAdminKeyAvailable } = await import('../lib/supabaseAdmin');
-        const client = isAdminKeyAvailable ? supabaseAdmin : supabase;
-        
-        await client.from('audit_logs').insert({
-          admin_id: user.id,
-          action_type: 'System_Error',
-          table_name: 'system',
-          record_id: user.id,
-          new_value: { 
-            message, 
-            context, 
-            error: error instanceof Error ? { 
-              name: error.name, 
-              message: error.message,
-              stack: error.stack 
-            } : String(error) 
+      if (!user) return;
+
+      const { supabaseAdmin, isAdminKeyAvailable } = await import('../lib/supabaseAdmin');
+      const client = isAdminKeyAvailable ? supabaseAdmin : supabase;
+      
+      const logData = {
+        admin_id: user.id,
+        action_type: 'System_Error',
+        table_name: 'system',
+        record_id: user.id,
+        new_value: { 
+          message, 
+          context, 
+          error: error instanceof Error ? { 
+            name: error.name, 
+            message: error.message,
+            stack: error.stack 
+          } : String(error) 
+        }
+      };
+
+      // Try logging with a simple retry
+      let retries = 2;
+      while (retries > 0) {
+        try {
+          await client.from('audit_logs').insert(logData);
+          break; // Success
+        } catch (err: any) {
+          retries--;
+          if (retries === 0 || (err?.message && (err.message.includes('Lock') || err.message.includes('stolen')))) {
+            // Silently ignore if it's a lock/concurrency issue or max retries reached
+            if (!(err?.message && (err.message.includes('Lock') || err.message.includes('stolen')))) {
+              console.error('Failed to log error to audit_logs:', err);
+            }
+          } else {
+            await new Promise(resolve => setTimeout(resolve, 500)); // Wait before retry
           }
-        });
+        }
       }
     } catch (err) {
-      console.error('Failed to log error to audit_logs:', err);
+      console.error('Failed to prepare audit log:', err);
     }
   })();
 

@@ -7,7 +7,7 @@ import { ar } from 'date-fns/locale';
 import { Search, Filter, Shield, User, Store, Car, Edit, Ban, CheckCircle, Plus, X, Loader2, Download, Eye, Trash2, Info } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import toast from 'react-hot-toast';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { exportToCSV } from '../../utils/export';
 import { userService } from '../../services/userService';
 import { uploadService } from '../../services/uploadService';
@@ -370,7 +370,7 @@ export default function UsersList({ fixedRole }: UsersListProps) {
       <div className="bg-white shadow-sm overflow-hidden sm:rounded-2xl border border-gray-100">
         <div className="overflow-x-auto">
           <table className="w-full text-right">
-            <thead className="bg-gray-50/50 border-b border-gray-100">
+            <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
                 <th scope="col" className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">
                   المستخدم
@@ -433,7 +433,7 @@ export default function UsersList({ fixedRole }: UsersListProps) {
                         <div className="flex items-center">
                           <div className="flex-shrink-0 h-10 w-10 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden">
                             {user.avatar_url ? (
-                              <img src={user.avatar_url} alt="" className="h-10 w-10 object-cover rounded-full" />
+                              <img src={user.avatar_url} alt="" className="h-10 w-10 object-cover rounded-full" referrerPolicy="no-referrer" />
                             ) : (
                               <Icon className="h-5 w-5 text-gray-400" />
                             )}
@@ -597,7 +597,7 @@ export default function UsersList({ fixedRole }: UsersListProps) {
       {/* Create Customer Modal */}
       <AnimatePresence>
         {isCreateModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#000000B3] ">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -623,7 +623,7 @@ export default function UsersList({ fixedRole }: UsersListProps) {
                     type="file"
                     accept="image/*"
                     onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                   />
                 </div>
                 <div className="space-y-1">
@@ -633,7 +633,7 @@ export default function UsersList({ fixedRole }: UsersListProps) {
                     type="text"
                     value={formData.full_name}
                     onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                     placeholder="أدخل اسم العميل"
                   />
                 </div>
@@ -644,7 +644,7 @@ export default function UsersList({ fixedRole }: UsersListProps) {
                     type="tel"
                     value={formData.primary_phone}
                     onChange={(e) => setFormData({ ...formData, primary_phone: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                     placeholder="01xxxxxxxxx"
                     dir="ltr"
                   />
@@ -655,7 +655,7 @@ export default function UsersList({ fixedRole }: UsersListProps) {
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                     placeholder="example@mail.com"
                     dir="ltr"
                   />
@@ -667,7 +667,7 @@ export default function UsersList({ fixedRole }: UsersListProps) {
                     type="text"
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                     placeholder="أدخل كلمة المرور"
                     dir="ltr"
                   />
@@ -684,7 +684,7 @@ export default function UsersList({ fixedRole }: UsersListProps) {
                           type="text"
                           value={formData.city}
                           onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                           placeholder="القاهرة"
                         />
                       </div>
@@ -694,7 +694,7 @@ export default function UsersList({ fixedRole }: UsersListProps) {
                           type="text"
                           value={formData.district}
                           onChange={(e) => setFormData({ ...formData, district: e.target.value })}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                           placeholder="المعادي"
                         />
                       </div>
@@ -706,7 +706,7 @@ export default function UsersList({ fixedRole }: UsersListProps) {
                         type="text"
                         value={formData.street_name}
                         onChange={(e) => setFormData({ ...formData, street_name: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                         placeholder="شارع 9"
                       />
                     </div>
@@ -718,7 +718,7 @@ export default function UsersList({ fixedRole }: UsersListProps) {
                           type="text"
                           value={formData.building_number}
                           onChange={(e) => setFormData({ ...formData, building_number: e.target.value })}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                           placeholder="12"
                         />
                       </div>
@@ -728,7 +728,7 @@ export default function UsersList({ fixedRole }: UsersListProps) {
                           type="text"
                           value={formData.floor_number}
                           onChange={(e) => setFormData({ ...formData, floor_number: e.target.value })}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                           placeholder="3"
                         />
                       </div>
@@ -738,7 +738,7 @@ export default function UsersList({ fixedRole }: UsersListProps) {
                           type="text"
                           value={formData.apartment_number}
                           onChange={(e) => setFormData({ ...formData, apartment_number: e.target.value })}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                           placeholder="301"
                         />
                       </div>
@@ -750,7 +750,7 @@ export default function UsersList({ fixedRole }: UsersListProps) {
                         type="text"
                         value={formData.landmark}
                         onChange={(e) => setFormData({ ...formData, landmark: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                         placeholder="بجوار صيدلية..."
                       />
                     </div>
@@ -782,7 +782,7 @@ export default function UsersList({ fixedRole }: UsersListProps) {
       {/* Edit User Modal */}
       <AnimatePresence>
         {isEditModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#000000B3] ">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -807,7 +807,7 @@ export default function UsersList({ fixedRole }: UsersListProps) {
                     type="text"
                     value={formData.full_name}
                     onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                     placeholder="أدخل الاسم"
                   />
                 </div>
@@ -818,7 +818,7 @@ export default function UsersList({ fixedRole }: UsersListProps) {
                     type="tel"
                     value={formData.primary_phone}
                     onChange={(e) => setFormData({ ...formData, primary_phone: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                     placeholder="01xxxxxxxxx"
                     dir="ltr"
                   />
@@ -829,7 +829,7 @@ export default function UsersList({ fixedRole }: UsersListProps) {
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                     placeholder="example@mail.com"
                     dir="ltr"
                   />
@@ -840,7 +840,7 @@ export default function UsersList({ fixedRole }: UsersListProps) {
                     type="text"
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                     placeholder="اتركها فارغة إذا لم ترد التغيير"
                     dir="ltr"
                   />
@@ -857,7 +857,7 @@ export default function UsersList({ fixedRole }: UsersListProps) {
                           type="text"
                           value={formData.city}
                           onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                           placeholder="القاهرة"
                         />
                       </div>
@@ -867,7 +867,7 @@ export default function UsersList({ fixedRole }: UsersListProps) {
                           type="text"
                           value={formData.district}
                           onChange={(e) => setFormData({ ...formData, district: e.target.value })}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                           placeholder="المعادي"
                         />
                       </div>
@@ -879,7 +879,7 @@ export default function UsersList({ fixedRole }: UsersListProps) {
                         type="text"
                         value={formData.street_name}
                         onChange={(e) => setFormData({ ...formData, street_name: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                         placeholder="شارع 9"
                       />
                     </div>
@@ -891,7 +891,7 @@ export default function UsersList({ fixedRole }: UsersListProps) {
                           type="text"
                           value={formData.building_number}
                           onChange={(e) => setFormData({ ...formData, building_number: e.target.value })}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                           placeholder="12"
                         />
                       </div>
@@ -901,7 +901,7 @@ export default function UsersList({ fixedRole }: UsersListProps) {
                           type="text"
                           value={formData.floor_number}
                           onChange={(e) => setFormData({ ...formData, floor_number: e.target.value })}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                           placeholder="3"
                         />
                       </div>
@@ -911,7 +911,7 @@ export default function UsersList({ fixedRole }: UsersListProps) {
                           type="text"
                           value={formData.apartment_number}
                           onChange={(e) => setFormData({ ...formData, apartment_number: e.target.value })}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                           placeholder="301"
                         />
                       </div>
@@ -923,7 +923,7 @@ export default function UsersList({ fixedRole }: UsersListProps) {
                         type="text"
                         value={formData.landmark}
                         onChange={(e) => setFormData({ ...formData, landmark: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                         placeholder="بجوار صيدلية..."
                       />
                     </div>
@@ -939,7 +939,7 @@ export default function UsersList({ fixedRole }: UsersListProps) {
                         type="text"
                         value={formData.vendor_address}
                         onChange={(e) => setFormData({ ...formData, vendor_address: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                         placeholder="أدخل عنوان المتجر"
                       />
                     </div>
@@ -949,7 +949,7 @@ export default function UsersList({ fixedRole }: UsersListProps) {
                         type="text"
                         value={formData.tax_registration_number}
                         onChange={(e) => setFormData({ ...formData, tax_registration_number: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                         placeholder="أدخل الرقم الضريبي"
                       />
                     </div>
@@ -981,7 +981,7 @@ export default function UsersList({ fixedRole }: UsersListProps) {
       {/* View User Modal */}
       <AnimatePresence>
         {isViewModalOpen && selectedUser && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#000000B3] ">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -1179,7 +1179,7 @@ export default function UsersList({ fixedRole }: UsersListProps) {
       {/* Delete Confirmation Modal */}
       <AnimatePresence>
         {isDeleteDialogOpen && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-[#000000B3] ">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}

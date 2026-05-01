@@ -220,7 +220,7 @@ export default function ZonesList() {
       <div className="bg-white shadow-sm overflow-hidden sm:rounded-3xl border border-gray-100">
         <div className="overflow-x-auto">
           <table className="w-full text-right">
-            <thead className="bg-gray-50/50 border-b border-gray-100">
+            <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
                 <th scope="col" className="px-8 py-5 text-right text-xs font-bold text-gray-500 uppercase tracking-widest">
                   المنطقة
@@ -259,7 +259,7 @@ export default function ZonesList() {
                 </tr>
               ) : (
                 data?.zones?.map((zone) => (
-                  <tr key={zone.zone_id} className="hover:bg-gray-50/50 transition-colors group">
+                  <tr key={zone.zone_id} className="hover:bg-gray-50 transition-colors group">
                     <td className="px-8 py-5 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-12 w-12 bg-emerald-50 rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform">

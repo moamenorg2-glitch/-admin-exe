@@ -12,7 +12,7 @@ export default function SystemSettings() {
   const [formData, setFormData] = useState<ISystemSettings | null>(null);
 
   const { data: settings, isLoading } = useQuery({
-    queryKey: ['system_settings'],
+    queryKey: ['system-settings'],
     queryFn: async () => {
       try {
         const data = await settingsService.fetchSettings();
@@ -32,8 +32,8 @@ export default function SystemSettings() {
       await settingsService.updateSettings(newSettings);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['system_settings'] }).catch((err) => {
-        console.error('Critical: Error invalidating system_settings query:', err);
+      queryClient.invalidateQueries({ queryKey: ['system-settings'] }).catch((err) => {
+        console.error('Critical: Error invalidating system-settings query:', err);
       });
       toast.success('تم حفظ الإعدادات بنجاح');
       setIsEditing(false);

@@ -30,7 +30,7 @@ export default function PenaltyFormModal({ onClose, initialUserId, initialUserNa
       if (!searchQuery || searchQuery.length < 3) return [];
       const { data, error } = await supabase
         .from('profiles')
-        .select('user_id, full_name, primary_phone, user_type')
+        .select('user_id, full_name, primary_phone, user_type, avatar_url')
         .or(`full_name.ilike.%${searchQuery}%,primary_phone.ilike.%${searchQuery}%`)
         .limit(5);
       
@@ -104,10 +104,10 @@ export default function PenaltyFormModal({ onClose, initialUserId, initialUserNa
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" dir="rtl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#000000B3] " dir="rtl">
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-red-100 rounded-xl">
               <ShieldAlert className="w-5 h-5 text-red-600" />
@@ -154,8 +154,12 @@ export default function PenaltyFormModal({ onClose, initialUserId, initialUserNa
                             onClick={() => setSelectedUser(user)}
                             className="p-3 hover:bg-gray-50 cursor-pointer flex items-center gap-3 transition-colors"
                           >
-                            <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                              <User className="w-4 h-4 text-gray-500" />
+                            <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden border border-gray-200">
+                              {user.avatar_url ? (
+                                <img src={user.avatar_url} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                              ) : (
+                                <User className="w-4 h-4 text-gray-500" />
+                              )}
                             </div>
                             <div>
                               <div className="text-sm font-bold text-gray-900">{user.full_name}</div>
@@ -173,8 +177,12 @@ export default function PenaltyFormModal({ onClose, initialUserId, initialUserNa
             ) : (
               <div className="flex items-center justify-between p-4 bg-emerald-50 border border-emerald-100 rounded-xl">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
-                    <User className="w-5 h-5 text-emerald-600" />
+                  <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center overflow-hidden border border-emerald-200">
+                    {selectedUser.avatar_url ? (
+                      <img src={selectedUser.avatar_url} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                    ) : (
+                      <User className="w-5 h-5 text-emerald-600" />
+                    )}
                   </div>
                   <div>
                     <div className="text-sm font-bold text-gray-900">{selectedUser.full_name}</div>

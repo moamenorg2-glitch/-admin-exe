@@ -4,7 +4,7 @@ import { supabase } from '../../lib/supabase';
 import { Search, Filter, Store, Edit, Star, CheckCircle, XCircle, Plus, X, Loader2, Download, Trash2, Ban, Info, MapPin } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import toast from 'react-hot-toast';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { exportToCSV } from '../../utils/export';
 import { vendorService } from '../../services/vendorService';
 import { userService } from '../../services/userService';
@@ -386,7 +386,7 @@ export default function VendorsList() {
       <div className="bg-white shadow-sm overflow-hidden sm:rounded-2xl border border-gray-100">
         <div className="overflow-x-auto">
           <table className="w-full text-right">
-            <thead className="bg-gray-50/50 border-b border-gray-100">
+            <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
                 <th scope="col" className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">
                   المتجر
@@ -595,7 +595,7 @@ export default function VendorsList() {
       {/* Create Vendor Modal */}
       <AnimatePresence>
         {isCreateModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#000000B3] ">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -620,7 +620,7 @@ export default function VendorsList() {
                       type="file"
                       accept="image/*"
                       onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                     />
                   </div>
                   <div className="space-y-1">
@@ -630,7 +630,7 @@ export default function VendorsList() {
                       type="text"
                       value={formData.brand_name}
                       onChange={(e) => setFormData({ ...formData, brand_name: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                       placeholder="أدخل اسم المتجر"
                     />
                   </div>
@@ -641,7 +641,7 @@ export default function VendorsList() {
                       type="tel"
                       value={formData.primary_phone}
                       onChange={(e) => setFormData({ ...formData, primary_phone: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                       placeholder="01xxxxxxxxx"
                       dir="ltr"
                     />
@@ -652,7 +652,7 @@ export default function VendorsList() {
                       required
                       value={formData.category_id}
                       onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                     >
                       <option value="">اختر التصنيف</option>
                       {categories?.map((cat) => (
@@ -668,7 +668,7 @@ export default function VendorsList() {
                       required
                       value={formData.zone_id}
                       onChange={(e) => setFormData({ ...formData, zone_id: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                     >
                       <option value="">اختر المنطقة</option>
                       {zones?.map((zone) => (
@@ -687,7 +687,7 @@ export default function VendorsList() {
                       max="100"
                       value={formData.commission_rate}
                       onChange={(e) => setFormData({ ...formData, commission_rate: Number(e.target.value) })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                     />
                   </div>
                   <div className="space-y-1">
@@ -698,7 +698,7 @@ export default function VendorsList() {
                       min="0"
                       value={formData.min_order_value}
                       onChange={(e) => setFormData({ ...formData, min_order_value: Number(e.target.value) })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                     />
                   </div>
                   <div className="space-y-1">
@@ -707,7 +707,7 @@ export default function VendorsList() {
                       type="email"
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                       placeholder="example@mail.com"
                       dir="ltr"
                     />
@@ -719,7 +719,7 @@ export default function VendorsList() {
                       type="text"
                       value={formData.password}
                       onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                       placeholder="أدخل كلمة المرور"
                       dir="ltr"
                     />
@@ -730,7 +730,7 @@ export default function VendorsList() {
                       type="text"
                       value={formData.tax_registration_number}
                       onChange={(e) => setFormData({ ...formData, tax_registration_number: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                       placeholder="أدخل رقم السجل التجاري"
                     />
                   </div>
@@ -746,7 +746,7 @@ export default function VendorsList() {
                       type="text"
                       value={formData.address}
                       onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                       placeholder="أدخل عنوان المتجر"
                     />
                   </div>
@@ -781,7 +781,7 @@ export default function VendorsList() {
                       min="0"
                       value={formData.preparation_time_avg}
                       onChange={(e) => setFormData({ ...formData, preparation_time_avg: Number(e.target.value) })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                     />
                   </div>
                 </div>
@@ -811,7 +811,7 @@ export default function VendorsList() {
       {/* Edit Vendor Modal */}
       <AnimatePresence>
         {isEditModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#000000B3] ">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -863,7 +863,7 @@ export default function VendorsList() {
                       type="file"
                       accept="image/*"
                       onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                     />
                   </div>
                   <div className="space-y-1">
@@ -873,7 +873,7 @@ export default function VendorsList() {
                       type="text"
                       value={formData.brand_name}
                       onChange={(e) => setFormData({ ...formData, brand_name: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                       placeholder="أدخل اسم المتجر"
                     />
                   </div>
@@ -884,7 +884,7 @@ export default function VendorsList() {
                       type="tel"
                       value={formData.primary_phone}
                       onChange={(e) => setFormData({ ...formData, primary_phone: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                       placeholder="01xxxxxxxxx"
                       dir="ltr"
                     />
@@ -895,7 +895,7 @@ export default function VendorsList() {
                       required
                       value={formData.category_id}
                       onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                     >
                       <option value="">اختر التصنيف</option>
                       {categories?.map((cat) => (
@@ -911,7 +911,7 @@ export default function VendorsList() {
                       required
                       value={formData.zone_id}
                       onChange={(e) => setFormData({ ...formData, zone_id: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                     >
                       <option value="">اختر المنطقة</option>
                       {zones?.map((zone) => (
@@ -928,7 +928,7 @@ export default function VendorsList() {
                       type="number"
                       value={formData.commission_rate}
                       onChange={(e) => setFormData({ ...formData, commission_rate: Number(e.target.value) })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                       min="0"
                       max="100"
                     />
@@ -940,7 +940,7 @@ export default function VendorsList() {
                       type="number"
                       value={formData.min_order_value}
                       onChange={(e) => setFormData({ ...formData, min_order_value: Number(e.target.value) })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                       min="0"
                     />
                   </div>
@@ -950,7 +950,7 @@ export default function VendorsList() {
                       type="text"
                       value={formData.password}
                       onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                       placeholder="اتركها فارغة إذا لم ترد التغيير"
                       dir="ltr"
                     />
@@ -961,7 +961,7 @@ export default function VendorsList() {
                       type="text"
                       value={formData.tax_registration_number}
                       onChange={(e) => setFormData({ ...formData, tax_registration_number: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                       placeholder="أدخل رقم السجل التجاري"
                     />
                   </div>
@@ -977,7 +977,7 @@ export default function VendorsList() {
                       type="text"
                       value={formData.address}
                       onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                       placeholder="أدخل عنوان المتجر"
                     />
                   </div>
@@ -1012,7 +1012,7 @@ export default function VendorsList() {
                       min="0"
                       value={formData.preparation_time_avg}
                       onChange={(e) => setFormData({ ...formData, preparation_time_avg: Number(e.target.value) })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                     />
                   </div>
                 </div>
@@ -1042,7 +1042,7 @@ export default function VendorsList() {
       {/* Delete Vendor Confirmation Modal */}
       <AnimatePresence>
         {isDeleteVendorModalOpen && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-[#000000B3] ">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}

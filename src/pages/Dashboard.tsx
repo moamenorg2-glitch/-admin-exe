@@ -1,7 +1,7 @@
 import { ShoppingCart, Users, Store, Bike, AlertCircle, Download, Calendar, Filter,
   ChevronDown, MoreHorizontal, Activity, TrendingUp, DollarSign, ArrowUpRight, ArrowDownRight, Package, XCircle
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   PieChart, Pie, Cell
@@ -97,7 +97,7 @@ export default function Dashboard() {
     return (
       <div className="min-h-[400px] flex flex-col items-center justify-center">
         <div className="relative w-16 h-16 mb-4">
-          <div className="absolute inset-0 border-4 border-emerald-100 dark:border-emerald-900/30 rounded-full"></div>
+          <div className="absolute inset-0 border-4 border-emerald-100 dark:border-emerald-900 rounded-full"></div>
           <div className="absolute inset-0 border-4 border-emerald-600 rounded-full border-t-transparent animate-spin"></div>
         </div>
         <p className="text-sm text-slate-400 font-bold animate-pulse">جاري جلب أحدث البيانات...</p>
@@ -111,7 +111,6 @@ export default function Dashboard() {
       {/* Top Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 border-b border-slate-100 pb-6 dark:border-slate-800">
         <div>
-          <h2 className="text-[22px] font-black text-slate-900 dark:text-white">زاجل إكسبريس</h2>
           <p className="text-[13px] text-slate-400 font-medium tracking-wide">لوحة تحكم إدارة الخدمات اللوجستية</p>
         </div>
         
@@ -181,15 +180,15 @@ export default function Dashboard() {
             exit={{ height: 0, opacity: 0 }}
             className="mb-6 overflow-hidden"
           >
-            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 rounded-xl p-4 flex items-start gap-4">
-              <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-800/40 flex items-center justify-center shrink-0">
+            <div className="bg-amber-50 dark:bg-amber-900 border border-amber-200 dark:border-amber-800 rounded-xl p-4 flex items-start gap-4">
+              <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-800 flex items-center justify-center shrink-0">
                 <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
               </div>
               <div className="flex-1">
                 <h4 className="text-sm font-bold text-amber-900 dark:text-amber-200 mb-1">تنبيهات جودة البيانات (ذكاء اصطناعي)</h4>
                 <div className="space-y-2">
                   {conflicts.map((order: any) => (
-                    <div key={order.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2 bg-white/50 dark:bg-black/20 rounded-lg border border-amber-100 dark:border-amber-800/20">
+                    <div key={order.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2 bg-[#FFFFFF80] dark:bg-[#000000B3] rounded-lg border border-amber-100 dark:border-amber-800">
                       <p className="text-[11px] text-amber-800 dark:text-amber-300 font-medium">الطلب <span className="font-mono">#{order.order_number || order.id.substring(0, 6)}</span> قيمته مرتفعة جداً ({order.grand_total} ج.م) ولم يتم تأكيده بعد.</p>
                       <button className="text-[10px] font-black bg-amber-600 text-white px-3 py-1 rounded-md hover:bg-amber-700 transition-colors whitespace-nowrap">اقتراح معالجة الـ AI</button>
                     </div>
@@ -204,7 +203,7 @@ export default function Dashboard() {
       {/* Row 1: 6 Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
         {statCards.map((card, i) => (
-          <div key={i} className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-100 dark:border-slate-700/50 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow group">
+          <div key={i} className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-100 dark:border-slate-700 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow group">
             <div className="flex items-start gap-4 mb-2">
               <div className={cn("w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-transform group-hover:scale-110", card.iconBg)}>
                 <card.icon className="w-5 h-5" />
@@ -232,7 +231,7 @@ export default function Dashboard() {
       {/* Row 3: Most Active Categories & Revenue */}
       <div className="flex flex-col lg:flex-row gap-6 mb-6">
         {/* Most Active Categories (1/3) */}
-        <div className="w-full lg:w-1/3 bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-100 dark:border-slate-700/50 shadow-sm">
+        <div className="w-full lg:w-1/3 bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-100 dark:border-slate-700 shadow-sm">
           <div className="mb-8">
             <h3 className="text-sm font-bold text-slate-900 dark:text-white">الفئات الأكثر نشاطاً</h3>
             <p className="text-[10px] text-slate-400">تحليل أداء الأقسام</p>
@@ -256,8 +255,8 @@ export default function Dashboard() {
         </div>
 
         {/* Total Revenue (2/3) */}
-        <div className="w-full lg:w-2/3 bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-100 dark:border-slate-700/50 shadow-sm flex flex-col justify-between">
-          <div className="flex justify-between items-start mb-6 border-b border-slate-50 dark:border-slate-700/50 pb-4">
+        <div className="w-full lg:w-2/3 bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-100 dark:border-slate-700 shadow-sm flex flex-col justify-between">
+          <div className="flex justify-between items-start mb-6 border-b border-slate-50 dark:border-slate-700 pb-4">
             <div>
               <h3 className="text-sm font-bold text-slate-900 dark:text-white">إجمالي الإيرادات</h3>
               <p className="text-[10px] text-slate-400 leading-tight">ملخص مبيعات المنصة</p>
@@ -289,7 +288,7 @@ export default function Dashboard() {
       {/* Row 4: Top Vendors, Top Products, Drivers */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
         {/* Top Vendors (1/3) */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-100 dark:border-slate-700/50 shadow-sm">
+        <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-100 dark:border-slate-700 shadow-sm">
           <div className="mb-8">
             <h3 className="text-sm font-bold text-slate-900 dark:text-white">المتاجر الأكثر طلباً</h3>
             <p className="text-[10px] text-slate-400">حصة المبيعات لكل متجر</p>
@@ -313,7 +312,7 @@ export default function Dashboard() {
         </div>
 
         {/* Top Products (1/3) */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-100 dark:border-slate-700/50 shadow-sm">
+        <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-100 dark:border-slate-700 shadow-sm">
           <div className="mb-6">
             <h3 className="text-sm font-bold text-slate-900 dark:text-white">المنتجات الأكثر طلباً</h3>
             <p className="text-[10px] text-slate-400">توزيع الطلبات على المنتجات</p>
@@ -329,14 +328,14 @@ export default function Dashboard() {
                   </PieChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="w-full h-full rounded-full border-4 border-slate-50 dark:border-slate-700/50 flex items-center justify-center">
+                <div className="w-full h-full rounded-full border-4 border-slate-50 dark:border-slate-700 flex items-center justify-center">
                    <Package className="w-10 h-10 text-slate-200 dark:text-slate-700" />
                 </div>
               )}
             </div>
             <div className="w-full space-y-2">
               {productData.length > 0 ? productData.map((item, i) => (
-                <div key={i} className="flex justify-between items-center bg-slate-50 dark:bg-slate-700/50 rounded-lg p-2 border border-slate-100 dark:border-slate-700">
+                <div key={i} className="flex justify-between items-center bg-slate-50 dark:bg-slate-700 rounded-lg p-2 border border-slate-100 dark:border-slate-700">
                   <div className="flex items-center gap-2 overflow-hidden">
                     <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: item.color }}></div>
                     <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 truncate">{item.name}</span>
@@ -351,7 +350,7 @@ export default function Dashboard() {
         </div>
 
         {/* Delivery Drivers (1/3) */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-100 dark:border-slate-700/50 shadow-sm">
+        <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-100 dark:border-slate-700 shadow-sm">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-sm font-bold text-slate-900 dark:text-white">مناديب التوصيل</h3>
             <Link to="/drivers" className="text-[10px] font-bold text-slate-400 cursor-pointer hover:text-blue-500">عرض الكل</Link>
@@ -386,7 +385,7 @@ export default function Dashboard() {
       </div>
 
       {/* Row 5: Active Orders Table */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700/50 shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
         <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-white dark:bg-slate-800">
           <h3 className="text-base font-bold text-slate-900 dark:text-white">الطلبات النشطة</h3>
         </div>
@@ -404,7 +403,7 @@ export default function Dashboard() {
             </thead>
             <tbody className="divide-y divide-slate-50 dark:divide-slate-700/50 text-xs font-medium">
               {(dashboardData?.recentOrders?.length ? dashboardData.recentOrders : []).map((order: any) => (
-                <tr key={order.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors bg-white dark:bg-slate-800">
+                <tr key={order.id} className="hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors bg-white dark:bg-slate-800">
                   <td className="py-5 px-6 text-slate-400 font-mono">#{order.order_number || order.id.substring(0, 6)}</td>
                   <td className="py-5 px-6">
                     <div className="flex items-center gap-3">

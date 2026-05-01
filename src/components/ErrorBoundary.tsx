@@ -56,7 +56,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
         <div className="min-h-screen flex items-center justify-center bg-[#151521] p-4 text-right" dir="rtl">
           <div className="bg-[#1E1E2D] p-10 rounded-[2rem] shadow-2xl max-w-lg w-full text-center border border-gray-800">
             <div className="flex justify-center mb-8">
-              <div className="bg-red-500/10 p-6 rounded-full border border-red-500/20">
+              <div className="bg-red-500 p-6 rounded-full border border-red-500">
                 <AlertTriangle className="h-16 w-16 text-red-500" />
               </div>
             </div>
@@ -69,7 +69,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
                 sessionStorage.setItem('boundary_recovery_count', '0');
                 window.location.reload();
               }}
-              className="w-full flex items-center justify-center gap-3 bg-emerald-600 text-white py-4 px-6 rounded-2xl hover:bg-emerald-700 transition-all font-black shadow-lg shadow-emerald-500/20"
+              className="w-full flex items-center justify-center gap-3 bg-emerald-600 text-white py-4 px-6 rounded-2xl hover:bg-emerald-700 transition-all font-black shadow-lg shadow-emerald-500"
             >
               <RefreshCw className="w-6 h-6" />
               تحديث واجهة التطبيق

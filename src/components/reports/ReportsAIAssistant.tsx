@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { askGemini } from '../../services/geminiService';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../lib/supabase';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -25,6 +25,7 @@ interface Message {
 
 export default function ReportsAIAssistant() {
   const [isOpen, setIsOpen] = React.useState(false);
+  const [hasOpened, setHasOpened] = React.useState(false);
   const [isMinimized, setIsMinimized] = React.useState(false);
   const [isFullScreen, setIsFullScreen] = React.useState(true);
   const [input, setInput] = React.useState('');
@@ -41,6 +42,12 @@ export default function ReportsAIAssistant() {
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
+
+  React.useEffect(() => {
+    if (isOpen && !hasOpened) {
+      setHasOpened(true);
+    }
+  }, [isOpen, hasOpened]);
 
   React.useEffect(() => {
     if (isOpen && !isMinimized) {
@@ -171,8 +178,9 @@ export default function ReportsAIAssistant() {
       >
         <Bot className="w-8 h-8" />
         <div className={cn(
-          "absolute -top-1 -right-1 w-5 h-5 rounded-full border-2 border-white animate-pulse",
-          messages.length > 1 ? "bg-green-500" : "bg-red-500"
+          "absolute -top-1 -right-1 w-5 h-5 rounded-full border-2 border-white",
+          !hasOpened && "animate-pulse",
+          hasOpened ? "bg-green-500" : "bg-red-500"
         )} />
       </motion.button>
 
@@ -200,7 +208,7 @@ export default function ReportsAIAssistant() {
             {/* Header */}
             <div className="bg-blue-600 p-4 flex items-center justify-between text-white shadow-lg shrink-0">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-white/20 rounded-xl">
+                <div className="p-2 bg-[#FFFFFF80] rounded-xl">
                   <Bot className="w-6 h-6" />
                 </div>
                 <div>
@@ -214,7 +222,7 @@ export default function ReportsAIAssistant() {
               <div className="flex items-center gap-1">
                 <button 
                   onClick={() => setIsFullScreen(!isFullScreen)}
-                  className="p-2 hover:bg-white/10 rounded-lg transition-colors hidden md:block"
+                  className="p-2 hover:bg-[#FFFFFF80] rounded-lg transition-colors hidden md:block"
                   title={isFullScreen ? "تصغير" : "ملء الشاشة"}
                 >
                   <MessageSquare className="w-4 h-4" />
@@ -224,13 +232,13 @@ export default function ReportsAIAssistant() {
                     if (isFullScreen) setIsFullScreen(false);
                     setIsMinimized(!isMinimized);
                   }}
-                  className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                  className="p-2 hover:bg-[#FFFFFF80] rounded-lg transition-colors"
                 >
                   {isMinimized ? <Maximize2 className="w-4 h-4" /> : <Minimize2 className="w-4 h-4" />}
                 </button>
                 <button 
                   onClick={() => setIsOpen(false)}
-                  className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                  className="p-2 hover:bg-[#FFFFFF80] rounded-lg transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -241,7 +249,7 @@ export default function ReportsAIAssistant() {
             {!isMinimized && (
               <>
                 {/* Messages Area */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50/50 dark:bg-slate-900/50 transition-colors">
+                <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50 dark:bg-slate-900 transition-colors">
                   {messages.map((msg, idx) => (
                     <div 
                       key={idx}
@@ -266,7 +274,7 @@ export default function ReportsAIAssistant() {
                     </div>
                   ))}
                   {isLoading && (
-                    <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 animate-pulse bg-blue-50/50 dark:bg-blue-900/30 w-fit p-3 rounded-2xl transition-colors">
+                    <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 animate-pulse bg-blue-50 dark:bg-blue-900 w-fit p-3 rounded-2xl transition-colors">
                       <Loader2 className="w-4 h-4 animate-spin" />
                       <span className="text-xs font-bold">جاري التفكير وتحليل البيانات...</span>
                     </div>

@@ -49,7 +49,7 @@ export default function AssignDriverModal({ isOpen, onClose, onAssign, isAssigni
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-[#000000B3]">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden text-right relative z-[10000]">
         <div className="p-4 border-b border-gray-100 flex items-center justify-between">
           <h3 className="font-bold text-gray-900">تعيين مندوب توصيل</h3>

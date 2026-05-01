@@ -2,7 +2,7 @@ import { ReactNode, useState, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import { cn } from '../../lib/utils';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useLocation } from 'react-router-dom';
 
 interface DashboardLayoutProps {

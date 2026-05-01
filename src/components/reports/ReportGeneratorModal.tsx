@@ -209,15 +209,15 @@ export default function ReportGeneratorModal({ onClose }: ReportGeneratorModalPr
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" dir="rtl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#000000B3] " dir="rtl">
       <div className={cn(
         "bg-white dark:bg-gray-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col transition-all duration-300",
         previewData ? "w-full max-w-5xl h-[80vh]" : "w-full max-w-lg"
       )}>
         {/* Header */}
-        <div className="px-6 py-5 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/20">
+        <div className="px-6 py-5 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between bg-gray-50 dark:bg-[#111827B3]">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-xl">
+            <div className="p-2 bg-emerald-100 dark:bg-emerald-900 rounded-xl">
               <FileText className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
             </div>
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">
@@ -251,7 +251,7 @@ export default function ReportGeneratorModal({ onClose }: ReportGeneratorModalPr
                       className={cn(
                         "flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all gap-2",
                         reportType === type.id 
-                          ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 shadow-sm" 
+                          ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-400 shadow-sm" 
                           : "border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 hover:border-emerald-200"
                       )}
                     >
@@ -291,7 +291,7 @@ export default function ReportGeneratorModal({ onClose }: ReportGeneratorModalPr
               </div>
 
               {/* Info Box */}
-              <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-2xl border border-blue-100 dark:border-blue-900/30 flex gap-3">
+              <div className="p-4 bg-blue-50 dark:bg-blue-900 rounded-2xl border border-blue-100 dark:border-blue-900 flex gap-3">
                 <CheckCircle2 className="w-5 h-5 text-blue-500 flex-shrink-0" />
                 <p className="text-xs text-blue-700 dark:text-blue-300 leading-relaxed">
                   سيتم عرض البيانات أولاً للمراجعة، ثم يمكنك تحميلها كملف Excel.
@@ -308,14 +308,14 @@ export default function ReportGeneratorModal({ onClose }: ReportGeneratorModalPr
                   <ArrowRight className="w-4 h-4" />
                   العودة للإعدادات
                 </button>
-                <div className="text-sm font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-1 rounded-full">
+                <div className="text-sm font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900 px-3 py-1 rounded-full">
                   {previewData.length} سجل تم العثور عليه
                 </div>
               </div>
               
               <div className="flex-1 border border-gray-100 dark:border-gray-700 rounded-2xl overflow-hidden overflow-x-auto bg-white dark:bg-gray-900 shadow-inner transition-colors">
                 <table className="w-full text-right text-sm border-collapse">
-                  <thead className="bg-gray-100/80 dark:bg-gray-800 sticky top-0 z-10 backdrop-blur-md">
+                  <thead className="bg-gray-100 dark:bg-gray-800 sticky top-0 z-10 ">
                     <tr>
                       {Object.keys(previewData[0] || {}).map((key) => (
                         <th key={key} className="px-6 py-4 font-black text-gray-700 dark:text-gray-200 border-b border-gray-200 dark:border-gray-700 whitespace-nowrap">{key}</th>
@@ -324,7 +324,7 @@ export default function ReportGeneratorModal({ onClose }: ReportGeneratorModalPr
                   </thead>
                   <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                     {previewData.map((row, i) => (
-                      <tr key={i} className="hover:bg-emerald-50/30 dark:hover:bg-emerald-900/10 transition-colors">
+                      <tr key={i} className="hover:bg-emerald-50 dark:hover:bg-emerald-900 transition-colors">
                         {Object.values(row).map((val: any, j) => (
                           <td key={j} className="px-6 py-4 text-gray-600 dark:text-gray-300 font-medium whitespace-nowrap">
                             {val === null || val === undefined ? '-' : 

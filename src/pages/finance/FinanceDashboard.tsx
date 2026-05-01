@@ -222,7 +222,7 @@ export default function FinanceDashboard() {
       <div className="bg-white shadow-sm overflow-hidden sm:rounded-3xl border border-gray-100">
         <div className="overflow-x-auto">
           <table className="w-full text-right">
-            <thead className="bg-gray-50/50 border-b border-gray-100">
+            <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
                 <th scope="col" className="px-8 py-5 text-right text-xs font-bold text-gray-500 uppercase tracking-widest">
                   المستخدم
@@ -261,7 +261,7 @@ export default function FinanceDashboard() {
                 </tr>
               ) : (
                 data?.wallets?.map((wallet, idx) => (
-                  <tr key={wallet.user_id || `wallet-${idx}`} className="hover:bg-gray-50/50 transition-colors group">
+                  <tr key={wallet.user_id || `wallet-${idx}`} className="hover:bg-gray-50 transition-colors group">
                     <td className="px-8 py-5 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-12 w-12 bg-gray-50 rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform border border-gray-100">
@@ -396,9 +396,9 @@ export default function FinanceDashboard() {
 
       {/* Adjustment Modal */}
       {selectedWallet && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#000000B3] ">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
-            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
               <h3 className="text-xl font-black text-gray-900">تعديل رصيد المحفظة</h3>
               <button onClick={() => setSelectedWallet(null)} className="text-gray-400 hover:text-gray-600 transition-colors">
                 <X className="w-6 h-6" />

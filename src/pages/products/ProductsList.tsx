@@ -268,7 +268,7 @@ export default function ProductsList() {
       <div className="bg-white shadow-sm overflow-hidden sm:rounded-3xl border border-gray-100">
         <div className="overflow-x-auto">
           <table className="w-full text-right">
-            <thead className="bg-gray-50/50 border-b border-gray-100">
+            <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
                 <th scope="col" className="px-8 py-5 text-right text-xs font-bold text-gray-500 uppercase tracking-widest">
                   المنتج
@@ -311,7 +311,7 @@ export default function ProductsList() {
                 </tr>
               ) : (
                 data?.products?.map((product) => (
-                  <tr key={product.id} className="hover:bg-gray-50/50 transition-colors group">
+                  <tr key={product.id} className="hover:bg-gray-50 transition-colors group">
                     <td className="px-8 py-5 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-14 w-14 bg-gray-50 rounded-full overflow-hidden border border-gray-100 group-hover:scale-105 transition-transform">
@@ -397,7 +397,7 @@ export default function ProductsList() {
         
         {/* Pagination */}
         {data?.count && data.count > pageSize && (
-          <div className="bg-gray-50/30 px-8 py-5 border-t border-gray-100 flex items-center justify-between">
+          <div className="bg-gray-50 px-8 py-5 border-t border-gray-100 flex items-center justify-between">
             <div className="flex-1 flex justify-between sm:hidden">
               <button
                 onClick={() => setPage(p => Math.max(0, p - 1))}
@@ -467,7 +467,7 @@ export default function ProductsList() {
       {/* Add/Edit Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity" onClick={() => setIsModalOpen(false)}></div>
+          <div className="fixed inset-0 bg-[#111827B3]  transition-opacity" onClick={() => setIsModalOpen(false)}></div>
           <div className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden border border-gray-100">
             <div className="px-8 pt-8 pb-6 flex-shrink-0 border-b border-gray-50">
               <div className="flex justify-between items-center">
@@ -584,7 +584,7 @@ export default function ProductsList() {
               </div>
             </div>
 
-            <div className="px-8 py-6 bg-gray-50/50 border-t border-gray-50 flex flex-col sm:flex-row-reverse gap-3">
+            <div className="px-8 py-6 bg-gray-50 border-t border-gray-50 flex flex-col sm:flex-row-reverse gap-3">
               <button
                 type="button"
                 onClick={() => upsertProductMutation.mutate(formData)}

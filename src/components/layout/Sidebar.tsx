@@ -22,6 +22,18 @@ export default function Sidebar({ isOpen, isCollapsed, onClose }: SidebarProps) 
 
   const [openGroups, setOpenGroups] = useState<string[]>([]);
 
+  const { data: settings } = useQuery({
+    queryKey: ['system-settings'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('system_settings')
+        .select('appLogo, app_name')
+        .single();
+      if (error) throw error;
+      return data;
+    }
+  });
+
   const { data: permissions } = useQuery({
     queryKey: ['permissions', profile?.user_id],
     queryFn: async () => {
@@ -175,16 +187,26 @@ export default function Sidebar({ isOpen, isCollapsed, onClose }: SidebarProps) 
         isOpen ? "translate-x-0" : "translate-x-full lg:translate-x-0",
         isCollapsed ? "w-20" : "w-56"
       )}>
-        <div className="h-16 flex items-center justify-between border-b border-gray-800/50 px-6 flex-shrink-0 lg:hidden">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-emerald-600 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-emerald-500/20 rotate-3">
-              Z
+        <div className="h-16 flex items-center justify-between border-b border-gray-800 px-6 flex-shrink-0">
+          <div className="flex items-center gap-3 overflow-hidden">
+            <div className={cn(
+              "flex-shrink-0 flex items-center justify-center overflow-hidden transition-all duration-300",
+              settings?.appLogo ? "" : "bg-emerald-600 rounded-xl shadow-lg shadow-emerald-500/20 rotate-3 border border-emerald-500/30",
+              isCollapsed ? "w-10 h-10" : "w-9 h-9"
+            )}>
+              {settings?.appLogo ? (
+                <img src={settings.appLogo} alt="Logo" className="w-full h-full object-contain" />
+              ) : (
+                <span className="text-white font-black text-lg italic">Z</span>
+              )}
             </div>
-            <h1 className="text-lg font-black text-white uppercase tracking-tight">
-              زاجل
-            </h1>
+            {!isCollapsed && (
+              <h1 className="text-lg font-black text-white uppercase tracking-tight truncate">
+                {settings?.app_name || 'زاجل'}
+              </h1>
+            )}
           </div>
-          <button onClick={onClose} className="lg:hidden p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg">
+          <button onClick={onClose} className="lg:hidden p-2 text-gray-400 hover:text-white hover:bg-[#FFFFFF80] rounded-lg">
             <X className="w-6 h-6" />
           </button>
         </div>
@@ -202,8 +224,8 @@ export default function Sidebar({ isOpen, isCollapsed, onClose }: SidebarProps) 
                     className={({ isActive }) =>
                       cn(
                         isActive
-                          ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20'
-                          : 'text-gray-400 hover:bg-emerald-500/10 hover:text-white',
+                          ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600'
+                          : 'text-gray-400 hover:bg-emerald-500 hover:text-white',
                         'group flex items-center px-3 py-2.5 text-sm font-bold rounded-xl transition-all duration-300 mb-1',
                         isCollapsed && 'justify-center px-0 mx-2'
                       )
@@ -222,7 +244,7 @@ export default function Sidebar({ isOpen, isCollapsed, onClose }: SidebarProps) 
                           />
                           {counts && (counts as any)[item.name] > 0 && (
                             <span className={cn(
-                              "absolute -top-2 flex h-[18px] min-w-[18px] items-center justify-center rounded-lg bg-red-500 px-1 text-[10px] font-black text-white shadow-lg shadow-red-500/20 border-2 border-[#1E1E2D]",
+                              "absolute -top-2 flex h-[18px] min-w-[18px] items-center justify-center rounded-lg bg-red-500 px-1 text-[10px] font-black text-white shadow-lg shadow-red-500 border-2 border-[#1E1E2D]",
                               isCollapsed ? "-right-2" : "right-1"
                             )}>
                               {(counts as any)[item.name]}
@@ -248,7 +270,7 @@ export default function Sidebar({ isOpen, isCollapsed, onClose }: SidebarProps) 
                       <div className="flex items-center gap-2">
                         <span>{group}</span>
                         {groupCounts[group] > 0 && (
-                          <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-black text-white shadow-lg shadow-red-500/20">
+                          <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-black text-white shadow-lg shadow-red-500">
                             {groupCounts[group]}
                           </span>
                         )}
@@ -280,8 +302,8 @@ export default function Sidebar({ isOpen, isCollapsed, onClose }: SidebarProps) 
                         className={({ isActive }) =>
                           cn(
                             isActive
-                              ? 'bg-emerald-600/10 text-emerald-500 font-bold'
-                              : 'text-gray-400 hover:bg-emerald-500/5 hover:text-white',
+                              ? 'bg-emerald-600 text-emerald-500 font-bold'
+                              : 'text-gray-400 hover:bg-emerald-500 hover:text-white',
                             'group flex items-center px-4 py-2 text-sm rounded-xl transition-all duration-300',
                             !isCollapsed && 'mr-4 mb-0.5',
                             isCollapsed && 'justify-center px-0 mb-1'
@@ -301,7 +323,7 @@ export default function Sidebar({ isOpen, isCollapsed, onClose }: SidebarProps) 
                               />
                               {counts && (counts as any)[item.name] > 0 && (
                                 <span className={cn(
-                                  "absolute -top-2 flex h-[16px] min-w-[16px] items-center justify-center rounded-md bg-red-500 px-1 text-[9px] font-black text-white shadow-lg shadow-red-500/20 border-2 border-[#1E1E2D]",
+                                  "absolute -top-2 flex h-[16px] min-w-[16px] items-center justify-center rounded-md bg-red-500 px-1 text-[9px] font-black text-white shadow-lg shadow-red-500 border-2 border-[#1E1E2D]",
                                   isCollapsed ? "-right-2" : "right-1"
                                 )}>
                                   {(counts as any)[item.name]}

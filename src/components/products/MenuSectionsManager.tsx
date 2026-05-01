@@ -95,7 +95,7 @@ export default function MenuSectionsManager({ vendorId, onClose }: MenuSectionsM
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-      <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={onClose}></div>
+      <div className="fixed inset-0 bg-[#111827B3] " onClick={onClose}></div>
       <div className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-lg flex flex-col overflow-hidden border border-gray-100">
         <div className="px-8 py-6 border-b border-gray-50 flex justify-between items-center">
           <h3 className="text-xl font-black text-gray-900">إدارة أقسام القائمة</h3>

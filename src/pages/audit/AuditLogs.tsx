@@ -383,7 +383,7 @@ export default function AuditLogs() {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {Object.entries(data).map(([key, value]) => (
-          <div key={key} className="flex flex-col p-3 bg-gray-50/50 rounded-xl border border-gray-100">
+          <div key={key} className="flex flex-col p-3 bg-gray-50 rounded-xl border border-gray-100">
             <span className="text-[10px] font-black text-gray-400 uppercase mb-1">
               {fieldNamesAr[key] || key}
             </span>
@@ -459,7 +459,7 @@ export default function AuditLogs() {
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="flex items-center gap-4">
-          <div className="bg-emerald-500 p-3.5 rounded-2xl shadow-lg shadow-emerald-200/50">
+          <div className="bg-emerald-500 p-3.5 rounded-2xl shadow-lg shadow-emerald-200">
             <History className="h-7 w-7 text-white" />
           </div>
           <div>
@@ -473,7 +473,7 @@ export default function AuditLogs() {
             type="button"
             onClick={(e) => handleClearAll(e)}
             disabled={isDeleting || logs.length === 0}
-            className="flex items-center gap-2 px-6 py-3 bg-rose-500 text-white rounded-2xl font-bold hover:bg-rose-600 transition-all shadow-lg shadow-rose-200/50 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap active:scale-95 cursor-pointer z-10"
+            className="flex items-center gap-2 px-6 py-3 bg-rose-500 text-white rounded-2xl font-bold hover:bg-rose-600 transition-all shadow-lg shadow-rose-200 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap active:scale-95 cursor-pointer z-10"
           >
             <Trash2 className="h-5 w-5" />
             حذف الكل
@@ -486,7 +486,7 @@ export default function AuditLogs() {
               placeholder="بحث برقم السجل..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full sm:w-72 pr-12 pl-4 py-3 bg-white border-2 border-gray-100 rounded-2xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none font-medium text-gray-700 placeholder:text-gray-400 shadow-sm"
+              className="w-full sm:w-72 pr-12 pl-4 py-3 bg-white border-2 border-gray-100 rounded-2xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500 transition-all outline-none font-medium text-gray-700 placeholder:text-gray-400 shadow-sm"
             />
           </div>
 
@@ -495,7 +495,7 @@ export default function AuditLogs() {
             <select
               value={tableFilter}
               onChange={(e) => setTableFilter(e.target.value)}
-              className="w-full sm:w-64 pr-12 pl-4 py-3 bg-white border-2 border-gray-100 rounded-2xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none font-bold text-gray-700 appearance-none shadow-sm cursor-pointer"
+              className="w-full sm:w-64 pr-12 pl-4 py-3 bg-white border-2 border-gray-100 rounded-2xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500 transition-all outline-none font-bold text-gray-700 appearance-none shadow-sm cursor-pointer"
             >
               <option value="All">جميع العمليات المسجلة</option>
               <optgroup label="الجداول المراقبة (الأهم)">
@@ -522,11 +522,11 @@ export default function AuditLogs() {
       </div>
 
       {/* Table Section */}
-      <div className="bg-white shadow-xl shadow-gray-200/50 overflow-hidden sm:rounded-[2.5rem] border border-gray-100">
+      <div className="bg-white shadow-xl shadow-gray-200 overflow-hidden sm:rounded-[2.5rem] border border-gray-100">
         <div className="overflow-x-auto">
           <table className="w-full text-right border-collapse">
             <thead>
-              <tr className="bg-gray-50/50 border-b border-gray-100">
+              <tr className="bg-gray-50 border-b border-gray-100">
                 <th className="px-8 py-6 text-right text-xs font-black text-gray-500 uppercase tracking-[0.2em]">التاريخ</th>
                 <th className="px-8 py-6 text-right text-xs font-black text-gray-500 uppercase tracking-[0.2em]">المسؤول</th>
                 <th className="px-8 py-6 text-right text-xs font-black text-gray-500 uppercase tracking-[0.2em]">العملية</th>
@@ -541,7 +541,7 @@ export default function AuditLogs() {
                 <tr>
                   <td colSpan={7} className="px-8 py-20 text-center">
                     <div className="flex flex-col items-center gap-3">
-                      <div className="w-10 h-10 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin"></div>
+                      <div className="w-10 h-10 border-4 border-emerald-500 border-t-emerald-500 rounded-full animate-spin"></div>
                       <span className="text-gray-500 font-bold">جاري التحميل...</span>
                     </div>
                   </td>
@@ -571,7 +571,7 @@ export default function AuditLogs() {
                 </tr>
               ) : (
                 logs.map((log) => (
-                  <tr key={log.id} className="hover:bg-gray-50/80 transition-colors group">
+                  <tr key={log.id} className="hover:bg-gray-50 transition-colors group">
                     <td className="px-8 py-5 whitespace-nowrap">
                       <div className="flex flex-col">
                         <span className="text-sm font-bold text-gray-900">
@@ -621,7 +621,7 @@ export default function AuditLogs() {
                       <div className="flex items-center justify-center gap-2">
                         <button 
                           onClick={() => setSelectedLog(log)}
-                          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-50 text-emerald-700 text-sm font-bold hover:bg-emerald-100 transition-colors border border-emerald-100/50"
+                          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-50 text-emerald-700 text-sm font-bold hover:bg-emerald-100 transition-colors border border-emerald-100"
                         >
                           <Info className="h-4 w-4" />
                           عرض
@@ -646,7 +646,7 @@ export default function AuditLogs() {
 
         {/* Pagination Controls */}
         {totalPages > 1 && (
-          <div className="px-8 py-4 border-t border-gray-100 flex items-center justify-between bg-gray-50/50">
+          <div className="px-8 py-4 border-t border-gray-100 flex items-center justify-between bg-gray-50">
             <div className="text-sm text-gray-500 font-medium">
               إجمالي السجلات: <span className="font-bold text-gray-900">{totalCount}</span>
             </div>
@@ -675,9 +675,9 @@ export default function AuditLogs() {
 
       {/* View Details Modal */}
       {selectedLog && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-[#000000B3]  flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl">
-            <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+            <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-gray-50">
               <div className="flex items-center gap-3">
                 <h3 className="text-xl font-bold text-gray-900">تفاصيل السجل</h3>
                 {isResolving && (

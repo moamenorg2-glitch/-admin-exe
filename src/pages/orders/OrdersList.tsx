@@ -1,10 +1,10 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../lib/supabase';
 import { format, differenceInMinutes } from 'date-fns';
 import { ar } from 'date-fns/locale';
-import { Search, Filter, Eye, AlertCircle, Clock, Motorbike, User, Store, MessageSquare, X, Download, RefreshCw, History, Settings, Phone, CheckCircle2, MapPin, ChevronDown, ArrowUp, ArrowDown, UserPlus, Zap, Trash2, Hash } from 'lucide-react';
+import { Search, Filter, Eye, AlertCircle, Clock, Motorbike, User, Store, MessageSquare, X, Download, RefreshCw, History, Settings, Phone, CheckCircle2, MapPin, ChevronDown, ArrowUp, ArrowDown, UserPlus, Zap, Trash2, Hash, LayoutGrid, List } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { getDelayStatus } from '../../utils/orderUtils';
 import OrderDetailsPanel from '../../components/orders/OrderDetailsPanel';
@@ -47,12 +47,15 @@ const paymentStatusNames: Record<string, string> = {
 };
 
 const paymentMethodStyles: Record<string, string> = {
-  'نقداً': 'bg-red-100 text-red-700',
-  'Cash': 'bg-red-100 text-red-700',
-  'بطاقة': 'bg-purple-100 text-purple-700',
-  'Card': 'bg-purple-100 text-purple-700',
-  'محفظة': 'bg-green-100 text-green-700',
-  'Wallet': 'bg-green-100 text-green-700',
+  'نقداً': 'bg-red-100 text-red-800 border-red-200',
+  'Cash': 'bg-red-100 text-red-800 border-red-200',
+  'cash': 'bg-red-100 text-red-800 border-red-200',
+  'بطاقة': 'bg-purple-100 text-purple-800 border-purple-200',
+  'Card': 'bg-purple-100 text-purple-800 border-purple-200',
+  'card': 'bg-purple-100 text-purple-800 border-purple-200',
+  'محفظة': 'bg-emerald-100 text-emerald-800 border-emerald-200',
+  'Wallet': 'bg-emerald-100 text-emerald-800 border-emerald-200',
+  'wallet': 'bg-emerald-100 text-emerald-800 border-emerald-200',
 };
 
 const statusOrder: Record<OrderStatus, number> = {
@@ -88,6 +91,7 @@ export default function OrdersList() {
   const [assigningDriverOrderId, setAssigningDriverOrderId] = useState<string | null>(null);
   const [selectedHistoryOrder, setSelectedHistoryOrder] = useState<any | null>(null);
   const [activeTab, setActiveTab] = useState<'current' | 'completed' | 'cancelled'>('current');
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
   
   // Thresholds state
   const [prepThreshold, setPrepThreshold] = useState(() => {
@@ -421,9 +425,9 @@ export default function OrdersList() {
       <div className="bg-white dark:bg-slate-800 rounded-[2rem] shadow-sm border border-gray-100 dark:border-slate-700 overflow-visible mb-6 z-10 relative">
         
         {/* Top Header: Tabs */}
-        <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center p-4 xl:p-5 border-b border-gray-100/80 dark:border-slate-700/80 bg-gray-50/30 dark:bg-slate-800/50 gap-4">
+        <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center p-4 xl:p-5 border-b border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 gap-4">
           {/* Tabs */}
-          <div className="flex bg-gray-100/80 dark:bg-slate-900/50 p-1.5 rounded-2xl border border-gray-200/50 dark:border-slate-700/50 w-full xl:w-fit">
+          <div className="flex bg-gray-100 dark:bg-slate-900 p-1.5 rounded-2xl border border-gray-200 dark:border-slate-700 w-full xl:w-fit">
             <button
               onClick={() => {
                 setActiveTab('current');
@@ -432,7 +436,7 @@ export default function OrdersList() {
               className={cn(
                 "px-6 py-2.5 rounded-xl text-sm font-black transition-all cursor-pointer flex-1 xl:flex-none text-center",
                 activeTab === 'current' 
-                  ? "bg-emerald-600 text-white shadow-md shadow-emerald-500/20"
+                  ? "bg-emerald-600 text-white shadow-md shadow-emerald-500"
                   : "text-gray-500 dark:text-gray-400 hover:text-emerald-700 dark:hover:text-emerald-400 hover:bg-white dark:hover:bg-slate-800"
               )}
             >
@@ -446,7 +450,7 @@ export default function OrdersList() {
               className={cn(
                 "px-6 py-2.5 rounded-xl text-sm font-black transition-all cursor-pointer flex-1 xl:flex-none text-center",
                 activeTab === 'completed' 
-                  ? "bg-emerald-600 text-white shadow-md shadow-emerald-500/20"
+                  ? "bg-emerald-600 text-white shadow-md shadow-emerald-500"
                   : "text-gray-500 dark:text-gray-400 hover:text-emerald-700 dark:hover:text-emerald-400 hover:bg-white dark:hover:bg-slate-800"
               )}
             >
@@ -460,7 +464,7 @@ export default function OrdersList() {
               className={cn(
                 "px-6 py-2.5 rounded-xl text-sm font-black transition-all cursor-pointer flex-1 xl:flex-none text-center",
                 activeTab === 'cancelled' 
-                  ? "bg-emerald-600 text-white shadow-md shadow-emerald-500/20"
+                  ? "bg-emerald-600 text-white shadow-md shadow-emerald-500"
                   : "text-gray-500 dark:text-gray-400 hover:text-emerald-700 dark:hover:text-emerald-400 hover:bg-white dark:hover:bg-slate-800"
               )}
             >
@@ -468,9 +472,38 @@ export default function OrdersList() {
             </button>
           </div>
 
-          <div className="hidden xl:flex items-center gap-2 text-gray-400 text-xs font-bold">
-            <Hash className="w-3.5 h-3.5" />
-            <span>عرض {sortedOrders.length} من {statsData.count} طلب</span>
+          <div className="flex w-full xl:w-auto items-center justify-between xl:justify-end gap-4 border-t border-gray-200 dark:border-slate-700 xl:border-0 pt-4 xl:pt-0 mt-2 xl:mt-0">
+            <div className="flex bg-gray-100 dark:bg-slate-900 p-1 rounded-xl border border-gray-200 dark:border-slate-700">
+              <button
+                onClick={() => setViewMode('grid')}
+                className={cn(
+                  "p-1.5 rounded-lg transition-all",
+                  viewMode === 'grid' 
+                    ? "bg-white dark:bg-slate-800 text-emerald-600 shadow-sm" 
+                    : "text-gray-500 hover:text-emerald-500"
+                )}
+                title="عرض شبكي"
+              >
+                <LayoutGrid className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setViewMode('table')}
+                className={cn(
+                  "p-1.5 rounded-lg transition-all",
+                  viewMode === 'table' 
+                    ? "bg-white dark:bg-slate-800 text-emerald-600 shadow-sm" 
+                    : "text-gray-500 hover:text-emerald-500"
+                )}
+                title="عرض في جدول"
+              >
+                <List className="w-4 h-4" />
+              </button>
+            </div>
+            
+            <div className="flex items-center gap-2 text-gray-400 text-xs font-bold">
+              <Hash className="w-3.5 h-3.5" />
+              <span>عرض {sortedOrders.length} من {statsData.count} طلب</span>
+            </div>
           </div>
         </div>
 
@@ -486,7 +519,7 @@ export default function OrdersList() {
                 placeholder="بحث برقم الطلب، اسم العميل، رقم الهاتف، أو اسم المتجر..."
                 value={searchQuery || ''}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="block w-full pr-12 pl-4 py-3 bg-gray-50 dark:bg-slate-900/50 border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:bg-white dark:focus:bg-slate-800 text-sm font-bold transition-all shadow-inner dark:text-white"
+                className="block w-full pr-12 pl-4 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:bg-white dark:focus:bg-slate-800 text-sm font-bold transition-all shadow-inner dark:text-white"
               />
             </div>
 
@@ -497,7 +530,7 @@ export default function OrdersList() {
               <select
                 value={dateRange}
                 onChange={(e) => setDateRange(e.target.value as any)}
-                className="block w-full pr-11 pl-4 py-3 bg-gray-50 dark:bg-slate-900/50 border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:bg-white dark:focus:bg-slate-800 text-sm font-bold appearance-none transition-all shadow-inner dark:text-white"
+                className="block w-full pr-11 pl-4 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:bg-white dark:focus:bg-slate-800 text-sm font-bold appearance-none transition-all shadow-inner dark:text-white"
               >
                 <option value="all">جميع التواريخ</option>
                 <option value="today">اليوم</option>
@@ -512,7 +545,7 @@ export default function OrdersList() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={clearFilters}
-                className="inline-flex items-center justify-center px-4 py-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-black text-xs rounded-xl hover:bg-red-100 dark:hover:bg-red-900/40 transition-all border border-red-100 dark:border-red-900/30 cursor-pointer lg:w-auto w-full shrink-0"
+                className="inline-flex items-center justify-center px-4 py-3 bg-red-50 dark:bg-red-900 text-red-600 dark:text-red-400 font-black text-xs rounded-xl hover:bg-red-100 dark:hover:bg-red-900 transition-all border border-red-100 dark:border-red-900 cursor-pointer lg:w-auto w-full shrink-0"
               >
                 <X className="w-4 h-4 ml-1.5" />
                 مسح الفلاتر
@@ -526,7 +559,7 @@ export default function OrdersList() {
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
-                className="flex flex-wrap gap-4 items-center p-3.5 bg-gray-50/50 dark:bg-slate-800/50 rounded-xl border border-gray-100 dark:border-slate-700 overflow-hidden"
+                className="flex flex-wrap gap-4 items-center p-3.5 bg-gray-50 dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 overflow-hidden"
               >
                 <div className="flex items-center gap-3">
                   <label className="text-xs font-black text-gray-500 dark:text-gray-400">من:</label>
@@ -551,7 +584,7 @@ export default function OrdersList() {
           </AnimatePresence>
 
           {/* Unified Actions Row: Status, Sort, and Quick Actions */}
-          <div className="flex flex-col xl:flex-row xl:items-end gap-5 p-5 bg-gray-50/80 dark:bg-slate-800/80 rounded-2xl border border-gray-200/50 dark:border-slate-700/50">
+          <div className="flex flex-col xl:flex-row xl:items-end gap-5 p-5 bg-gray-50 dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700">
             {activeTab === 'current' && (
               <>
                 <div className="flex-1 space-y-2.5">
@@ -570,7 +603,7 @@ export default function OrdersList() {
                         className={cn(
                           "px-3.5 py-1.5 rounded-xl text-[11px] font-black border transition-all tracking-wide cursor-pointer",
                           selectedStatuses.includes(key as OrderStatus)
-                            ? "bg-emerald-600 border-emerald-600 text-white shadow-md shadow-emerald-500/20"
+                            ? "bg-emerald-600 border-emerald-600 text-white shadow-md shadow-emerald-500"
                             : "bg-white dark:bg-slate-700 border-gray-200 dark:border-slate-600 text-gray-600 dark:text-gray-300 hover:border-emerald-300 dark:hover:border-emerald-700 hover:bg-emerald-50 dark:hover:bg-slate-600 hover:text-emerald-700 dark:hover:text-emerald-400 shadow-sm"
                         )}
                       >
@@ -603,7 +636,7 @@ export default function OrdersList() {
                     className={cn(
                       "px-3 py-1.5 rounded-xl text-[10px] font-black transition-all border flex items-center gap-1 cursor-pointer",
                       sortConfig?.key === col.key 
-                        ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/50"
+                        ? "bg-emerald-50 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800"
                         : "bg-white dark:bg-slate-700 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-slate-600 hover:bg-emerald-50 dark:hover:bg-slate-600 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-200 dark:hover:border-emerald-700 shadow-sm"
                     )}
                   >
@@ -645,7 +678,7 @@ export default function OrdersList() {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => refetch().catch(console.error)}
-                  className="inline-flex items-center justify-center w-[34px] h-[34px] bg-emerald-600 border border-emerald-500 shadow-md shadow-emerald-500/20 text-white rounded-xl hover:bg-emerald-700 hover:border-emerald-600 transition-all cursor-pointer"
+                  className="inline-flex items-center justify-center w-[34px] h-[34px] bg-emerald-600 border border-emerald-500 shadow-md shadow-emerald-500 text-white rounded-xl hover:bg-emerald-700 hover:border-emerald-600 transition-all cursor-pointer"
                 >
                   <RefreshCw className={cn("w-3.5 h-3.5", (isFetching || isLoading) && "animate-spin")} />
                 </motion.button>
@@ -656,8 +689,9 @@ export default function OrdersList() {
 
       </div>
 
-      {/* Cards Grid */}
-      <div className={cn("grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 transition-opacity duration-300", isFetching && !isLoading ? "opacity-60" : "")}>
+            {/* View Container */}
+      {viewMode === 'grid' ? (
+        <div className={cn("grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 transition-opacity duration-300", isFetching && !isLoading ? "opacity-60" : "")}>
         {isLoading ? (
           Array.from({ length: 6 }).map((_, index) => (
             <div key={`orders-skeleton-${index}`} className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 animate-pulse flex flex-col gap-4">
@@ -683,16 +717,16 @@ export default function OrdersList() {
                 key={order.id} 
                 className={cn(
                   "bg-white dark:bg-slate-800 rounded-3xl border shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] hover:shadow-xl transition-all duration-300 flex flex-col overflow-hidden relative group/card",
-                  delay.isDelayed ? "border-red-200 dark:border-red-900/50" : "border-gray-100 dark:border-slate-700"
+                  delay.isDelayed ? "border-red-200 dark:border-red-900" : "border-gray-100 dark:border-slate-700"
                 )}
               >
                 
                 {/* Header Section */}
                 <div className={cn(
-                  "p-3.5 border-b flex items-start justify-between backdrop-blur-md",
+                  "p-3.5 border-b flex items-start justify-between ",
                   delay.isDelayed 
-                    ? "bg-gradient-to-r from-red-50/80 to-white dark:from-red-900/20 dark:to-slate-800 border-red-50 dark:border-red-900/30" 
-                    : "bg-gradient-to-r from-gray-50/80 to-white dark:from-slate-800/80 dark:to-slate-800 border-gray-50 dark:border-slate-700/50"
+                    ? "bg-gradient-to-r from-red-50/80 to-white dark:from-red-900/20 dark:to-slate-800 border-red-50 dark:border-red-900" 
+                    : "bg-gradient-to-r from-gray-50/80 to-white dark:from-slate-800/80 dark:to-slate-800 border-gray-50 dark:border-slate-700"
                 )}>
                   <div className="flex items-center gap-3">
                     {true && (
@@ -749,9 +783,9 @@ export default function OrdersList() {
                           type: 'customer', 
                           data: { ...order.customer, address: order.address, masterOrderId: order.id } 
                         })}
-                        className="flex items-center text-right group/info bg-gray-50 hover:bg-emerald-50 dark:bg-slate-700/30 dark:hover:bg-slate-700 p-2 rounded-2xl transition-all cursor-pointer border border-transparent hover:border-emerald-100 dark:hover:border-slate-600"
+                        className="flex items-center text-right group/info bg-gray-50 hover:bg-emerald-50 dark:bg-slate-700 dark:hover:bg-slate-700 p-2 rounded-2xl transition-all cursor-pointer border border-transparent hover:border-emerald-100 dark:hover:border-slate-600"
                       >
-                        <div className="h-8 w-8 rounded-full bg-white dark:bg-slate-600 flex items-center justify-center border border-gray-200 dark:border-slate-500 group-hover/info:border-emerald-200 dark:group-hover/info:border-emerald-500/50 shadow-sm overflow-hidden shrink-0 transition-colors">
+                        <div className="h-8 w-8 rounded-full bg-white dark:bg-slate-600 flex items-center justify-center border border-gray-200 dark:border-slate-500 group-hover/info:border-emerald-200 dark:group-hover/info:border-emerald-500 shadow-sm overflow-hidden shrink-0 transition-colors">
                           {order.customer?.avatar_url ? (
                             <img 
                               src={order.customer.avatar_url} 
@@ -766,10 +800,10 @@ export default function OrdersList() {
                         <div className="mr-2.5 overflow-hidden flex-1 flex flex-row items-center justify-between gap-2">
                           <div className="text-sm font-bold text-gray-800 dark:text-gray-200 group-hover/info:text-emerald-700 dark:group-hover/info:text-emerald-400 truncate">{order.customer?.full_name || 'غير معروف'}</div>
                           <div className="flex items-center gap-1.5 shrink-0">
-                            <span className="text-[10px] bg-emerald-100/50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-1.5 py-0.5 rounded-md font-bold" title="طلبات مكتملة">
+                            <span className="text-[10px] bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-400 px-1.5 py-0.5 rounded-md font-bold" title="طلبات مكتملة">
                               ✓ {order.customer?.order_history?.filter((h: any) => h.status === 'Completed').length || 0}
                             </span>
-                            <span className="text-[10px] bg-red-100/50 dark:bg-red-900/30 text-red-700 dark:text-red-400 px-1.5 py-0.5 rounded-md font-bold" title="طلبات ملغية">
+                            <span className="text-[10px] bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-400 px-1.5 py-0.5 rounded-md font-bold" title="طلبات ملغية">
                               ✗ {order.customer?.order_history?.filter((h: any) => ['Cancelled', 'Rejected'].includes(h.status)).length || 0}
                             </span>
                           </div>
@@ -779,13 +813,13 @@ export default function OrdersList() {
                   )}
 
                   {true && (
-                    <div className="flex flex-col gap-1.5 border-t border-gray-100/60 dark:border-slate-700/60 pt-3">
+                    <div className="flex flex-col gap-1.5 border-t border-gray-100 dark:border-slate-700 pt-3">
                       <span className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest pl-1">المتاجر</span>
                       {order.sub_orders?.length > 1 ? (
                         <div className="relative">
                           <motion.button
                             onClick={() => setOpenVendorDropdownId(openVendorDropdownId === order.id ? null : order.id)}
-                            className="flex items-center justify-between w-full text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-2.5 rounded-xl border border-emerald-100 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-all cursor-pointer shadow-sm"
+                            className="flex items-center justify-between w-full text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900 px-3 py-2.5 rounded-xl border border-emerald-100 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900 transition-all cursor-pointer shadow-sm"
                           >
                             <div className="flex items-center gap-2">
                               <Store className="w-3.5 h-3.5" />
@@ -800,13 +834,13 @@ export default function OrdersList() {
                                 initial={{ opacity: 0, y: -5, height: 0 }}
                                 animate={{ opacity: 1, y: 0, height: 'auto' }}
                                 exit={{ opacity: 0, y: -5, height: 0 }}
-                                className="overflow-hidden bg-white dark:bg-slate-800 rounded-b-xl border-x border-b border-emerald-100 dark:border-emerald-800/50 flex flex-col shadow-lg absolute w-full z-10"
+                                className="overflow-hidden bg-white dark:bg-slate-800 rounded-b-xl border-x border-b border-emerald-100 dark:border-emerald-800 flex flex-col shadow-lg absolute w-full z-10"
                               >
                                 {order.sub_orders.map((so: any) => (
                                   <motion.button 
                                     key={so.id} 
                                     onClick={() => { setInfoModal({ type: 'vendor', data: { ...so.vendor, masterOrderId: order.id } }); setOpenVendorDropdownId(null); }}
-                                    className="flex items-center justify-between text-xs font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 px-3 py-2.5 transition-colors w-full text-right cursor-pointer border-t border-gray-50 dark:border-slate-700/50"
+                                    className="flex items-center justify-between text-xs font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 px-3 py-2.5 transition-colors w-full text-right cursor-pointer border-t border-gray-50 dark:border-slate-700"
                                   >
                                     <div className="flex items-center gap-2">
                                       <div className="w-5 h-5 rounded bg-white dark:bg-slate-700 flex items-center justify-center shrink-0 border border-gray-100 dark:border-slate-600 overflow-hidden shadow-sm">
@@ -818,7 +852,7 @@ export default function OrdersList() {
                                       </div>
                                       <span className="truncate max-w-[120px]">{so.vendor?.brand_name || 'غير معروف'}</span>
                                     </div>
-                                    <span className="text-[10px] bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-1.5 py-0.5 rounded-lg border border-emerald-100/50 dark:border-emerald-800/50">
+                                    <span className="text-[10px] bg-emerald-50 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-400 px-1.5 py-0.5 rounded-lg border border-emerald-100 dark:border-emerald-800">
                                       {so.order_items?.length || 0} منتج
                                     </span>
                                   </motion.button>
@@ -833,7 +867,7 @@ export default function OrdersList() {
                             <motion.button 
                               key={so.id} 
                               onClick={() => setInfoModal({ type: 'vendor', data: { ...so.vendor, masterOrderId: order.id } })}
-                              className="flex items-center gap-2 text-xs font-bold text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-slate-700/30 px-3 py-2.5 rounded-xl border border-gray-100 dark:border-slate-700/60 w-full hover:bg-emerald-50 dark:hover:bg-slate-700 hover:border-emerald-200 dark:hover:border-slate-600 transition-all group/vinfo cursor-pointer shadow-sm"
+                              className="flex items-center gap-2 text-xs font-bold text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-slate-700 px-3 py-2.5 rounded-xl border border-gray-100 dark:border-slate-700 w-full hover:bg-emerald-50 dark:hover:bg-slate-700 hover:border-emerald-200 dark:hover:border-slate-600 transition-all group/vinfo cursor-pointer shadow-sm"
                             >
                               <div className="w-6 h-6 rounded bg-white dark:bg-slate-600 flex items-center justify-center shrink-0 border border-gray-200 dark:border-slate-500 overflow-hidden shadow-sm">
                                 {so.vendor?.profile?.avatar_url ? (
@@ -843,7 +877,7 @@ export default function OrdersList() {
                                 )}
                               </div>
                               <span className="group-hover/vinfo:text-emerald-700 dark:group-hover/vinfo:text-emerald-400 flex-1 text-right truncate">{so.vendor?.brand_name || 'متجر غير معروف'}</span>
-                              <span className="text-[10px] bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 px-1.5 py-0.5 rounded-lg font-bold border border-emerald-200/50 dark:border-emerald-800/50 shrink-0">
+                              <span className="text-[10px] bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 px-1.5 py-0.5 rounded-lg font-bold border border-emerald-200 dark:border-emerald-800 shrink-0">
                                 {so.order_items?.length || 0} منتج
                               </span>
                             </motion.button>
@@ -854,7 +888,7 @@ export default function OrdersList() {
                   )}
 
                   {true && (
-                    <div className="flex flex-col gap-1.5 border-t border-gray-100/60 pt-2">
+                    <div className="flex flex-col gap-1.5 border-t border-gray-100 pt-2">
                       <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">المندوب</span>
                       {order.delivery_team && order.delivery_team.length > 0 ? (
                         <div className="flex flex-col gap-1.5">
@@ -866,7 +900,7 @@ export default function OrdersList() {
                             );
                             const activeCount = activeMasterOrderIds.size;
                             return (
-                              <div key={teamMember.id} className="flex items-center justify-between p-2 bg-indigo-50/50 rounded-2xl border border-indigo-100/50">
+                              <div key={teamMember.id} className="flex items-center justify-between p-2 bg-indigo-50 rounded-2xl border border-indigo-100">
                                 <motion.button 
                                   whileHover={{ scale: 1.02 }}
                                   whileTap={{ scale: 0.95 }}
@@ -931,7 +965,7 @@ export default function OrdersList() {
                               whileTap={{ scale: 0.95 }}
                               onClick={(e) => { e.stopPropagation(); autoAssignDriverMutation.mutate(order.id); }}
                               disabled={autoAssignDriverMutation.isPending}
-                              className="flex items-center justify-center gap-1.5 flex-1 py-1.5 bg-zap-gradient text-white rounded-xl text-[11px] font-black shadow-md shadow-amber-500/20 hover:shadow-amber-500/40 hover:opacity-90 transition-all disabled:opacity-50 cursor-pointer"
+                              className="flex items-center justify-center gap-1.5 flex-1 py-1.5 bg-zap-gradient text-white rounded-xl text-[11px] font-black shadow-md shadow-amber-500 hover:shadow-amber-500 hover:opacity-90 transition-all disabled:opacity-50 cursor-pointer"
                             >
                               <Zap className="w-3.5 h-3.5" />
                               <span>تلقائي</span>
@@ -951,7 +985,7 @@ export default function OrdersList() {
                     </div>
                   )}
 
-                  <div className="flex flex-wrap gap-x-4 gap-y-2 border-t border-gray-100/60 dark:border-slate-700/60 pt-2 mt-1">
+                  <div className="flex flex-wrap gap-x-4 gap-y-2 border-t border-gray-100 dark:border-slate-700 pt-2 mt-1">
                     {true && (
                       <div className="flex flex-col gap-0.5 flex-1 min-w-[30%]">
                         <span className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest leading-tight">الإجمالي</span>
@@ -983,13 +1017,13 @@ export default function OrdersList() {
                   </div>
 
                   {true && (
-                    <div className="flex flex-row flex-wrap items-center gap-2 border-t border-gray-100/60 dark:border-slate-700/60 pt-2">
+                    <div className="flex flex-row flex-wrap items-center gap-2 border-t border-gray-100 dark:border-slate-700 pt-2">
                       {order.status !== 'Pending' && (
                         <div className={cn(
                           "flex items-center gap-1.5 px-2.5 py-1 rounded-xl border font-black text-xs w-fit tracking-wider shadow-sm transition-colors",
                           delay.isDelayed && delay.type === 'prep' 
-                            ? "bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border-red-100 dark:border-red-800/50 animate-pulse" 
-                            : "bg-gray-50 dark:bg-slate-700/50 text-gray-600 dark:text-gray-300 border-gray-100 dark:border-slate-700/80"
+                            ? "bg-red-50 dark:bg-red-900 text-red-600 dark:text-red-400 border-red-100 dark:border-red-800 animate-pulse" 
+                            : "bg-gray-50 dark:bg-slate-700 text-gray-600 dark:text-gray-300 border-gray-100 dark:border-slate-700"
                         )}>
                           <Clock className="w-3.5 h-3.5" />
                           <span>تحضير: {delay.prepElapsed} د</span>
@@ -1000,8 +1034,8 @@ export default function OrdersList() {
                         <div className={cn(
                           "flex items-center gap-1.5 px-2.5 py-1 rounded-xl border font-black text-xs w-fit tracking-wider shadow-sm transition-colors",
                           delay.isDelayed && delay.type === 'delivery' 
-                            ? "bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border-red-100 dark:border-red-800/50 animate-pulse" 
-                            : "bg-gray-50 dark:bg-slate-700/50 text-gray-600 dark:text-gray-300 border-gray-100 dark:border-slate-700/80"
+                            ? "bg-red-50 dark:bg-red-900 text-red-600 dark:text-red-400 border-red-100 dark:border-red-800 animate-pulse" 
+                            : "bg-gray-50 dark:bg-slate-700 text-gray-600 dark:text-gray-300 border-gray-100 dark:border-slate-700"
                         )}>
                           <Motorbike className="w-3.5 h-3.5" />
                           <span>توصيل: {delay.deliveryElapsed} د</span>
@@ -1017,7 +1051,7 @@ export default function OrdersList() {
 
                 {/* Actions Footer */}
                 {true && (
-                  <div className="p-3 bg-gray-50/80 dark:bg-slate-800/80 backdrop-blur-md flex items-center justify-end gap-2 mt-auto border-t border-gray-100 dark:border-slate-700/50 group-hover/card:bg-gray-100/50 dark:group-hover/card:bg-slate-700/30 transition-colors">
+                  <div className="p-3 bg-gray-50 dark:bg-slate-800  flex items-center justify-end gap-2 mt-auto border-t border-gray-100 dark:border-slate-700 group-hover/card:bg-gray-100 dark:group-hover/card:bg-slate-700 transition-colors">
                     {order.status === 'Pending' && (
                       <motion.button 
                         whileHover={{ scale: 1.05 }}
@@ -1026,7 +1060,7 @@ export default function OrdersList() {
                           e.stopPropagation();
                           handleQuickAccept(order.id);
                         }}
-                        className="text-white bg-amber-500 hover:bg-amber-600 shadow-md shadow-amber-500/20 hover:shadow-amber-500/40 px-3 py-2 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 cursor-pointer flex-1 justify-center"
+                        className="text-white bg-amber-500 hover:bg-amber-600 shadow-md shadow-amber-500 hover:shadow-amber-500 px-3 py-2 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 cursor-pointer flex-1 justify-center"
                       >
                         <Store className="w-4 h-4" />
                         <span>قبول</span>
@@ -1041,7 +1075,7 @@ export default function OrdersList() {
                           e.stopPropagation();
                           setTrackingTarget({ type: 'order', id: order.id, name: `طلب #${order.order_number}` });
                         }}
-                        className="text-white bg-indigo-600 hover:bg-indigo-700 shadow-md shadow-indigo-500/20 hover:shadow-indigo-500/40 px-3 py-2 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 cursor-pointer flex-1 justify-center"
+                        className="text-white bg-indigo-600 hover:bg-indigo-700 shadow-md shadow-indigo-500 hover:shadow-indigo-500 px-3 py-2 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 cursor-pointer flex-1 justify-center"
                       >
                         <MapPin className="w-4 h-4" />
                         <span>تتبع</span>
@@ -1051,7 +1085,7 @@ export default function OrdersList() {
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={() => setSelectedOrderId(order.id)}
-                      className="text-emerald-700 dark:text-emerald-300 hover:text-white dark:hover:text-white hover:bg-emerald-600 dark:hover:bg-emerald-500 bg-emerald-50 dark:bg-emerald-900/30 px-3 py-2 rounded-xl font-black text-xs transition-all border border-emerald-200/50 dark:border-emerald-800/50 inline-flex items-center justify-center gap-1.5 shadow-sm cursor-pointer flex-1 group/btn"
+                      className="text-emerald-700 dark:text-emerald-300 hover:text-white dark:hover:text-white hover:bg-emerald-600 dark:hover:bg-emerald-500 bg-emerald-50 dark:bg-emerald-900 px-3 py-2 rounded-xl font-black text-xs transition-all border border-emerald-200 dark:border-emerald-800 inline-flex items-center justify-center gap-1.5 shadow-sm cursor-pointer flex-1 group/btn"
                     >
                       <Eye className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
                       <span>التفاصيل</span>
@@ -1063,6 +1097,273 @@ export default function OrdersList() {
           })
         )}
       </div>
+      ) : (
+        <div className={cn("bg-white dark:bg-slate-800 rounded-[2rem] shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden transition-opacity duration-300", isFetching && !isLoading ? "opacity-60" : "")}>
+          <div className="overflow-x-auto">
+            <table className="w-full text-right divide-y divide-gray-100 dark:divide-slate-700">
+              <thead className="bg-gray-50 dark:bg-slate-900 border-b border-gray-100 dark:border-slate-700">
+                <tr>
+                  <th className="px-6 py-4 text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider">الطلب</th>
+                  <th className="px-6 py-4 text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">العميل</th>
+                  <th className="px-6 py-4 text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">المتجر / المندوب</th>
+                  <th className="px-6 py-4 text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap text-center">التوقيت</th>
+                  <th className="px-6 py-4 text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">المالية</th>
+                  <th className="px-6 py-4 text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap text-center">الحالة والإجراءات</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-slate-700 bg-white dark:bg-slate-800">
+                {isLoading ? (
+                  Array.from({ length: 6 }).map((_, i) => (
+                    <tr key={`skel-${i}`} className="animate-pulse">
+                      <td className="px-6 py-4"><div className="h-4 bg-gray-200 dark:bg-slate-700 rounded w-16 mb-2"></div><div className="h-3 bg-gray-100 dark:bg-slate-800 rounded w-24"></div></td>
+                      <td className="px-6 py-4"><div className="flex items-center gap-2"><div className="h-8 w-8 rounded-full bg-gray-200 dark:bg-slate-700"></div><div className="h-4 bg-gray-200 dark:bg-slate-700 rounded w-24"></div></div></td>
+                      <td className="px-6 py-4"><div className="h-4 bg-gray-200 dark:bg-slate-700 rounded w-32 mb-2"></div><div className="h-4 bg-gray-100 dark:bg-slate-800 rounded w-24"></div></td>
+                      <td className="px-6 py-4"><div className="flex flex-col items-center gap-2"><div className="h-5 bg-gray-200 dark:bg-slate-700 rounded-lg w-16"></div><div className="h-5 bg-gray-100 dark:bg-slate-800 rounded-lg w-16"></div></div></td>
+                      <td className="px-6 py-4"><div className="h-4 bg-gray-200 dark:bg-slate-700 rounded w-16 mb-2"></div><div className="h-3 bg-gray-100 dark:bg-slate-800 rounded w-12"></div></td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-col items-center gap-2">
+                          <div className="h-6 bg-gray-200 dark:bg-slate-700 rounded-full w-20"></div>
+                          <div className="h-8 bg-gray-200 dark:bg-slate-700 rounded w-24"></div>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : sortedOrders.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-12 text-center text-gray-500">لا توجد طلبات تطابق معايير البحث</td>
+                  </tr>
+                ) : (
+                  sortedOrders.map((order) => {
+                    const delay = getDelayStatusForOrder(order);
+                    return (
+                      <tr key={order.id} className={cn("hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors group/row", delay.isDelayed ? "bg-red-50/50 dark:bg-red-900/10" : "")}>
+                        <td className="px-6 py-4">
+                          <div className="flex flex-col gap-1">
+                            <span className="text-sm font-black text-gray-900 dark:text-white">#{order.order_number}</span>
+                            <span className="text-[10px] text-gray-500 font-bold flex items-center gap-1"><Clock className="w-3 h-3" /> {format(new Date(order.created_at), 'PPpp', { locale: ar })}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <button onClick={() => setInfoModal({ type: 'customer', data: { ...order.customer, address: order.address, masterOrderId: order.id } })} className="flex items-center gap-2 group-hover/row:text-emerald-700 dark:group-hover/row:text-emerald-400 text-right cursor-pointer">
+                            <div className="h-8 w-8 rounded-full bg-emerald-50 dark:bg-slate-700 flex items-center justify-center overflow-hidden shrink-0 border border-emerald-100 dark:border-slate-600">
+                              {order.customer?.avatar_url ? <img src={order.customer.avatar_url} alt="" className="h-full w-full object-cover" /> : <User className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />}
+                            </div>
+                            <span className="text-sm font-bold text-gray-800 dark:text-gray-200">{order.customer?.full_name || 'غير معروف'}</span>
+                          </button>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex flex-col gap-2 relative">
+                            <div className="flex items-center gap-2">
+                              {/* Vendor dropdown block */}
+                              {order.sub_orders?.length === 1 ? (
+                                <button 
+                                  onClick={(e) => { 
+                                    e.stopPropagation(); 
+                                    setInfoModal({ type: 'vendor', data: order.sub_orders[0].vendor }); 
+                                  }}
+                                  className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-bold hover:underline cursor-pointer group/vendor"
+                                >
+                                  <Store className="w-3.5 h-3.5 group-hover/vendor:scale-110 transition-transform" />
+                                  <span className="truncate max-w-[120px]">{order.sub_orders[0].vendor?.brand_name || 'متجر غير معروف'}</span>
+                                </button>
+                              ) : order.sub_orders?.length > 1 ? (
+                                <div className="relative">
+                                  <button 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setOpenVendorDropdownId(openVendorDropdownId === order.id ? null : order.id);
+                                    }}
+                                    className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-bold hover:bg-emerald-50 dark:hover:bg-emerald-900/30 px-2 py-1 rounded-lg border border-emerald-100 dark:border-emerald-800 transition-colors cursor-pointer group/vendor"
+                                  >
+                                    <Store className="w-3.5 h-3.5 text-emerald-500" />
+                                    <span className="whitespace-nowrap">{order.sub_orders.length} متاجر</span>
+                                    <ChevronDown className={cn("w-3 h-3 transition-transform", openVendorDropdownId === order.id && "rotate-180")} />
+                                  </button>
+                                  
+                                  <AnimatePresence>
+                                    {openVendorDropdownId === order.id && (
+                                      <>
+                                        <div className="fixed inset-0 z-10" onClick={() => setOpenVendorDropdownId(null)} />
+                                        <motion.div 
+                                          initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                                          exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                                          className="absolute top-full left-0 mt-2 w-64 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-gray-100 dark:border-slate-700 p-2 z-20 origin-top-left"
+                                        >
+                                          <div className="max-h-48 overflow-y-auto scrollbar-hide py-1">
+                                            {order.sub_orders.map((so: any) => {
+                                              const itemCount = so.order_items?.reduce((sum: number, item: any) => sum + (item.requested_qty || 0), 0) || 0;
+                                              return (
+                                                <button
+                                                  key={so.id}
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setInfoModal({ type: 'vendor', data: so.vendor });
+                                                    setOpenVendorDropdownId(null);
+                                                  }}
+                                                  className="w-full text-right px-3 py-2.5 rounded-xl hover:bg-emerald-50 dark:hover:bg-emerald-900/30 flex items-center justify-between group/vitem transition-all"
+                                                >
+                                                  <div className="flex items-center gap-2 overflow-hidden">
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                                                    <span className="text-[11px] font-black text-gray-700 dark:text-gray-200 truncate">{so.vendor?.brand_name}</span>
+                                                  </div>
+                                                  <div className="flex items-center gap-1.5 shrink-0">
+                                                    <span className="text-[10px] font-bold text-gray-400 bg-gray-50 dark:bg-slate-700 px-1.5 py-0.5 rounded-md border border-gray-100 dark:border-slate-600">
+                                                      {itemCount} قطع
+                                                    </span>
+                                                    <Eye className="w-3.5 h-3.5 text-emerald-600 opacity-0 group-hover/vitem:opacity-100 transition-all" />
+                                                  </div>
+                                                </button>
+                                              );
+                                            })}
+                                          </div>
+                                        </motion.div>
+                                      </>
+                                    )}
+                                  </AnimatePresence>
+                                </div>
+                              ) : (
+                                <span className="text-[10px] text-gray-400 italic">بدون متجر</span>
+                              )}
+                              
+                              <div className="px-1.5 py-0.5 bg-gray-100 dark:bg-slate-700 rounded text-[10px] font-black text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-slate-600 shrink-0 shadow-sm" title="إجمالي عدد المنتجات في الطلب">
+                                {order.sub_orders?.reduce((sum, so) => sum + (so.order_items?.reduce((iSum, item) => iSum + (item.requested_qty || 0), 0) || 0), 0) || 0}
+                                <span className="mr-0.5 font-medium">قطع</span>
+                              </div>
+                            </div>
+                            
+                            {order.delivery_team && order.delivery_team.length > 0 ? (
+                              <div className="flex items-center gap-2">
+                                <button className="flex items-center gap-1.5 text-xs text-indigo-600 dark:text-indigo-400 font-bold cursor-pointer hover:underline group/driver whitespace-nowrap" onClick={(e) => { e.stopPropagation(); setInfoModal({ type: 'driver', data: { ...order.delivery_team[0].driver?.user, user_id: order.delivery_team[0].driver_id }}) }}>
+                                  <Motorbike className="w-3.5 h-3.5 group-hover/driver:translate-x-1 transition-transform" />
+                                  <span>{order.delivery_team[0].driver?.user?.full_name}</span>
+                                </button>
+                                {(() => {
+                                  const driver = order.delivery_team[0]?.driver;
+                                  if (!driver) return null;
+                                  const activeCount = driver.active_orders?.filter(
+                                    (ao: any) => {
+                                      const status = ao.master_order?.status;
+                                      return status && !['Completed', 'Cancelled', 'Rejected'].includes(status);
+                                    }
+                                  ).length || 0;
+                                  return activeCount > 0 && (
+                                    <div className="px-2 py-0.5 bg-amber-50 dark:bg-amber-900/30 rounded-lg text-[10px] font-black text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-800/50 flex items-center gap-1 shadow-sm" title="عدد الطلبات النشطة حالياً">
+                                      <Zap className="w-2.5 h-2.5 fill-current" />
+                                      {activeCount}
+                                    </div>
+                                  );
+                                })()}
+                              </div>
+                            ) : (
+                              !['Completed', 'Cancelled', 'Rejected'].includes(order.status) && (
+                                <button onClick={(e) => { e.stopPropagation(); setAssigningDriverOrderId(order.id); }} className="text-[10px] font-black bg-indigo-50 dark:bg-indigo-900 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 px-2 py-1.5 rounded-lg w-fit hover:bg-indigo-100 cursor-pointer shadow-sm">تعيين مندوب</button>
+                              )
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex flex-col gap-2 items-center justify-center min-w-[100px]">
+                            {order.status !== 'Pending' && (
+                              <div className={cn(
+                                "flex items-center gap-1 px-2 py-0.5 rounded-lg border font-bold text-[10px] w-full justify-center transition-colors shadow-sm",
+                                delay.isDelayed && delay.type === 'prep' 
+                                  ? "bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border-red-100 dark:border-red-900" 
+                                  : "bg-gray-50 dark:bg-slate-700 text-gray-500 dark:text-gray-400 border-gray-100 dark:border-slate-600"
+                              )}>
+                                <Clock className="w-3 h-3 shrink-0" />
+                                <span>تحضير: {delay.prepElapsed} د</span>
+                              </div>
+                            )}
+                            {['OnTheWay', 'Completed', 'Cancelled', 'Rejected'].includes(order.status) ? (
+                              <div className={cn(
+                                "flex items-center gap-1 px-2 py-0.5 rounded-lg border font-bold text-[10px] w-full justify-center transition-colors shadow-sm",
+                                delay.isDelayed && delay.type === 'delivery' 
+                                  ? "bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border-red-100 dark:border-red-900" 
+                                  : "bg-gray-50 dark:bg-slate-700 text-gray-500 dark:text-gray-400 border-gray-100 dark:border-slate-600"
+                              )}>
+                                <Motorbike className="w-3 h-3 shrink-0" />
+                                <span>توصيل: {delay.deliveryElapsed} د</span>
+                              </div>
+                            ) : order.status === 'Pending' ? (
+                              <span className="text-[10px] text-amber-500 font-bold animate-pulse">في انتظار القبول</span>
+                            ) : (
+                              <div className="h-5 w-full bg-gray-50 dark:bg-slate-700/30 rounded-lg flex items-center justify-center opacity-30">
+                                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">بانتظار التحميل</span>
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex flex-col gap-1">
+                            <span className="text-sm font-black text-gray-900 dark:text-gray-100">{order.grand_total} ج.م</span>
+                            <span className={cn(
+                              "px-2 py-0.5 rounded-md font-bold text-[10px] uppercase tracking-wider w-fit border shadow-sm", 
+                              paymentMethodStyles[order.payment_method] || 'bg-gray-50 dark:bg-slate-700 text-gray-800 dark:text-gray-200 border-gray-200 dark:border-slate-600'
+                            )}>
+                              {order.payment_method || 'نقداً'}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 min-w-[150px]">
+                          <div className="flex flex-col items-center gap-3">
+                            {/* Status Label */}
+                            <button 
+                              onClick={() => setSelectedHistoryOrder(order)} 
+                              className={cn(
+                                "px-3 py-1 inline-flex items-center gap-1.5 text-[10px] font-black rounded-lg border uppercase shadow-sm whitespace-nowrap cursor-pointer transition-colors w-full justify-center", 
+                                statusColors[order.status as OrderStatus], 
+                                "dark:bg-opacity-20"
+                              )}
+                            >
+                              {statusNames[order.status as OrderStatus]}
+                            </button>
+
+                            {/* Actions Group */}
+                            <div className="flex flex-row items-center justify-center gap-1.5 w-full">
+                              {order.status === 'Pending' && (
+                                <motion.button 
+                                  whileHover={{ scale: 1.05 }} 
+                                  whileTap={{ scale: 0.95 }} 
+                                  onClick={() => handleQuickAccept(order.id)} 
+                                  className="flex-1 text-white bg-emerald-500 hover:bg-emerald-600 shadow-sm py-1.5 rounded-lg font-black text-[10px] transition-all flex items-center justify-center gap-1 cursor-pointer border border-emerald-400/30 whitespace-nowrap px-2"
+                                >
+                                  <CheckCircle2 className="w-3 h-3" /> قبول
+                                </motion.button>
+                              )}
+
+                              {['Active', 'OnTheWay'].includes(order.status) && (
+                                <motion.button 
+                                  whileHover={{ scale: 1.05 }} 
+                                  whileTap={{ scale: 0.95 }} 
+                                  onClick={() => window.open(`/orders/tracking/${order.id}`, '_blank')}
+                                  className="flex-1 text-white bg-indigo-500 hover:bg-indigo-600 shadow-sm py-1.5 rounded-lg font-black text-[10px] transition-all flex items-center justify-center gap-1 cursor-pointer border border-indigo-400/30 whitespace-nowrap px-2"
+                                  title="تتبع على الخريطة"
+                                >
+                                  <MapPin className="w-3 h-3" /> تتبع
+                                </motion.button>
+                              )}
+
+                              <motion.button 
+                                whileHover={{ scale: 1.05 }} 
+                                whileTap={{ scale: 0.95 }} 
+                                onClick={() => setSelectedOrderId(order.id)} 
+                                className="flex-1 text-gray-700 dark:text-gray-300 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 py-1.5 rounded-lg font-black text-[10px] transition-all border border-gray-200 dark:border-slate-600 flex items-center justify-center gap-1 cursor-pointer shadow-sm whitespace-nowrap px-2"
+                              >
+                                <Eye className="w-3 h-3" /> عرض
+                              </motion.button>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Infinite Scroll Loader */}
       <div ref={loadMoreRef} className="py-8 flex justify-center">
@@ -1100,7 +1401,7 @@ export default function OrdersList() {
 
       {/* Info Modal */}
       {infoModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#000000B3]  animate-in fade-in duration-200">
           <div className="bg-white rounded-[2.5rem] w-full max-w-md overflow-hidden shadow-2xl border border-gray-100 animate-in zoom-in-95 duration-200">
             <div className="p-8">
               <div className="flex justify-between items-center mb-8">
@@ -1289,7 +1590,7 @@ export default function OrdersList() {
 
       {/* Settings Modal */}
       {isSettingsOpen && (
-        <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-[#111827B3]  z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-[2.5rem] shadow-2xl max-w-md w-full p-10 border border-gray-100">
             <div className="flex justify-between items-center mb-8">
               <div className="flex items-center gap-3">
@@ -1359,14 +1660,14 @@ export default function OrdersList() {
       {/* Status History Modal */}
       <AnimatePresence>
         {selectedHistoryOrder && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#000000B3] ">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden"
             >
-              <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+              <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-gray-50">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center">
                     <History className="w-5 h-5" />
@@ -1439,7 +1740,7 @@ export default function OrdersList() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setTrackingTarget(null)}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+              className="fixed inset-0 bg-[#000000B3]  z-40"
             />
             <motion.div
               initial={{ x: '100%' }}

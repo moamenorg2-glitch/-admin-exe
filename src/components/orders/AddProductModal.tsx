@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
 import { X, Search, Plus } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface AddProductModalProps {
   isOpen: boolean;
@@ -36,7 +36,7 @@ export default function AddProductModal({ isOpen, onClose, vendorId, onAdd }: Ad
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-[#000000B3] ">
         <motion.div 
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}

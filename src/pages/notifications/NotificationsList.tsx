@@ -118,7 +118,7 @@ export default function NotificationsList() {
       <div className="bg-white shadow-sm overflow-hidden sm:rounded-2xl border border-gray-100">
         <div className="overflow-x-auto">
           <table className="w-full text-right">
-            <thead className="bg-gray-50/50 border-b border-gray-100">
+            <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
                 <th scope="col" className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">
                   الإشعار
@@ -151,7 +151,7 @@ export default function NotificationsList() {
                 </tr>
               ) : (
                 data?.notifications?.map((notification) => (
-                  <tr key={notification.id} className={cn("hover:bg-gray-50 transition-colors", !notification.is_read && "bg-emerald-50/30")}>
+                  <tr key={notification.id} className={cn("hover:bg-gray-50 transition-colors", !notification.is_read && "bg-emerald-50")}>
                     <td className="px-6 py-4">
                       <div className="flex items-start">
                         <div className={cn(

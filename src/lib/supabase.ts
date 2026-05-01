@@ -24,6 +24,6 @@ export const supabase = globalForSupabase.supabase ?? createClient<Database>(
   }
 );
 
-if (process.env.NODE_ENV !== 'production') {
+if (import.meta.env.DEV) {
   globalForSupabase.supabase = supabase;
 }

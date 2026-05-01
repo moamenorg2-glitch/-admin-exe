@@ -163,7 +163,7 @@ export default function ModifiersManager({ productId, vendorId, sectionId, onClo
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-      <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={onClose}></div>
+      <div className="fixed inset-0 bg-[#111827B3] " onClick={onClose}></div>
       <div className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl flex flex-col overflow-hidden border border-gray-100">
         <div className="px-8 py-6 border-b border-gray-50 flex justify-between items-center">
           <div className="flex items-center gap-3">
@@ -283,7 +283,7 @@ export default function ModifiersManager({ productId, vendorId, sectionId, onClo
                   </div>
 
                   {expandedGroupId === group.id && (
-                    <div className="px-6 pb-6 pt-2 border-t border-gray-50 space-y-4 bg-gray-50/30">
+                    <div className="px-6 pb-6 pt-2 border-t border-gray-50 space-y-4 bg-gray-50">
                       {/* Add New Option */}
                       <div className="flex items-end gap-2 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
                         <div className="flex-1 space-y-1">

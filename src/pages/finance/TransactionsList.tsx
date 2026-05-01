@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
-import { Search, Filter, ArrowUpRight, ArrowDownLeft, Clock, Wallet, User, X } from 'lucide-react';
+import { Search, Filter, ArrowUpRight, ArrowDownLeft, Clock, Wallet, User, X, Check } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
@@ -10,12 +10,63 @@ import { handleGlobalError } from '../../utils/errorHandler';
 export default function TransactionsList() {
   const searchParams = new URLSearchParams(window.location.search);
   const initialUserId = searchParams.get('userId') || '';
+  const queryClient = useQueryClient();
   
   const [page, setPage] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('All');
   const [selectedProofUrl, setSelectedProofUrl] = useState<string | null>(null);
+  const [confirmAction, setConfirmAction] = useState<{tx: any, action: 'approve' | 'reject'} | null>(null);
+  const [depositAmount, setDepositAmount] = useState<string>('');
   const pageSize = 20;
+
+  const handleActionMutation = useMutation({
+    mutationFn: async ({ tx, action, amount }: { tx: any, action: 'approve' | 'reject', amount?: number }) => {
+      if (action === 'approve') {
+        const approvedAmount = amount || 0;
+        // 1. Update status to approved
+        const { error: txError } = await supabase
+          .from('wallets_transaction')
+          .update({ 
+            transaction_type: 'topup', 
+            description_ar: tx.description_ar + ' (تم القبول)',
+            amount: approvedAmount
+          })
+          .eq('transaction_id', tx.transaction_id);
+        if (txError) throw txError;
+
+        // 2. Add to wallet
+        const { data: wallet } = await supabase
+          .from('wallets')
+          .select('current_balance')
+          .eq('user_id', tx.wallet_id)
+          .single();
+        
+        const newBalance = (Number(wallet?.current_balance) || 0) + approvedAmount;
+        
+        const { error: walletError } = await supabase
+          .from('wallets')
+          .update({ current_balance: newBalance })
+          .eq('user_id', tx.wallet_id);
+        if (walletError) throw walletError;
+      } else {
+        // Reject: Remove request (mark as rejected)
+        const { error: txError } = await supabase
+          .from('wallets_transaction')
+          .update({ transaction_type: 'deposit_rejected', description_ar: tx.description_ar + ' (تم الرفض)' })
+          .eq('transaction_id', tx.transaction_id);
+        if (txError) throw txError;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      setConfirmAction(null);
+      setDepositAmount('');
+    },
+    onError: (error) => {
+      handleGlobalError(error, 'خطأ في تنفيذ الإجراء');
+    }
+  });
 
   const { data, isLoading } = useQuery({
     queryKey: ['transactions', page, searchQuery, typeFilter, initialUserId],
@@ -103,6 +154,7 @@ export default function TransactionsList() {
       case 'deposit_rejected': return 'إيداع مرفوض';
       case 'vendor_cancellation_deduction': return 'خصم إلغاء (تاجر)';
       case 'vendor_cash_payment': return 'دفع نقدي (تاجر)';
+      case 'deposit_approved': return 'إيداع معتمد';
       default: return type;
     }
   };
@@ -168,7 +220,7 @@ export default function TransactionsList() {
       <div className="bg-white shadow-sm overflow-hidden sm:rounded-3xl border border-gray-100">
         <div className="overflow-x-auto">
           <table className="w-full text-right">
-            <thead className="bg-gray-50/50 border-b border-gray-100">
+            <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
                 <th scope="col" className="px-8 py-5 text-right text-xs font-bold text-gray-500 uppercase tracking-widest">
                   المستخدم
@@ -191,12 +243,15 @@ export default function TransactionsList() {
                 <th scope="col" className="px-8 py-5 text-right text-xs font-bold text-gray-500 uppercase tracking-widest">
                   التاريخ
                 </th>
+                <th scope="col" className="px-8 py-5 text-right text-xs font-bold text-gray-500 uppercase tracking-widest">
+                  إجراءات
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-50">
               {isLoading ? (
                 <tr>
-                  <td colSpan={7} className="px-8 py-12 text-center text-gray-500 font-medium">
+                  <td colSpan={8} className="px-8 py-12 text-center text-gray-500 font-medium">
                     <div className="flex justify-center items-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
                     </div>
@@ -204,13 +259,13 @@ export default function TransactionsList() {
                 </tr>
               ) : data?.transactions?.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-8 py-12 text-center text-gray-500 font-medium">
+                  <td colSpan={8} className="px-8 py-12 text-center text-gray-500 font-medium">
                     لا توجد معاملات مالية حالياً
                   </td>
                 </tr>
               ) : (
                 data?.transactions?.map((tx) => (
-                  <tr key={tx.transaction_id} className="hover:bg-gray-50/50 transition-colors group even:bg-gray-50/30">
+                  <tr key={tx.transaction_id} className="hover:bg-gray-50 transition-colors group even:bg-gray-50">
                     <td className="px-8 py-5 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10 rounded-2xl bg-gray-50 flex items-center justify-center group-hover:scale-105 transition-transform overflow-hidden border border-gray-100">
@@ -281,6 +336,27 @@ export default function TransactionsList() {
                         <span>{format(new Date(tx.created_at), 'PPp', { locale: ar })}</span>
                       </div>
                     </td>
+                    <td className="px-8 py-5 whitespace-nowrap text-sm">
+                      {tx.transaction_type === 'deposit_pending' && (
+                        <div className="flex gap-2">
+                          <button 
+                            onClick={() => {
+                              setConfirmAction({ tx, action: 'approve' });
+                              setDepositAmount(tx.amount > 0 ? tx.amount.toString() : '');
+                            }}
+                            className="p-2 bg-emerald-100 text-emerald-600 rounded-lg hover:bg-emerald-200 transition-colors"
+                          >
+                            <Check className="w-4 h-4" />
+                          </button>
+                          <button 
+                            onClick={() => setConfirmAction({ tx, action: 'reject' })}
+                            className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      )}
+                    </td>
                   </tr>
                 ))
               )}
@@ -338,11 +414,11 @@ export default function TransactionsList() {
 
       {/* Proof Image Modal */}
       {selectedProofUrl && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm" onClick={() => setSelectedProofUrl(null)}>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#000000B3] " onClick={() => setSelectedProofUrl(null)}>
           <div className="relative max-w-4xl w-full max-h-[90vh] flex flex-col items-center justify-center" onClick={e => e.stopPropagation()}>
             <button 
               onClick={() => setSelectedProofUrl(null)}
-              className="absolute -top-12 right-0 p-2 text-white hover:text-gray-300 transition-colors bg-white/10 rounded-full hover:bg-white/20"
+              className="absolute -top-12 right-0 p-2 text-white hover:text-gray-300 transition-colors bg-[#FFFFFF80] rounded-full hover:bg-[#FFFFFF80]"
             >
               <X className="w-6 h-6" />
             </button>
@@ -351,10 +427,8 @@ export default function TransactionsList() {
               alt="إثبات الدفع" 
               className="max-w-full max-h-[80vh] object-contain rounded-lg shadow-2xl"
               onError={(e) => {
-                // Fallback if it's not an image (e.g. PDF)
                 const target = e.target as HTMLImageElement;
                 target.style.display = 'none';
-                // Try to open it in a new tab/window instead
                 window.open(selectedProofUrl, '_system');
                 setSelectedProofUrl(null);
               }}
@@ -368,9 +442,68 @@ export default function TransactionsList() {
               </button>
               <button 
                 onClick={() => setSelectedProofUrl(null)}
-                className="px-6 py-2.5 bg-white/10 text-white rounded-xl font-bold hover:bg-white/20 transition-colors"
+                className="px-6 py-2.5 bg-[#FFFFFF80] text-white rounded-xl font-bold hover:bg-[#FFFFFF80] transition-colors"
               >
                 إغلاق
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Modal */}
+      {confirmAction && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#000000B3] " onClick={() => setConfirmAction(null)}>
+          <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl" onClick={e => e.stopPropagation()}>
+            <h3 className="text-xl font-extrabold text-gray-900 mb-4">
+              {confirmAction.action === 'approve' ? 'تأكيد قبول الإيداع' : 'تأكيد رفض الإيداع'}
+            </h3>
+            <p className="text-gray-500 font-medium mb-6">
+              {confirmAction.action === 'approve' 
+                ? 'الرجاء إدخال المبلغ النهائي الذي سيتم إيداعه في محفظة المستخدم:'
+                : 'هل أنت متأكد من رفض هذا الطلب؟'}
+            </p>
+            
+            {confirmAction.action === 'approve' && (
+              <div className="mb-6">
+                <label className="block text-sm font-bold text-gray-700 mb-2">المبلغ المودع (ج.م)</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={depositAmount}
+                  onChange={(e) => setDepositAmount(e.target.value)}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 font-bold text-gray-900 text-left"
+                  placeholder="0.00"
+                  autoFocus
+                />
+              </div>
+            )}
+
+            <div className="flex gap-4">
+              <button 
+                onClick={() => setConfirmAction(null)}
+                disabled={handleActionMutation.isPending}
+                className="flex-1 px-6 py-3 bg-gray-100 text-gray-700 rounded-2xl font-bold hover:bg-gray-200 transition-colors disabled:opacity-50"
+              >
+                إلغاء
+              </button>
+              <button 
+                onClick={() => handleActionMutation.mutate({
+                  tx: confirmAction.tx,
+                  action: confirmAction.action,
+                  amount: confirmAction.action === 'approve' ? Number(depositAmount) : undefined
+                })}
+                disabled={
+                  handleActionMutation.isPending || 
+                  (confirmAction.action === 'approve' && (Number(depositAmount) <= 0 || isNaN(Number(depositAmount))))
+                }
+                className={cn(
+                  "flex-1 px-6 py-3 rounded-2xl font-bold transition-colors text-white disabled:opacity-50 disabled:cursor-not-allowed",
+                  confirmAction.action === 'approve' ? "bg-emerald-600 hover:bg-emerald-700" : "bg-red-600 hover:bg-red-700"
+                )}
+              >
+                {handleActionMutation.isPending ? 'جاري...' : (confirmAction.action === 'approve' ? 'قبول وإيداع' : 'رفض')}
               </button>
             </div>
           </div>

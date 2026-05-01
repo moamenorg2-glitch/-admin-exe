@@ -4,7 +4,7 @@ import { supabase } from '../../lib/supabase';
 import { Search, Filter, Car, Edit, Star, MapPin, Power, PowerOff, Plus, X, Loader2, Download, Eye, Trash2, User, Ban, CheckCircle, Info, MessageSquare, Phone } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import toast from 'react-hot-toast';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { exportToCSV } from '../../utils/export';
 import { driverService } from '../../services/driverService';
 import { userService } from '../../services/userService';
@@ -357,7 +357,7 @@ export default function DriversList() {
       <div className="bg-white shadow-sm overflow-hidden sm:rounded-2xl border border-gray-100">
         <div className="overflow-x-auto">
           <table className="w-full text-right">
-            <thead className="bg-gray-50/50 border-b border-gray-100">
+            <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
                 <th scope="col" className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">
                   السائق
@@ -422,7 +422,7 @@ export default function DriversList() {
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10 bg-indigo-100 rounded-full flex items-center justify-center overflow-hidden">
                           {(driver.profile as any)?.avatar_url ? (
-                            <img src={(driver.profile as any).avatar_url} alt="" className="h-10 w-10 object-cover rounded-full" />
+                            <img src={(driver.profile as any).avatar_url} alt="" className="h-10 w-10 object-cover rounded-full" referrerPolicy="no-referrer" />
                           ) : (
                             <Car className="h-5 w-5 text-indigo-600" />
                           )}
@@ -610,7 +610,7 @@ export default function DriversList() {
       {/* Create Driver Modal */}
       <AnimatePresence>
         {isCreateModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#000000B3] ">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -634,7 +634,7 @@ export default function DriversList() {
                     type="file"
                     accept="image/*"
                     onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                   />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -645,7 +645,7 @@ export default function DriversList() {
                       type="text"
                       value={formData.full_name}
                       onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                       placeholder="أدخل اسم السائق"
                     />
                   </div>
@@ -656,7 +656,7 @@ export default function DriversList() {
                       type="tel"
                       value={formData.primary_phone}
                       onChange={(e) => setFormData({ ...formData, primary_phone: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                       placeholder="01xxxxxxxxx"
                       dir="ltr"
                     />
@@ -667,7 +667,7 @@ export default function DriversList() {
                       required
                       value={formData.zone_id}
                       onChange={(e) => setFormData({ ...formData, zone_id: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                     >
                       <option value="">اختر المنطقة</option>
                       {zones?.map((zone) => (
@@ -684,7 +684,7 @@ export default function DriversList() {
                       type="text"
                       value={formData.vehicle_type}
                       onChange={(e) => setFormData({ ...formData, vehicle_type: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                       placeholder="مثال: دراجة نارية، سيارة"
                     />
                   </div>
@@ -695,7 +695,7 @@ export default function DriversList() {
                       type="text"
                       value={formData.vehicle_model}
                       onChange={(e) => setFormData({ ...formData, vehicle_model: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                       placeholder="مثال: تويوتا كورولا 2022"
                     />
                   </div>
@@ -706,7 +706,7 @@ export default function DriversList() {
                       type="text"
                       value={formData.license_plate}
                       onChange={(e) => setFormData({ ...formData, license_plate: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                       placeholder="أدخل رقم اللوحة"
                     />
                   </div>
@@ -716,7 +716,7 @@ export default function DriversList() {
                       type="email"
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                       placeholder="example@mail.com"
                       dir="ltr"
                     />
@@ -728,7 +728,7 @@ export default function DriversList() {
                       type="text"
                       value={formData.password}
                       onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                       placeholder="أدخل كلمة المرور"
                       dir="ltr"
                     />
@@ -740,7 +740,7 @@ export default function DriversList() {
                       type="text"
                       value={formData.national_id}
                       onChange={(e) => setFormData({ ...formData, national_id: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                       placeholder="أدخل الرقم القومي"
                     />
                   </div>
@@ -771,7 +771,7 @@ export default function DriversList() {
       {/* Edit Driver Modal */}
       <AnimatePresence>
         {isEditModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#000000B3] ">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -796,7 +796,7 @@ export default function DriversList() {
                       type="file"
                       accept="image/*"
                       onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                     />
                   </div>
                   <div className="space-y-1">
@@ -806,7 +806,7 @@ export default function DriversList() {
                       type="text"
                       value={formData.full_name}
                       onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                       placeholder="أدخل اسم السائق"
                     />
                   </div>
@@ -817,7 +817,7 @@ export default function DriversList() {
                       type="tel"
                       value={formData.primary_phone}
                       onChange={(e) => setFormData({ ...formData, primary_phone: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                       placeholder="01xxxxxxxxx"
                       dir="ltr"
                     />
@@ -828,7 +828,7 @@ export default function DriversList() {
                       required
                       value={formData.zone_id}
                       onChange={(e) => setFormData({ ...formData, zone_id: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                     >
                       <option value="">اختر المنطقة</option>
                       {zones?.map((zone) => (
@@ -845,7 +845,7 @@ export default function DriversList() {
                       type="text"
                       value={formData.vehicle_type}
                       onChange={(e) => setFormData({ ...formData, vehicle_type: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                       placeholder="مثال: دراجة نارية، سيارة"
                     />
                   </div>
@@ -856,7 +856,7 @@ export default function DriversList() {
                       type="text"
                       value={formData.vehicle_model}
                       onChange={(e) => setFormData({ ...formData, vehicle_model: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                       placeholder="مثال: تويوتا كورولا 2022"
                     />
                   </div>
@@ -867,7 +867,7 @@ export default function DriversList() {
                       type="text"
                       value={formData.license_plate}
                       onChange={(e) => setFormData({ ...formData, license_plate: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                       placeholder="أدخل رقم اللوحة"
                     />
                   </div>
@@ -878,7 +878,7 @@ export default function DriversList() {
                       type="text"
                       value={formData.national_id}
                       onChange={(e) => setFormData({ ...formData, national_id: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                       placeholder="أدخل الرقم القومي"
                     />
                   </div>
@@ -888,7 +888,7 @@ export default function DriversList() {
                       type="text"
                       value={formData.password}
                       onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                       placeholder="اتركها فارغة إذا لم ترد التغيير"
                       dir="ltr"
                     />
@@ -920,7 +920,7 @@ export default function DriversList() {
       {/* View Driver Modal */}
       <AnimatePresence>
         {isViewModalOpen && selectedDriver && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#000000B3] ">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -1068,7 +1068,7 @@ export default function DriversList() {
       {/* Delete Confirmation Modal */}
       <AnimatePresence>
         {isDeleteDialogOpen && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-[#000000B3] ">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}

@@ -127,7 +127,7 @@ export default function PromotionsList() {
       <div className="bg-white shadow-sm overflow-hidden sm:rounded-2xl border border-gray-100">
         <div className="overflow-x-auto">
           <table className="w-full text-right">
-            <thead className="bg-gray-50/50 border-b border-gray-100">
+            <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
                 <th scope="col" className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">الكود والعنوان</th>
                 <th scope="col" className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">النوع والقيمة</th>
@@ -311,7 +311,7 @@ export default function PromotionsList() {
 
       {/* Delete Confirmation Modal */}
       {promotionToDelete && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-[#000000B3]">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden text-right relative z-[10000]">
             <div className="p-4 border-b border-gray-100 flex items-center justify-between">
               <h3 className="font-bold text-gray-900">تأكيد الحذف</h3>

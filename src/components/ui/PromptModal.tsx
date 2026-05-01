@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, AlertCircle } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface PromptModalProps {
   isOpen: boolean;
@@ -49,7 +49,7 @@ export default function PromptModal({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-[#000000B3] ">
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -57,7 +57,7 @@ export default function PromptModal({
           className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden text-right relative"
         >
           {/* Header */}
-          <div className="p-5 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+          <div className="p-5 border-b border-gray-100 flex items-center justify-between bg-gray-50">
             <h3 className="font-black text-gray-900 text-lg">{title}</h3>
             <button 
               onClick={onClose} 

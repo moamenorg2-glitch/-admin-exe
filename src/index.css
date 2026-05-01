@@ -80,7 +80,7 @@ input, textarea, [contenteditable="true"], .selectable-text {
 .dark .border-gray-100,
 .dark .border-gray-200,
 .dark .border-gray-300 {
-  @apply !border-gray-700/60;
+  @apply !border-gray-700;
 }
 
 .dark .bg-gray-50,
@@ -117,7 +117,7 @@ input, textarea, [contenteditable="true"], .selectable-text {
 .dark .rounded-3xl,
 .dark .rounded-2xl,
 .dark .rounded-xl {
-  @apply border border-gray-700/50;
+  @apply border border-gray-700;
 }
 
 .dark .hover\:bg-gray-50:hover,
@@ -141,7 +141,7 @@ input, textarea, [contenteditable="true"], .selectable-text {
 .dark input, 
 .dark select, 
 .dark textarea {
-  @apply !bg-[#1E1E2D] !border-gray-600 !text-white focus:!border-emerald-500 focus:!ring-1 focus:!ring-emerald-500/20;
+  @apply !bg-[#1E1E2D] !border-gray-600 !text-white focus:!border-emerald-500 focus:!ring-1 focus:!ring-emerald-500;
 }
 
 .dark .shadow-sm,
@@ -153,41 +153,41 @@ input, textarea, [contenteditable="true"], .selectable-text {
 }
 
 /* Status Badges & Color Accents in Dark Mode */
-.dark .bg-emerald-50, .dark .bg-emerald-50\/30, .dark .bg-emerald-50\/50 { @apply !bg-emerald-900/20; }
+.dark .bg-emerald-50, .dark .bg-emerald-50\/30, .dark .bg-emerald-50\/50 { @apply !bg-emerald-900; }
 .dark .text-emerald-700, .dark .text-emerald-800 { @apply !text-emerald-400; }
 .dark .text-emerald-600 { @apply !text-emerald-500; }
-.dark .border-emerald-100, .dark .border-emerald-200 { @apply !border-emerald-900/30; }
-.dark .bg-emerald-100 { @apply !bg-emerald-900/30; }
+.dark .border-emerald-100, .dark .border-emerald-200 { @apply !border-emerald-900; }
+.dark .bg-emerald-100 { @apply !bg-emerald-900; }
 
-.dark .bg-green-50 { @apply !bg-green-900/20; }
+.dark .bg-green-50 { @apply !bg-green-900; }
 .dark .text-green-700, .dark .text-green-800 { @apply !text-green-400; }
 .dark .text-green-600 { @apply !text-green-500; }
-.dark .border-green-100 { @apply !border-green-900/30; }
+.dark .border-green-100 { @apply !border-green-900; }
 
-.dark .bg-amber-50 { @apply !bg-amber-900/20; }
+.dark .bg-amber-50 { @apply !bg-amber-900; }
 .dark .text-amber-700, .dark .text-amber-800 { @apply !text-amber-400; }
 .dark .text-amber-600 { @apply !text-amber-500; }
-.dark .border-amber-100 { @apply !border-amber-900/30; }
+.dark .border-amber-100 { @apply !border-amber-900; }
 
-.dark .bg-blue-50 { @apply !bg-blue-900/20; }
+.dark .bg-blue-50 { @apply !bg-blue-900; }
 .dark .text-blue-700, .dark .text-blue-800 { @apply !text-blue-400; }
 .dark .text-blue-600 { @apply !text-blue-500; }
-.dark .border-blue-100 { @apply !border-blue-900/30; }
+.dark .border-blue-100 { @apply !border-blue-900; }
 
-.dark .bg-red-50 { @apply !bg-red-900/20; }
+.dark .bg-red-50 { @apply !bg-red-900; }
 .dark .text-red-700, .dark .text-red-800 { @apply !text-red-400; }
 .dark .text-red-600 { @apply !text-red-500; }
-.dark .border-red-100 { @apply !border-red-900/30; }
+.dark .border-red-100 { @apply !border-red-900; }
 
-.dark .bg-indigo-50 { @apply !bg-indigo-900/20; }
+.dark .bg-indigo-50 { @apply !bg-indigo-900; }
 .dark .text-indigo-700, .dark .text-indigo-800 { @apply !text-indigo-400; }
 .dark .text-indigo-600 { @apply !text-indigo-500; }
-.dark .border-indigo-100 { @apply !border-indigo-900/30; }
+.dark .border-indigo-100 { @apply !border-indigo-900; }
 
-.dark .bg-purple-50 { @apply !bg-purple-900/20; }
+.dark .bg-purple-50 { @apply !bg-purple-900; }
 .dark .text-purple-700, .dark .text-purple-800 { @apply !text-purple-400; }
 .dark .text-purple-600 { @apply !text-purple-500; }
-.dark .border-purple-100 { @apply !border-purple-900/30; }
+.dark .border-purple-100 { @apply !border-purple-900; }
 
 /* Ensure icons are visible */
 .dark .lucide {
@@ -199,7 +199,7 @@ input, textarea, [contenteditable="true"], .selectable-text {
 .dark .bg-black\/50,
 .dark .bg-black\/60,
 .dark .bg-gray-600.bg-opacity-75 {
-  @apply !bg-black/70 !backdrop-blur-md;
+  @apply !bg-[#000000B3];
 }
 
 /* Custom Global Scrollbar for Desktop App */

@@ -29,10 +29,10 @@ export default function PenaltyDetailsModal({ penalty, onClose }: PenaltyDetails
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" dir="rtl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#000000B3] " dir="rtl">
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-red-100 rounded-xl">
               <ShieldAlert className="w-5 h-5 text-red-600" />
@@ -57,8 +57,12 @@ export default function PenaltyDetailsModal({ penalty, onClose }: PenaltyDetails
               المستخدم المستهدف
             </h3>
             <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100 flex items-center gap-4">
-              <div className="w-12 h-12 bg-white rounded-full border border-gray-200 flex items-center justify-center">
-                <User className="w-6 h-6 text-gray-400" />
+              <div className="w-12 h-12 bg-white rounded-full border border-gray-200 flex items-center justify-center overflow-hidden">
+                {penalty.profiles?.avatar_url ? (
+                  <img src={penalty.profiles.avatar_url} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                ) : (
+                  <User className="w-6 h-6 text-gray-400" />
+                )}
               </div>
               <div>
                 <div className="font-bold text-gray-900 text-lg">{penalty.profiles?.full_name}</div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { X, Check, Loader2, Plus } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { cn } from '../../lib/utils';
@@ -89,7 +89,7 @@ export const EditModifiersModal: React.FC<EditModifiersModalProps> = ({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#000000B3] ">
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -104,7 +104,7 @@ export const EditModifiersModal: React.FC<EditModifiersModalProps> = ({
             </div>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-white/10 rounded-xl transition-colors"
+              className="p-2 hover:bg-[#FFFFFF80] rounded-xl transition-colors"
             >
               <X className="w-6 h-6" />
             </button>
@@ -145,7 +145,7 @@ export const EditModifiersModal: React.FC<EditModifiersModalProps> = ({
                           className={cn(
                             "flex items-center justify-between p-4 rounded-2xl border-2 transition-all text-right",
                             isSelected 
-                              ? "border-emerald-600 bg-emerald-50/50" 
+                              ? "border-emerald-600 bg-emerald-50" 
                               : "border-gray-100 hover:border-emerald-200 bg-white"
                           )}
                         >

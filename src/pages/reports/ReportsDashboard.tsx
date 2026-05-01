@@ -310,12 +310,12 @@ export default function ReportsDashboard() {
   const handleRefresh = () => setRefreshKey(prev => prev + 1);
 
   return (
-    <div className="space-y-8 pb-20 p-4 md:p-8 bg-gray-50/30 min-h-screen" dir="rtl">
+    <div className="space-y-8 pb-20 p-4 md:p-8 bg-gray-50 min-h-screen" dir="rtl">
       {/* Header & Main Filters */}
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-[2rem] border border-gray-100 dark:border-gray-700 shadow-xl shadow-gray-100/50 dark:shadow-none">
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-[2rem] border border-gray-100 dark:border-gray-700 shadow-xl shadow-gray-100 dark:shadow-none">
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-emerald-600 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-200 dark:shadow-emerald-900/20">
+            <div className="w-14 h-14 bg-emerald-600 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-200 dark:shadow-emerald-900">
               <TrendingUp className="w-8 h-8 text-white" />
             </div>
             <div>
@@ -333,7 +333,7 @@ export default function ReportsDashboard() {
                <RefreshCw className={cn("w-5 h-5", (loadingProfits || loadingVendors) && "animate-spin")} />
              </button>
              
-             <div className="flex items-center gap-2 px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-100 dark:border-gray-600 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-emerald-500/20">
+             <div className="flex items-center gap-2 px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-100 dark:border-gray-600 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-emerald-500">
                <Calendar className="w-4 h-4 text-gray-400" />
                <input 
                  type="date"
@@ -353,7 +353,7 @@ export default function ReportsDashboard() {
              <select 
                value={selectedVendor}
                onChange={(e) => setSelectedVendor(e.target.value)}
-               className="px-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-100 dark:border-gray-600 rounded-xl text-sm font-bold shadow-sm outline-none focus:ring-2 focus:ring-emerald-500/20 dark:text-white"
+               className="px-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-100 dark:border-gray-600 rounded-xl text-sm font-bold shadow-sm outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white"
              >
                 <option value="all">كل المتاجر</option>
                 {vendors?.map(v => <option key={v.user_id} value={v.user_id}>{v.brand_name}</option>)}
@@ -362,7 +362,7 @@ export default function ReportsDashboard() {
              <select 
                value={selectedDriver}
                onChange={(e) => setSelectedDriver(e.target.value)}
-               className="px-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-100 dark:border-gray-600 rounded-xl text-sm font-bold shadow-sm outline-none focus:ring-2 focus:ring-emerald-500/20 dark:text-white"
+               className="px-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-100 dark:border-gray-600 rounded-xl text-sm font-bold shadow-sm outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white"
              >
                 <option value="all">كل السائقين</option>
                 {drivers?.map(d => <option key={d.user_id} value={d.user_id}>{d.full_name}</option>)}
@@ -375,51 +375,51 @@ export default function ReportsDashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
         <div className="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm relative overflow-hidden group transition-colors">
           <div className="relative z-10">
-            <div className="p-3 bg-blue-50 dark:bg-blue-900/20 w-fit rounded-xl mb-4 group-hover:scale-110 transition-transform">
+            <div className="p-3 bg-blue-50 dark:bg-blue-900 w-fit rounded-xl mb-4 group-hover:scale-110 transition-transform">
               <ShoppingBag className="w-6 h-6 text-blue-600 dark:text-blue-400" />
             </div>
             <p className="text-sm font-bold text-gray-500 dark:text-gray-400">إجمالي الطلبات</p>
             <h4 className="text-2xl font-black text-gray-900 dark:text-white mt-1">{profitStats?.total_orders || 0}</h4>
           </div>
-          <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-blue-50/30 dark:bg-blue-900/10 rounded-full blur-2xl" />
+          <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-blue-50 dark:bg-blue-900 rounded-full blur-2xl" />
         </div>
 
         <div className="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm relative overflow-hidden group transition-colors">
           <div className="relative z-10">
-            <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 w-fit rounded-xl mb-4 group-hover:scale-110 transition-transform">
+            <div className="p-3 bg-emerald-50 dark:bg-emerald-900 w-fit rounded-xl mb-4 group-hover:scale-110 transition-transform">
               <Store className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
             </div>
             <p className="text-sm font-bold text-gray-500 dark:text-gray-400">عمولات المتاجر</p>
             <h4 className="text-2xl font-black text-emerald-700 dark:text-emerald-400 mt-1">{profitStats?.total_commissions || 0} ج.م</h4>
           </div>
-          <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-emerald-50/30 dark:bg-emerald-900/10 rounded-full blur-2xl" />
+          <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-emerald-50 dark:bg-emerald-900 rounded-full blur-2xl" />
         </div>
 
         <div className="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm relative overflow-hidden group transition-colors">
           <div className="relative z-10">
-            <div className="p-3 bg-purple-50 dark:bg-purple-900/20 w-fit rounded-xl mb-4 group-hover:scale-110 transition-transform">
+            <div className="p-3 bg-purple-50 dark:bg-purple-900 w-fit rounded-xl mb-4 group-hover:scale-110 transition-transform">
               <Wallet className="w-6 h-6 text-purple-600 dark:text-purple-400" />
             </div>
             <p className="text-sm font-bold text-gray-500 dark:text-gray-400">رسوم الخدمة</p>
             <h4 className="text-2xl font-black text-purple-700 dark:text-purple-400 mt-1">{profitStats?.total_service_fees || 0} ج.م</h4>
           </div>
-          <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-purple-50/30 dark:bg-purple-900/10 rounded-full blur-2xl" />
+          <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-purple-50 dark:bg-purple-900 rounded-full blur-2xl" />
         </div>
 
         <div className="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm relative overflow-hidden group transition-colors">
           <div className="relative z-10">
-            <div className="p-3 bg-rose-50 dark:bg-rose-900/20 w-fit rounded-xl mb-4 group-hover:scale-110 transition-transform">
+            <div className="p-3 bg-rose-50 dark:bg-rose-900 w-fit rounded-xl mb-4 group-hover:scale-110 transition-transform">
               <AlertCircle className="w-6 h-6 text-rose-600 dark:text-rose-400" />
             </div>
             <p className="text-sm font-bold text-gray-500 dark:text-gray-400">إجمالي الخصومات</p>
             <h4 className="text-2xl font-black text-rose-700 dark:text-rose-400 mt-1">{profitStats?.total_discounts || 0} ج.م</h4>
           </div>
-          <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-rose-50/30 dark:bg-rose-900/10 rounded-full blur-2xl" />
+          <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-rose-50 dark:bg-rose-900 rounded-full blur-2xl" />
         </div>
 
         <div className="bg-emerald-600 dark:bg-emerald-700 p-6 rounded-3xl shadow-xl shadow-emerald-100 dark:shadow-none relative overflow-hidden group">
           <div className="relative z-10">
-            <div className="p-3 bg-white/20 w-fit rounded-xl mb-4">
+            <div className="p-3 bg-[#FFFFFF80] w-fit rounded-xl mb-4">
               <TrendingUp className="w-6 h-6 text-white" />
             </div>
             <p className="text-sm font-bold text-emerald-100 dark:text-emerald-200">صافي الربح</p>
@@ -450,7 +450,7 @@ export default function ReportsDashboard() {
           </div>
           <div className="overflow-x-auto max-h-[400px]">
              <table className="w-full text-right text-sm">
-                <thead className="bg-gray-100 dark:bg-gray-700/50 sticky top-0 z-10 transition-colors">
+                <thead className="bg-gray-100 dark:bg-gray-700 sticky top-0 z-10 transition-colors">
                    <tr className="text-gray-900 dark:text-gray-400 font-bold">
                       <th className="px-6 py-4">المتجر</th>
                       <th className="px-6 py-4">طلبات كاش</th>
@@ -464,7 +464,7 @@ export default function ReportsDashboard() {
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                    {vendorReport?.map((row: any) => (
-                     <tr key={row.vendor_id} className="hover:bg-gray-50/80 dark:hover:bg-gray-700/30 transition-colors">
+                     <tr key={row.vendor_id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                         <td className="px-6 py-4 font-bold text-gray-900 dark:text-white">{row.brand_name}</td>
                         <td className="px-6 py-4 text-gray-900 dark:text-gray-300 font-black">{row.cash_orders_count}</td>
                         <td className="px-6 py-4 text-gray-900 dark:text-gray-300 font-black">{row.cash_sales_amount.toFixed(2)} ج.م</td>
@@ -499,7 +499,7 @@ export default function ReportsDashboard() {
           </div>
           <div className="overflow-x-auto max-h-[400px]">
              <table className="w-full text-right text-sm">
-                <thead className="bg-gray-100 dark:bg-gray-700/50 sticky top-0 z-10 transition-colors">
+                <thead className="bg-gray-100 dark:bg-gray-700 sticky top-0 z-10 transition-colors">
                    <tr className="text-gray-900 dark:text-gray-400 font-bold">
                       <th className="px-6 py-4">السائق</th>
                       <th className="px-6 py-4">عدد التوصيلات</th>
@@ -508,7 +508,7 @@ export default function ReportsDashboard() {
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                    {driverReport?.map((row: any) => (
-                     <tr key={row.driver_id} className="hover:bg-gray-50/80 dark:hover:bg-gray-700/30 transition-colors">
+                     <tr key={row.driver_id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                         <td className="px-6 py-4 font-bold text-gray-900 dark:text-white">{row.driver_name}</td>
                         <td className="px-6 py-4 text-gray-900 dark:text-gray-300 font-black">{row.delivery_count}</td>
                         <td className="px-6 py-4 text-blue-800 dark:text-blue-400 font-black">{row.actual_paid_earnings} ج.م</td>
@@ -532,13 +532,13 @@ export default function ReportsDashboard() {
            </div>
            <div className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                 <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-2xl border border-orange-100 dark:border-orange-900/30">
+                 <div className="p-4 bg-orange-50 dark:bg-orange-900 rounded-2xl border border-orange-100 dark:border-orange-900">
                     <p className="text-xs font-bold text-orange-600 dark:text-orange-400 uppercase mb-1">جزاءات السائقين</p>
                     <h5 className="text-xl font-black text-gray-900 dark:text-white">
                        {penaltiesReport?.filter((p: any) => p.profile?.user_type === 'driver').reduce((sum: number, p: any) => sum + (p.penalty_amount || 0), 0) || 0} ج.م
                     </h5>
                  </div>
-                 <div className="p-4 bg-rose-50 dark:bg-rose-900/20 rounded-2xl border border-rose-100 dark:border-rose-900/30">
+                 <div className="p-4 bg-rose-50 dark:bg-rose-900 rounded-2xl border border-rose-100 dark:border-rose-900">
                     <p className="text-xs font-bold text-rose-600 dark:text-rose-400 uppercase mb-1">جزاءات المتاجر</p>
                     <h5 className="text-xl font-black text-gray-900 dark:text-white">
                        {penaltiesReport?.filter((p: any) => p.profile?.user_type === 'vendor').reduce((sum: number, p: any) => sum + (p.penalty_amount || 0), 0) || 0} ج.م
@@ -575,13 +575,13 @@ export default function ReportsDashboard() {
                <Users className="w-5 h-5 text-purple-500" />
                <h3 className="font-black text-lg dark:text-white">الشكاوي والنزاعات</h3>
              </div>
-             <span className="bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 px-3 py-1 rounded-full text-xs font-bold">
+             <span className="bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-400 px-3 py-1 rounded-full text-xs font-bold">
                 {supportTickets?.length || 0} تذكرة
              </span>
           </div>
           <div className="overflow-x-auto max-h-[300px]">
              <table className="w-full text-right text-xs">
-                <thead className="bg-gray-100 dark:bg-gray-700/50 sticky top-0 z-10 transition-colors">
+                <thead className="bg-gray-100 dark:bg-gray-700 sticky top-0 z-10 transition-colors">
                    <tr className="text-gray-900 dark:text-gray-400 font-bold border-b border-gray-200 dark:border-gray-700">
                       <th className="px-6 py-4">الموضوع</th>
                       <th className="px-6 py-4">الحالة</th>
@@ -591,12 +591,12 @@ export default function ReportsDashboard() {
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                    {supportTickets?.map((t: any) => (
-                     <tr key={t.id} className="hover:bg-gray-50/80 dark:hover:bg-gray-700/30 transition-colors">
+                     <tr key={t.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                         <td className="px-6 py-4 font-black text-gray-900 dark:text-gray-200 max-w-[200px] truncate">{t.subject}</td>
                         <td className="px-6 py-4 text-center">
                            <span className={cn(
                              "px-2 py-0.5 rounded-full font-black text-[10px]",
-                             t.status === 'resolved' ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-400" : "bg-orange-100 text-orange-900 dark:bg-orange-900/20 dark:text-orange-400"
+                             t.status === 'resolved' ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-400" : "bg-orange-100 text-orange-900 dark:bg-orange-900 dark:text-orange-400"
                            )}>
                               {t.status === 'resolved' ? 'تم الحل' : 'قيد المعالجة'}
                            </span>

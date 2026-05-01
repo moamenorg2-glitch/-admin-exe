@@ -222,7 +222,7 @@ export default function PermissionsList() {
       <div className="bg-white shadow-sm overflow-hidden sm:rounded-3xl border border-gray-100">
         <div className="overflow-x-auto">
           <table className="w-full text-right">
-            <thead className="bg-gray-50/50 border-b border-gray-100">
+            <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
                 <th scope="col" className="px-8 py-5 text-right text-xs font-bold text-gray-500 uppercase tracking-widest">
                   الصلاحية
@@ -261,7 +261,7 @@ export default function PermissionsList() {
                 </tr>
               ) : (
                 data?.map((permission) => (
-                  <tr key={permission.id} className="hover:bg-gray-50/50 transition-colors group">
+                  <tr key={permission.id} className="hover:bg-gray-50 transition-colors group">
                     <td className="px-8 py-5 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="p-2.5 bg-emerald-50 rounded-xl mr-1 group-hover:scale-110 transition-transform">
@@ -325,7 +325,7 @@ export default function PermissionsList() {
       {/* Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity" onClick={closeModal}></div>
+          <div className="fixed inset-0 bg-[#111827B3]  transition-opacity" onClick={closeModal}></div>
           <div className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-lg flex flex-col overflow-hidden border border-gray-100">
             <div className="px-8 pt-8 pb-6 flex-shrink-0 border-b border-gray-50">
               <div className="flex justify-between items-center">
@@ -347,7 +347,7 @@ export default function PermissionsList() {
             </div>
             
             <form onSubmit={handleSubmit} className="p-8 space-y-6">
-              <div className="p-5 bg-emerald-50/50 rounded-[2rem] border border-emerald-100 flex items-center gap-4 group cursor-pointer hover:bg-emerald-50 transition-all">
+              <div className="p-5 bg-emerald-50 rounded-[2rem] border border-emerald-100 flex items-center gap-4 group cursor-pointer hover:bg-emerald-50 transition-all">
                 <div className="relative flex items-center">
                   <input
                     type="checkbox"
@@ -421,7 +421,7 @@ export default function PermissionsList() {
       {/* Delete Confirmation Modal */}
       {permissionToDelete && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={() => setPermissionToDelete(null)}></div>
+          <div className="fixed inset-0 bg-[#111827B3] " onClick={() => setPermissionToDelete(null)}></div>
           <div className="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-sm overflow-hidden border border-gray-100 text-right p-8">
             <div className="flex flex-col items-center text-center">
               <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mb-6">

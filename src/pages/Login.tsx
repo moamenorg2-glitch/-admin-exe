@@ -139,7 +139,7 @@ export default function Login() {
               referrerPolicy="no-referrer"
             />
           ) : (
-            <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl flex items-center justify-center text-white font-bold text-4xl shadow-xl shadow-emerald-500/30">
+            <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl flex items-center justify-center text-white font-bold text-4xl shadow-xl shadow-emerald-500">
               {settings?.app_name?.charAt(0) || 'Z'}
             </div>
           )}

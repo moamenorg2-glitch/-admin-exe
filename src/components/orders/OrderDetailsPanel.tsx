@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { format, differenceInMinutes } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { X, MapPin, Phone, User, Clock, CheckCircle, AlertCircle, Motorbike, UserPlus, ShieldAlert, Star, Scale, MessageSquare, Plus, Minus, Trash2, CreditCard, ReceiptText, Printer, History, Zap, Edit2, ShoppingBag, Store, ChevronDown, Quote, Tag, Wallet, Settings2, Bell } from 'lucide-react';
@@ -538,7 +538,7 @@ export default function OrderDetailsPanel({ orderId, onClose, prepThreshold, del
       {/* Panel */}
       <div className="fixed inset-y-0 left-0 w-full max-w-lg bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out flex flex-col border-r border-gray-200">
         {/* Header */}
-        <div className="px-6 py-6 border-b border-gray-100 flex items-center justify-between bg-white/80 backdrop-blur-md sticky top-0 z-30">
+        <div className="px-6 py-6 border-b border-gray-100 flex items-center justify-between bg-[#FFFFFF80]  sticky top-0 z-30">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-emerald-600 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-200 rotate-3 group-hover:rotate-0 transition-transform">
               <ReceiptText className="w-6 h-6 text-white" />
@@ -576,7 +576,7 @@ export default function OrderDetailsPanel({ orderId, onClose, prepThreshold, del
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide bg-gray-50/30">
+        <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide bg-gray-50">
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-32 space-y-6">
               <div className="relative">
@@ -853,7 +853,7 @@ export default function OrderDetailsPanel({ orderId, onClose, prepThreshold, del
                     {order.sub_orders?.map((subOrder: any) => (
                       <div key={subOrder.id} className="bg-white border border-gray-100 rounded-[2rem] overflow-hidden shadow-sm hover:shadow-md transition-shadow">
                         {/* Vendor Header */}
-                        <div className="p-5 bg-gray-50/50 border-b border-gray-100 flex justify-between items-center relative group">
+                        <div className="p-5 bg-gray-50 border-b border-gray-100 flex justify-between items-center relative group">
                           <button
                             onClick={() => {
                               if (window.confirm('هل أنت متأكد من إزالة هذا المتجر من الطلب؟')) {
@@ -943,7 +943,7 @@ export default function OrderDetailsPanel({ orderId, onClose, prepThreshold, del
                         {/* Items */}
                         <div className="p-2 space-y-1">
                           {subOrder.items?.map((item: any) => (
-                            <div key={item.id} className="group/item relative bg-white hover:bg-gray-50/50 rounded-2xl p-4 transition-all flex gap-4 border border-transparent hover:border-gray-100">
+                            <div key={item.id} className="group/item relative bg-white hover:bg-gray-50 rounded-2xl p-4 transition-all flex gap-4 border border-transparent hover:border-gray-100">
                               <button
                                 onClick={() => {
                                   if (window.confirm('هل أنت متأكد من إزالة هذا المنتج؟')) {
@@ -982,7 +982,7 @@ export default function OrderDetailsPanel({ orderId, onClose, prepThreshold, del
                                         {typeof item.product_name_snapshot === 'object' ? (item.product_name_snapshot?.name_ar || item.product_name_snapshot?.name || JSON.stringify(item.product_name_snapshot)) : item.product_name_snapshot}
                                       </p>
                                       {(item.variant_name_snapshot || item.variant?.variant_name) && (
-                                        <span className="text-[9px] text-emerald-600 font-black bg-emerald-50 px-1.5 py-0.5 rounded-md border border-emerald-100/50 uppercase">
+                                        <span className="text-[9px] text-emerald-600 font-black bg-emerald-50 px-1.5 py-0.5 rounded-md border border-emerald-100 uppercase">
                                           {(() => {
                                             const v = item.variant_name_snapshot || item.variant?.variant_name;
                                             if (typeof v === 'object' && v !== null) {
@@ -1061,7 +1061,7 @@ export default function OrderDetailsPanel({ orderId, onClose, prepThreshold, del
 
                   {/* Delivery Team (Master Order Level) */}
                   <div className="bg-white border border-gray-100 rounded-[2rem] overflow-hidden shadow-sm">
-                    <div className="p-5 bg-emerald-50/30 border-b border-emerald-100/50 flex items-center justify-between">
+                    <div className="p-5 bg-emerald-50 border-b border-emerald-100 flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-emerald-100">
                           <Motorbike className="w-5 h-5" />
@@ -1093,7 +1093,7 @@ export default function OrderDetailsPanel({ orderId, onClose, prepThreshold, del
                     <div className="p-5 space-y-3">
                       {order.delivery_team && order.delivery_team.length > 0 ? (
                         order.delivery_team.map((team: any) => (
-                          <div key={team.id} className="flex items-center justify-between bg-gray-50/50 p-3 rounded-2xl border border-gray-100 group/driver">
+                          <div key={team.id} className="flex items-center justify-between bg-gray-50 p-3 rounded-2xl border border-gray-100 group/driver">
                             <div className="flex items-center gap-4">
                               <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-emerald-600 shadow-sm border border-gray-100 overflow-hidden">
                                 {team.driver?.user?.avatar_url ? (
@@ -1136,7 +1136,7 @@ export default function OrderDetailsPanel({ orderId, onClose, prepThreshold, del
                           </div>
                         ))
                       ) : (
-                        <div className="text-center py-8 border-2 border-dashed border-emerald-100 rounded-[2rem] bg-emerald-50/10">
+                        <div className="text-center py-8 border-2 border-dashed border-emerald-100 rounded-[2rem] bg-emerald-50">
                           <Motorbike className="w-8 h-8 text-emerald-200 mx-auto mb-2" />
                           <p className="text-[10px] text-emerald-400 font-black uppercase tracking-widest">بانتظار تعيين مندوب</p>
                         </div>
@@ -1147,7 +1147,7 @@ export default function OrderDetailsPanel({ orderId, onClose, prepThreshold, del
 
               {/* Reviews Section */}
               {reviews && reviews.length > 0 && (
-                <section className="bg-amber-50/50 border border-amber-100 rounded-[2rem] p-6 space-y-4">
+                <section className="bg-amber-50 border border-amber-100 rounded-[2rem] p-6 space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Star className="w-5 h-5 text-amber-500 fill-current" />
@@ -1395,7 +1395,7 @@ export default function OrderDetailsPanel({ orderId, onClose, prepThreshold, del
       {/* Chat Window Overlay */}
       <AnimatePresence>
         {activeChatRoomId && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-[#000000B3] ">
             <motion.div 
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}

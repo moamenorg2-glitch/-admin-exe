@@ -113,7 +113,7 @@ export default function PenaltiesList() {
       <div className="bg-white shadow-sm overflow-hidden sm:rounded-2xl border border-gray-100">
         <div className="overflow-x-auto">
           <table className="w-full text-right">
-            <thead className="bg-gray-50/50 border-b border-gray-100">
+            <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
                 <th scope="col" className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">
                   المستخدم المستهدف
@@ -155,8 +155,12 @@ export default function PenaltiesList() {
                   <tr key={penalty.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="flex-shrink-0 h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center">
-                          <User className="h-4 w-4 text-gray-500" />
+                        <div className="flex-shrink-0 h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border border-gray-200">
+                          {penalty.profiles?.avatar_url ? (
+                            <img src={penalty.profiles.avatar_url} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                          ) : (
+                            <User className="h-4 w-4 text-gray-500" />
+                          )}
                         </div>
                         <div className="mr-3">
                           <div className="text-sm font-medium text-gray-900">{penalty.profiles?.full_name}</div>

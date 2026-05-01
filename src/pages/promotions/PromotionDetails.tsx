@@ -134,7 +134,7 @@ export default function PromotionDetails({ id, onClose }: PromotionDetailsProps)
 
           {/* Usage History */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="px-4 py-3 border-b border-gray-100 bg-gray-50/50 font-bold text-gray-900 flex items-center gap-2">
+            <div className="px-4 py-3 border-b border-gray-100 bg-gray-50 font-bold text-gray-900 flex items-center gap-2">
               <Users className="w-4 h-4 text-gray-500" />
               سجل الاستخدام
             </div>
@@ -143,7 +143,7 @@ export default function PromotionDetails({ id, onClose }: PromotionDetailsProps)
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-right">
-                  <thead className="bg-gray-50/50 border-b border-gray-100">
+                  <thead className="bg-gray-50 border-b border-gray-100">
                     <tr>
                       <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">التاريخ</th>
                       <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">المستخدم</th>

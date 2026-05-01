@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../lib/supabase';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
@@ -211,7 +211,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ roomId, onClose, orderNumber, i
       {/* Header */}
       <div id="chat-header" className="p-4 bg-primary text-white flex justify-between items-center">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center overflow-hidden">
+          <div className="w-10 h-10 rounded-full bg-[#FFFFFF80] flex items-center justify-center overflow-hidden">
             {otherParticipant?.avatar_url ? (
               <img 
                 src={otherParticipant.avatar_url} 
@@ -228,7 +228,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ roomId, onClose, orderNumber, i
               {otherParticipant?.full_name ? `محادثة مع ${otherParticipant.full_name}` : 'محادثة الدعم'} 
               {orderNumber && ` (طلب #${orderNumber})`}
             </h3>
-            <p className="text-xs text-white/70">{isActive ? 'نشط الآن' : 'مغلق'}</p>
+            <p className="text-xs text-gray-200">{isActive ? 'نشط الآن' : 'مغلق'}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -237,7 +237,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ roomId, onClose, orderNumber, i
               {ticketId && (
                 <Link
                   to={`/support?ticketId=${ticketId}`}
-                  className="flex items-center gap-1 px-3 py-1 bg-white/20 hover:bg-white/30 text-white text-xs font-bold rounded-lg border border-white/20 transition-colors"
+                  className="flex items-center gap-1 px-3 py-1 bg-[#FFFFFF80] hover:bg-[#FFFFFF80] text-white text-xs font-bold rounded-lg border border-white/20 transition-colors"
                 >
                   <FileText className="w-4 h-4" />
                   التذكرة
@@ -245,7 +245,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ roomId, onClose, orderNumber, i
               )}
               <button
                 onClick={() => setShowConfirmEscalate(true)}
-                className="flex items-center gap-1 px-3 py-1 bg-amber-500/20 hover:bg-amber-500/40 text-white text-xs font-bold rounded-lg border border-white/20 transition-colors"
+                className="flex items-center gap-1 px-3 py-1 bg-amber-500 hover:bg-amber-500 text-white text-xs font-bold rounded-lg border border-white/20 transition-colors"
                 title="تحويل إلى نزاع"
               >
                 <Scale className="w-4 h-4" />
@@ -257,7 +257,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ roomId, onClose, orderNumber, i
             <button 
               onClick={() => setShowConfirmClose(true)}
               disabled={isClosing}
-              className="px-3 py-1 bg-red-500/20 hover:bg-red-500/40 text-white text-xs font-bold rounded-lg border border-white/20 transition-colors"
+              className="px-3 py-1 bg-red-500 hover:bg-red-500 text-white text-xs font-bold rounded-lg border border-white/20 transition-colors"
             >
               {isClosing ? 'جاري الإغلاق...' : 'إغلاق المحادثة'}
             </button>
@@ -265,7 +265,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ roomId, onClose, orderNumber, i
           <button 
             id="close-chat-btn"
             onClick={onClose}
-            className="p-2 hover:bg-white/10 rounded-full transition-colors"
+            className="p-2 hover:bg-[#FFFFFF80] rounded-full transition-colors"
           >
             <X className="w-6 h-6" />
           </button>
@@ -323,7 +323,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ roomId, onClose, orderNumber, i
                     <p className="text-sm leading-relaxed">{msg.message_content}</p>
                     <p
                       className={`text-[10px] mt-1 text-right ${
-                        isMe ? 'text-white/70' : 'text-gray-400'
+                        isMe ? 'text-gray-200' : 'text-gray-400'
                       }`}
                     >
                       {format(new Date(msg.created_at), 'HH:mm', { locale: ar })}
@@ -346,14 +346,14 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ roomId, onClose, orderNumber, i
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             placeholder="اكتب رسالتك هنا..."
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+            className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
             disabled={isSending}
           />
           <button
             id="send-message-btn"
             type="submit"
             disabled={!newMessage.trim() || isSending}
-            className="p-2 bg-primary text-white rounded-full hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-md"
+            className="p-2 bg-primary text-white rounded-full hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-md"
           >
             {isSending ? (
               <Loader2 className="w-5 h-5 animate-spin" />

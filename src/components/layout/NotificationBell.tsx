@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Bell, Check, Trash2, Info, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/authStore';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '../../lib/utils';
 import { toast } from 'react-hot-toast';
 
@@ -125,29 +126,30 @@ export default function NotificationBell() {
         )}
       </button>
 
-      <AnimatePresence mode="popLayout">
-        {isOpen && (
-          <motion.div
-            key="notifications-overlay"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-30 bg-black/60 backdrop-blur-md"
-            onClick={() => setIsOpen(false)}
-          />
-        )}
-        {isOpen && (
-          <motion.div
-            key="notifications-dropdown-content"
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[95%] max-w-2xl bg-[#1E1E2D] border border-gray-800 rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.5)] z-40 overflow-hidden flex flex-col max-h-[85vh]"
-          >
+      {isOpen && typeof document !== 'undefined' && createPortal(
+        <AnimatePresence mode="popLayout">
+          {isOpen && (
+            <motion.div
+              key="notifications-overlay"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[100] bg-[#000000B3] "
+              onClick={() => setIsOpen(false)}
+            />
+          )}
+          {isOpen && (
+            <motion.div
+              key="notifications-dropdown-content"
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[95%] max-w-2xl bg-[#1E1E2D] border border-gray-800 rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.5)] z-[101] overflow-hidden flex flex-col max-h-[85vh]"
+            >
               <div className="p-6 border-b border-gray-800 flex items-center justify-between bg-[#2B2B40]/30">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-emerald-500/10 rounded-xl">
+                  <div className="p-2 bg-emerald-500 rounded-xl">
                     <Bell className="w-5 h-5 text-emerald-500" />
                   </div>
                   <div>
@@ -158,7 +160,7 @@ export default function NotificationBell() {
                 {unreadCount > 0 && (
                   <button
                     onClick={markAllAsRead}
-                    className="text-xs text-emerald-500 hover:bg-emerald-500/10 px-4 py-2 rounded-xl font-bold transition-all"
+                    className="text-xs text-emerald-500 hover:bg-emerald-500 px-4 py-2 rounded-xl font-bold transition-all"
                   >
                     تحديد الكل كمقروء
                   </button>
@@ -170,7 +172,7 @@ export default function NotificationBell() {
                   <div className="p-12 text-center text-gray-500 text-sm">جاري التحميل...</div>
                 ) : notifications.length === 0 ? (
                   <div className="p-12 flex flex-col items-center gap-4 text-center">
-                    <div className="p-4 bg-gray-800/30 rounded-full">
+                    <div className="p-4 bg-gray-800 rounded-full">
                       <Bell className="w-8 h-8 text-gray-600" />
                     </div>
                     <p className="text-gray-500 text-sm">لا توجد إشعارات حالياً</p>
@@ -182,13 +184,13 @@ export default function NotificationBell() {
                         key={notification.id}
                         className={cn(
                           "p-5 rounded-2xl transition-all relative group border border-transparent",
-                          !notification.is_read ? "bg-emerald-500/5 border-emerald-500/10" : "hover:bg-white/5"
+                          !notification.is_read ? "bg-emerald-500 border-emerald-500" : "hover:bg-[#FFFFFF80]"
                         )}
                       >
                         <div className="flex gap-4">
                           <div className={cn(
                             "mt-1 p-2.5 rounded-xl shrink-0",
-                            !notification.is_read ? "bg-emerald-500/10" : "bg-gray-800/50"
+                            !notification.is_read ? "bg-emerald-500" : "bg-gray-800"
                           )}>
                             {getIcon((notification.data as any)?.type)}
                           </div>
@@ -214,7 +216,7 @@ export default function NotificationBell() {
                           {!notification.is_read && (
                             <button
                               onClick={() => markAsRead(notification.id)}
-                              className="p-2 text-emerald-500 hover:bg-emerald-500/10 rounded-xl transition-all shadow-sm bg-[#1E1E2D]"
+                              className="p-2 text-emerald-500 hover:bg-emerald-500 rounded-xl transition-all shadow-sm bg-[#1E1E2D]"
                               title="تحديد كمقروء"
                             >
                               <Check className="w-4 h-4" />
@@ -222,7 +224,7 @@ export default function NotificationBell() {
                           )}
                           <button
                             onClick={() => deleteNotification(notification.id)}
-                            className="p-2 text-red-400 hover:bg-red-400/10 rounded-xl transition-all shadow-sm bg-[#1E1E2D]"
+                            className="p-2 text-red-400 hover:bg-red-400 rounded-xl transition-all shadow-sm bg-[#1E1E2D]"
                             title="حذف"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -241,13 +243,15 @@ export default function NotificationBell() {
                 >
                   إغلاق
                 </button>
-                <button className="text-xs font-bold text-emerald-500 hover:text-emerald-400 transition-colors bg-emerald-500/5 px-4 py-2 rounded-lg">
+                <button className="text-xs font-bold text-emerald-500 hover:text-emerald-400 transition-colors bg-emerald-500 px-4 py-2 rounded-lg">
                   عرض الأرشيف الكامل
                 </button>
               </div>
             </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </div>
   );
 }
