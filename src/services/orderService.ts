@@ -717,7 +717,7 @@ export const orderService = {
         .from('order_delivery_team')
         .select('*, master_orders!fk_order_delivery_team_master_order(status, created_at)', { count: 'exact', head: true })
         .eq('driver_id', entityId)
-        .eq('master_orders.status', 'Cancelled')
+        .in('master_orders.status', ['Cancelled', 'Rejected'])
         .gte('master_orders.created_at', startOfDay.toISOString());
 
       return { completed_today: completed || 0, cancelled_today: cancelled || 0 };

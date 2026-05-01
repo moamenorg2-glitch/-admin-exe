@@ -87,7 +87,7 @@ export default function OrdersList() {
   const debouncedSearchQuery = useDebounce(searchQuery, 600);
 
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
-  const [trackingTarget, setTrackingTarget] = useState<{type: 'order' | 'driver' | 'vendor', id: string, name?: string} | null>(null);
+  const [trackingTarget, setTrackingTarget] = useState<{type: 'order' | 'driver' | 'vendor', id: string, name?: string, orderData?: any} | null>(null);
   const [assigningDriverOrderId, setAssigningDriverOrderId] = useState<string | null>(null);
   const [selectedHistoryOrder, setSelectedHistoryOrder] = useState<any | null>(null);
   const [activeTab, setActiveTab] = useState<'current' | 'completed' | 'cancelled'>('current');
@@ -1073,7 +1073,7 @@ export default function OrdersList() {
                         title="تتبع مباشر"
                         onClick={(e) => {
                           e.stopPropagation();
-                          setTrackingTarget({ type: 'order', id: order.id, name: `طلب #${order.order_number}` });
+                          setTrackingTarget({ type: 'order', id: order.id, name: `طلب #${order.order_number}`, orderData: order });
                         }}
                         className="text-white bg-indigo-600 hover:bg-indigo-700 shadow-md shadow-indigo-500 hover:shadow-indigo-500 px-3 py-2 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 cursor-pointer flex-1 justify-center"
                       >
@@ -1336,7 +1336,7 @@ export default function OrdersList() {
                                 <motion.button 
                                   whileHover={{ scale: 1.05 }} 
                                   whileTap={{ scale: 0.95 }} 
-                                  onClick={() => window.open(`/orders/tracking/${order.id}`, '_blank')}
+                                  onClick={() => setTrackingTarget({ type: 'order', id: order.id, name: `طلب #${order.order_number}`, orderData: order })}
                                   className="flex-1 text-white bg-indigo-500 hover:bg-indigo-600 shadow-sm py-1.5 rounded-lg font-black text-[10px] transition-all flex items-center justify-center gap-1 cursor-pointer border border-indigo-400/30 whitespace-nowrap px-2"
                                   title="تتبع على الخريطة"
                                 >
