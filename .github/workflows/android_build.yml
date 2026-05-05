@@ -72,22 +72,42 @@ jobs:
           echo "AndroidManifest.xml content after injection:"
           cat android/app/src/main/AndroidManifest.xml
 
+      - name: Prepare Assets
+        run: |
+          mkdir -p assets
+          if [ ! -f "assets/icon.png" ]; then
+            if [ -f "icons/icon-512.webp" ]; then
+              cp icons/icon-512.webp assets/icon.png
+              cp icons/icon-512.webp assets/splash.png
+            elif [ -f "icon.png" ]; then
+              cp icon.png assets/icon.png
+            fi
+          fi
+
       - name: Generate App Icons
         run: |
           if [ -f "assets/icon.png" ]; then
-            echo "Generating Android assets from assets/icon.png..."
+            echo "Generating assets..."
+            # Use -y to bypass confirmation if needed
             npx -y @capacitor/assets generate --android
-          elif [ -f "icon.png" ]; then
-             echo "Icon found in root, moving to assets/ and generating..."
-             mkdir -p assets
-             cp icon.png assets/icon.png
-             npx -y @capacitor/assets generate --android
           else
-            echo "No icon.png found in assets/ or root, skipping icon generation."
+            echo "No assets/icon.png found, skipping generation"
           fi
 
       - name: Sync Capacitor
         run: npx cap sync android
+
+      - name: Inject Google Auth Client ID
+        run: |
+          mkdir -p android/app/src/main/res/values
+          if [ -f "android/app/src/main/res/values/strings.xml" ]; then
+            # Avoid duplicate injection
+            if ! grep -q "server_client_id" android/app/src/main/res/values/strings.xml; then
+              sed -i '/<\/resources>/i \    <string name="server_client_id">74300040820-ek9sjdttg34qlq0vgo63engh5jdrrjuj.apps.googleusercontent.com</string>' android/app/src/main/res/values/strings.xml
+            fi
+          else
+            echo '<?xml version="1.0" encoding="utf-8"?><resources><string name="server_client_id">74300040820-ek9sjdttg34qlq0vgo63engh5jdrrjuj.apps.googleusercontent.com</string></resources>' > android/app/src/main/res/values/strings.xml
+          fi
 
       - name: Build APKs
         run: |
