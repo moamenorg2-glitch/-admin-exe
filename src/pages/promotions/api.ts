@@ -35,13 +35,14 @@ export const fetchPromotionDetails = async (id: string) => {
     supabase.from('promotion_rewards').select('*').eq('promotion_id', id),
     supabase.from('promotion_time_slots').select('*').eq('promotion_id', id),
     supabase.from('promotion_exclusions').select('*').eq('promotion_id', id),
+    (supabase.from('promotion_users' as any) as any).select('customer_id').eq('promotion_id', id),
   ]);
 
   for (const result of relatedResults) {
     if (result.error) throw result.error;
   }
 
-  const [conditions, rewards, timeSlots, exclusions] = relatedResults;
+  const [conditions, rewards, timeSlots, exclusions, assignedUsers] = relatedResults;
 
   let owner_type = 'platform';
   if (promotion.vendor_ids && promotion.vendor_ids.length > 0) {
@@ -78,6 +79,7 @@ export const fetchPromotionDetails = async (id: string) => {
     buy_product_quantity,
     get_product_id,
     get_product_quantity,
+    assigned_user_ids: assignedUsers.data?.map((u: any) => u.customer_id) || [],
     conditions: conditions.data || [],
     rewards: rewards.data || [],
     time_slots: timeSlots.data || [],
@@ -86,7 +88,19 @@ export const fetchPromotionDetails = async (id: string) => {
 };
 
 export const savePromotion = async (data: PromotionFormValues) => {
-  const { conditions, rewards, time_slots, exclusions, owner_type, buy_product_id, buy_product_quantity, get_product_id, get_product_quantity, ...promoData } = data;
+  const { 
+    conditions, 
+    rewards, 
+    time_slots, 
+    exclusions, 
+    owner_type, 
+    buy_product_id, 
+    buy_product_quantity, 
+    get_product_id, 
+    get_product_quantity, 
+    assigned_user_ids,
+    ...promoData 
+  } = data;
   
   let promotionId = promoData.id;
 
@@ -188,6 +202,7 @@ export const savePromotion = async (data: PromotionFormValues) => {
       supabase.from('promotion_rewards').delete().eq('promotion_id', promotionId),
       supabase.from('promotion_time_slots').delete().eq('promotion_id', promotionId),
       supabase.from('promotion_exclusions').delete().eq('promotion_id', promotionId),
+      (supabase.from('promotion_users' as any) as any).delete().eq('promotion_id', promotionId),
     ]);
     for (const result of deleteResults) {
       if (result.error) throw result.error;
@@ -227,6 +242,14 @@ export const savePromotion = async (data: PromotionFormValues) => {
       return { ...rest, promotion_id: promotionId };
     });
     insertPromises.push(supabase.from('promotion_exclusions').insert(exclusionsToInsert));
+  }
+
+  if (promoData.is_hidden && assigned_user_ids && assigned_user_ids.length > 0) {
+    const userToInsert = assigned_user_ids.map(uId => ({
+      promotion_id: promotionId,
+      customer_id: uId
+    }));
+    insertPromises.push((supabase.from('promotion_users' as any) as any).insert(userToInsert));
   }
 
   const results = await Promise.all(insertPromises);

@@ -215,7 +215,7 @@ export default function ReportsAIAssistant() {
                   <h3 className="font-black text-sm">المساعد الشخصي الذكي</h3>
                   <div className="flex items-center gap-1.5">
                     <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
-                    <span className="text-[10px] font-bold text-blue-100 uppercase tracking-tighter">متصل الآن</span>
+                    <span className="text-[11px] font-bold text-blue-100 uppercase tracking-tighter">متصل الآن</span>
                   </div>
                 </div>
               </div>
@@ -254,21 +254,21 @@ export default function ReportsAIAssistant() {
                     <div 
                       key={idx}
                       className={cn(
-                        "flex flex-col max-w-[85%] animate-in slide-in-from-bottom-2 duration-300",
-                        msg.role === 'user' ? "mr-auto items-end" : "ml-auto items-start"
+                        "flex flex-col animate-in slide-in-from-bottom-2 duration-300",
+                        msg.role === 'user' ? "mr-auto items-end max-w-[85%]" : "w-[96%] mx-auto"
                       )}
                     >
                       <div className={cn(
-                        "p-4 rounded-2xl text-sm leading-relaxed shadow-sm prose prose-sm max-w-none prose-p:leading-relaxed prose-table:w-full prose-table:min-w-full prose-img:rounded-xl overflow-x-auto prose-th:text-right prose-td:text-right prose-table:text-right text-right transition-colors",
+                        "p-4 rounded-2xl text-sm leading-relaxed shadow-sm prose prose-sm max-w-none prose-p:leading-relaxed prose-table:w-full prose-table:min-w-full prose-img:rounded-xl overflow-x-auto prose-th:text-right prose-td:text-right prose-table:text-right text-right transition-colors w-full [&_td]:text-right [&_th]:text-right [&_td]:dir-rtl [&_th]:dir-rtl",
                         msg.role === 'user' 
                           ? "bg-blue-600 text-white rounded-tl-none prose-headings:text-white prose-p:text-white prose-strong:text-white prose-ul:text-white prose-ol:text-white prose-li:text-white prose-a:text-white" 
-                          : "bg-white dark:bg-slate-800 text-gray-800 dark:text-gray-100 border border-gray-100 dark:border-slate-700 rounded-tr-none prose-neutral dark:prose-invert overflow-hidden"
+                          : "bg-white dark:bg-slate-800 text-gray-800 dark:text-gray-100 border border-gray-100 dark:border-slate-700 prose-neutral dark:prose-invert overflow-hidden"
                       )}>
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>
                           {msg.content}
                         </ReactMarkdown>
                       </div>
-                      <span className="text-[10px] text-gray-400 mt-1 font-medium px-2">
+                      <span className="text-[11px] text-gray-400 mt-1 font-medium px-2">
                         {msg.timestamp.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
@@ -304,7 +304,7 @@ export default function ReportsAIAssistant() {
                       <Send className="w-5 h-5 rotate-180" />
                     </button>
                   </div>
-                  <div className="mt-3 flex items-center justify-center gap-2 text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-wider">
+                  <div className="mt-3 flex items-center justify-center gap-2 text-[11px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-wider">
                     <Sparkles className="w-3 h-3 text-amber-400" />
                     <span>مدعوم بتقنية الذكاء الاصطناعي لإدارة زاجل</span>
                   </div>

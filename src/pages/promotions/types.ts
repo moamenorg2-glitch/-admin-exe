@@ -45,6 +45,7 @@ export const promotionSchema = z.object({
   end_date: z.string().min(1, 'تاريخ الانتهاء مطلوب'),
   usage_limit: z.number().nullable().optional(),
   per_user_limit: z.number().nullable().optional(),
+  is_hidden: z.boolean(),
   applicable_to: z.array(z.string()),
   is_active: z.boolean(),
   priority: z.number(),
@@ -69,6 +70,7 @@ export const promotionSchema = z.object({
   buy_product_quantity: z.number().nullable().optional(),
   get_product_id: z.string().nullable().optional(),
   get_product_quantity: z.number().nullable().optional(),
+  assigned_user_ids: z.array(z.string()).optional(),
 });
 
 export type PromotionCondition = z.infer<typeof promotionConditionSchema>;

@@ -1,7 +1,6 @@
 import { useEffect, lazy, Suspense } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './store/authStore';
-import { ErrorBoundary } from './components/ErrorBoundary';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
@@ -10,8 +9,8 @@ import Dashboard from './pages/Dashboard';
 const isMissingSupabase = !import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 const MissingConfigWarning = () => (
-  <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-    <div className="bg-white p-8 rounded-2xl shadow-xl max-w-lg w-full text-center border-2 border-red-500">
+  <div className="min-h-screen bg-[#E9E1CC] flex items-center justify-center p-4">
+    <div className="bg-[#F7F4EC] p-8 rounded-2xl shadow-xl max-w-lg w-full text-center border-2 border-red-500">
       <h1 className="text-2xl font-bold text-red-600 mb-4">تنقل ناقص (Missing Configuration)</h1>
       <p className="text-gray-700 mb-4">
         لم يتم العثور على مفتاح <strong>VITE_SUPABASE_ANON_KEY</strong> أثناء عملية البناء من GitHub Actions.
@@ -56,14 +55,14 @@ const MerchantDashboard = lazy(() => import('./pages/merchant/Dashboard'));
 const DriverDashboard = lazy(() => import('./pages/driver/Dashboard'));
 
 const PageLoader = () => (
-  <div className="min-h-screen flex flex-col items-center justify-center bg-[#F3F6F9] dark:bg-[#151521]">
+  <div className="min-h-screen flex flex-col items-center justify-center bg-[#E9E1CC] dark:bg-[#151521]">
     <div className="relative w-20 h-20 mb-4">
-      <div className="absolute inset-0 border-4 border-emerald-100 dark:border-emerald-900 rounded-full"></div>
-      <div className="absolute inset-0 border-4 border-emerald-600 rounded-full border-t-transparent animate-spin"></div>
+      <div className="absolute inset-0 border-4 border-[#EAEFDF] dark:border-emerald-900 rounded-full"></div>
+      <div className="absolute inset-0 border-4 border-[#5F6F52] rounded-full border-t-transparent animate-spin"></div>
     </div>
     <div className="flex flex-col items-center gap-2">
-      <h2 className="text-lg font-black text-slate-800 dark:text-white" dir="rtl">زاجل إكسبريس</h2>
-      <p className="text-xs text-slate-400 font-medium animate-pulse">جاري تحميل البيانات...</p>
+      <h2 className="text-lg font-black text-[#4D4939] dark:text-white" dir="rtl">زاجل إكسبريس</h2>
+      <p className="text-xs text-[#8B856E] font-medium animate-pulse">جاري تحميل البيانات...</p>
     </div>
   </div>
 );
@@ -86,8 +85,8 @@ export default function App() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
+      <div className="min-h-screen flex items-center justify-center bg-[#E9E1CC]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#5F6F52]"></div>
       </div>
     );
   }

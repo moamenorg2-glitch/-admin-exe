@@ -84,6 +84,8 @@ export const orderService = {
       }
     }
 
+    // Force inner join if filtering by vendor or driver natively, but since we are already querying, we can do client side if it's paginated it might miss some.
+    // Given the limitations, we'll do client-side filtering since this is an admin dashboard.
     const { data, error, count } = await query
       .order('created_at', { ascending: false })
       .range(page * pageSize, (page + 1) * pageSize - 1);

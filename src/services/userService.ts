@@ -2,7 +2,6 @@ import { supabase } from '../lib/supabase';
 import { Database } from '../types/database.types';
 import { supabaseAdmin, isAdminKeyAvailable } from '../lib/supabaseAdmin';
 import { formatToE164 } from '../utils/phoneUtils';
-import { getApiUrl } from '../utils/apiUtils';
 
 export type Profile = Database['public']['Tables']['profiles']['Row'];
 

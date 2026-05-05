@@ -159,7 +159,7 @@ export default function TransactionsList() {
     }
   };
 
-  const getTransactionIcon = (type: string, amount: number) => {
+  const getTransactionIcon = (_type: string, amount: number) => {
     if (amount > 0) return <ArrowUpRight className="w-4 h-4 text-green-600" />;
     return <ArrowDownLeft className="w-4 h-4 text-red-600" />;
   };
@@ -265,7 +265,7 @@ export default function TransactionsList() {
                 </tr>
               ) : (
                 data?.transactions?.map((tx) => (
-                  <tr key={tx.transaction_id} className="hover:bg-gray-50 transition-colors group even:bg-gray-50">
+                  <tr key={tx.transaction_id} className="hover:bg-gray-50 dark:hover:bg-slate-700/20 transition-colors group">
                     <td className="px-8 py-5 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10 rounded-2xl bg-gray-50 flex items-center justify-center group-hover:scale-105 transition-transform overflow-hidden border border-gray-100">

@@ -1,7 +1,6 @@
 import express, { Request, Response, NextFunction } from "express";
 import { createServer as createViteServer } from "vite";
 import path from "path";
-import { fileURLToPath } from "url";
 import { createClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
 import multer from "multer";
@@ -28,7 +27,7 @@ const catchAsync = (fn: Function) => {
   };
 };
 
-const globalErrorHandler = (err: any, req: Request, res: Response, next: NextFunction) => {
+const globalErrorHandler = (err: any, _req: Request, res: Response, _next: NextFunction) => {
   console.error("Global Error Handler:", err);
   
   const statusCode = err.statusCode || 500;
@@ -43,8 +42,8 @@ const globalErrorHandler = (err: any, req: Request, res: Response, next: NextFun
 // --------------------------------
 
 const upload = multer({ storage: multer.memoryStorage() });
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// const __filename = fileURLToPath(import.meta.url);
+// const __dirname = path.dirname(__filename);
 
 // Helper to format phone to E.164 (assuming Egypt +20)
 function formatPhone(phone: string): string {
@@ -69,7 +68,7 @@ async function startServer() {
 
   app.use(express.json());
 
-  app.get("/api/health", (req, res) => {
+  app.get("/api/health", (_req, res) => {
     res.json({ status: "ok", time: new Date().toISOString() });
   });
 
@@ -307,8 +306,8 @@ async function startServer() {
 
     console.log(`[DeleteUser] Starting comprehensive cleanup for user: ${userId}`);
 
-    // 1. Get Wallet ID for further deletions
-    const { data: walletData } = await supabaseAdmin.from('wallets').select('user_id').eq('user_id', userId).single();
+    // 1. Get Wallet ID for further deletions (Skipped if not needed)
+    // const { data: walletData } = await supabaseAdmin.from('wallets').select('user_id').eq('user_id', userId).single();
     
     // 2. Aggregate all deletions in a safe order to satisfy FKs
     
@@ -478,7 +477,7 @@ async function startServer() {
     console.log("Starting production server...");
     const distPath = path.join(process.cwd(), "dist");
     app.use(express.static(distPath));
-    app.get("*", (req, res) => {
+    app.get("*", (_req, res) => {
       res.sendFile(path.join(distPath, "index.html"));
     });
   }

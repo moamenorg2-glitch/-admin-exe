@@ -114,16 +114,20 @@ export const dashboardService = {
         `)
         .limit(5),
 
-      // Top Requested Products (Mocking real hits by checking metadata if possible or just limit)
+      // Top Requested Products (Remove randomness, use real count)
       supabase
         .from('products')
         .select('id, name_ar, base_price, order_items(count)')
         .limit(5),
 
-      // Top categories
+      // Top categories with real vendor counts
       supabase
         .from('vendor_categories')
-        .select('id, name_ar')
+        .select(`
+          id, 
+          name_ar,
+          vendor_details:vendor_details(count)
+        `)
         .limit(4)
     ]);
 
@@ -141,16 +145,22 @@ export const dashboardService = {
     if (topProductsResponse.error) throw topProductsResponse.error;
     if (activeCategoriesResponse.error) throw activeCategoriesResponse.error;
 
-    // Process Top Products with randomized weights if count is 0 to keep UI alive but predictable
+    // Process Top Products - Remove randomness
     const processedProducts = (topProductsResponse.data || []).map((p: any) => ({
       ...p,
-      sales_count: (p.order_items?.[0]?.count || 0) + Math.floor(Math.random() * 50) // Adding minimal flavor
+      sales_count: (p.order_items?.[0]?.count || 0)
     })).sort((a: any, b: any) => b.sales_count - a.sales_count);
 
     const processedVendors = (topVendorsResponse.data || []).map((v: any) => ({
       ...v,
-      order_count: (v.sub_orders?.[0]?.count || 0) + Math.floor(Math.random() * 20)
+      order_count: (v.sub_orders?.[0]?.count || 0)
     })).sort((a: any, b: any) => b.order_count - a.order_count);
+
+    // Process Categories - Add vendor_count
+    const processedCategories = (activeCategoriesResponse.data || []).map((cat: any) => ({
+      ...cat,
+      vendor_count: cat.vendor_details?.[0]?.count || 0
+    }));
 
     // Process Chart Data
     const chartDays = Array.from({ length: 7 }, (_, i) => {
@@ -192,7 +202,7 @@ export const dashboardService = {
       recentDrivers: recentDriversResponse.data || [],
       topVendors: processedVendors,
       topProducts: processedProducts,
-      topCategories: activeCategoriesResponse.data || []
+      topCategories: processedCategories
     };
   },
 

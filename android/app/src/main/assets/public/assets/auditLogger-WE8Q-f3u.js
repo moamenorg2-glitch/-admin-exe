@@ -1,1 +1,0 @@
-import{s as t}from"./index-sJ4Qs-fZ.js";const c=async(e,o,r,i,s,d)=>{try{const{data:{user:a}}=await t.auth.getUser();if(!a)return;await t.from("audit_logs").insert({admin_id:a.id,action_type:e,table_name:o,record_id:r,old_value:i,new_value:s,ip_address:d})}catch(a){console.error("Failed to log audit action:",a)}};export{c as l};

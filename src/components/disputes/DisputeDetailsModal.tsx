@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
 import { Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { 
   X, 
   Scale, 
@@ -365,7 +365,7 @@ export default function DisputeDetailsModal({ dispute, onClose, onIssuePenalty }
                               )}
                             >
                               <option.icon className="w-5 h-5 mb-1" />
-                              <span className="text-[10px] font-bold text-center">{option.label}</span>
+                              <span className="text-[11px] font-bold text-center">{option.label}</span>
                             </button>
                           ))}
                         </div>
@@ -392,7 +392,7 @@ export default function DisputeDetailsModal({ dispute, onClose, onIssuePenalty }
                               )}
                             >
                               <option.icon className="w-5 h-5 mb-1" />
-                              <span className="text-[10px] font-bold text-center">{option.label}</span>
+                              <span className="text-[11px] font-bold text-center">{option.label}</span>
                             </button>
                           ))}
                         </div>

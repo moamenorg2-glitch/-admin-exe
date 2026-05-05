@@ -1,6 +1,6 @@
 import { useAuthStore } from '../../store/authStore';
-import { LogOut, User as UserIcon, Menu, Sun, Moon } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
+import { User as UserIcon, Menu, Sun, Moon } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
 import NotificationBell from './NotificationBell';
@@ -21,9 +21,7 @@ export default function Header({
   isDarkMode,
   onToggleDarkMode
 }: HeaderProps) {
-  const { profile, signOut } = useAuthStore();
-  const location = useLocation();
-  const isDashboard = location.pathname === '/';
+  const { profile } = useAuthStore();
 
   const { data: settings } = useQuery({
     queryKey: ['system-settings'],
@@ -38,55 +36,69 @@ export default function Header({
   });
 
   return (
-    <header className="h-16 bg-[#1E1E2D] shadow-sm flex items-center justify-between px-6 z-20 border-b border-gray-800  sticky top-0">
-      <div className="flex items-center gap-4">
+    <header className={cn(
+      "h-16 w-full flex items-center justify-between px-4 sm:px-6 z-20 border-b sticky top-0 transition-colors duration-300",
+      isDarkMode ? "bg-[#1E1E2D] border-gray-800 shadow-lg shadow-black/20" : "bg-[#F7F4EC] border-[#E9E2D0] shadow-md transition-shadow duration-300"
+    )}>
+      <div className="flex items-center h-full gap-4">
         <button 
           onClick={onToggleSidebar}
-          className="p-2 text-gray-400 hover:text-white hover:bg-emerald-500 rounded-xl transition-all lg:hidden"
+          className={cn(
+             "p-2 rounded-xl transition-all lg:hidden flex items-center justify-center",
+             isDarkMode ? "text-gray-400 hover:text-white hover:bg-[#5F6F52]" : "text-[#7C755E] hover:text-white hover:bg-[#5F6F52]"
+          )}
         >
-          <Menu className="w-6 h-6" />
+          <Menu className="w-5 h-5 sm:w-6 h-6" />
         </button>
 
         <button 
           onClick={onToggleCollapse}
-          className="p-2 text-gray-400 hover:text-white hover:bg-emerald-500 rounded-xl transition-all hidden lg:block"
+          className={cn(
+            "p-2 rounded-xl transition-all hidden lg:flex items-center justify-center",
+            isDarkMode ? "text-gray-400 hover:text-white hover:bg-[#5F6F52]" : "text-[#7C755E] hover:text-white hover:bg-[#5F6F52]"
+          )}
           title={isCollapsed ? "توسيع القائمة" : "طي القائمة"}
         >
           <Menu className={cn("w-6 h-6 transition-transform", isCollapsed && "rotate-180")} />
         </button>
         
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 h-full">
           <div className={cn(
-            "flex items-center justify-center overflow-hidden transition-all duration-300",
-            settings?.appLogo ? "w-10 h-10" : "w-10 h-10 bg-emerald-600 rounded-xl shadow-lg shadow-emerald-500/20 rotate-3 border border-emerald-500/30"
+            "flex items-center justify-center overflow-hidden transition-all duration-300 rounded-full shrink-0",
+            settings?.appLogo ? "w-9 h-9 sm:w-10 h-10" : "w-9 h-9 sm:w-10 h-10 bg-[#5F6F52] shadow-lg shadow-[#5F6F52]/20 border border-[#5F6F52]/30"
           )}>
             {settings?.appLogo ? (
-              <img src={settings.appLogo} alt="Logo" className="w-full h-full object-contain" />
+              <img src={settings.appLogo} alt="Logo" className="w-full h-full object-cover" />
             ) : (
-              <span className="text-white font-black text-xl italic">Z</span>
+              <span className="text-white font-black text-xl italic uppercase">Z</span>
             )}
           </div>
-          <div className="flex flex-col leading-tight">
-            {!isDashboard && (
-              <span className="text-lg font-black text-white tracking-tight uppercase">
-                زاجل إكسبريس
-              </span>
-            )}
-            <span className="text-[10px] text-emerald-500 font-black uppercase tracking-[0.2em] opacity-80">
-              {settings?.app_name || 'Admin Panel'}
+          <div className="flex flex-col justify-center leading-none mt-0.5">
+            <span className={cn(
+              "text-[14px] sm:text-base md:text-xl font-black tracking-wide uppercase transition-colors whitespace-nowrap",
+              isDarkMode ? "text-[#10B981]" : "text-[#3D2B1F]"
+            )}>
+              {settings?.app_name || 'لوحة التحكم'}
             </span>
           </div>
         </div>
       </div>
       
-      <div className="flex items-center gap-4">
+      <div className="flex items-center h-full gap-2 sm:gap-4">
         {/* Notifications */}
-        <NotificationBell />
+        <div className="flex items-center justify-center">
+          <NotificationBell />
+        </div>
 
         {/* Dark Mode Toggle */}
         <button
           onClick={onToggleDarkMode}
-          className="p-2.5 text-gray-400 hover:text-emerald-500 hover:bg-[#2B2B40] rounded-xl transition-all duration-300 group"
+          className={cn(
+            "p-2 sm:p-2.5 rounded-xl transition-all duration-300 group flex items-center justify-center",
+            isDarkMode 
+              ? "text-gray-400 hover:text-[#5F6F52] hover:bg-[#2B2B40]" 
+              : "text-[#7C755E] hover:text-[#5F6F52] hover:bg-[#FAF5E9]"
+          )}
           title={isDarkMode ? "الوضع الفاتح" : "الوضع الداكن"}
         >
           {isDarkMode ? (
@@ -96,27 +108,25 @@ export default function Header({
           )}
         </button>
 
-        <Link to="/profile" className="flex items-center gap-3 text-sm text-gray-300 hover:bg-[#2B2B40] hover:text-white p-1 pr-3 rounded-xl transition-all group border border-transparent hover:border-emerald-500">
-          <div className="flex flex-col items-end leading-none">
-            <span className="font-bold text-[13px] text-white group-hover:text-emerald-400 transition-colors uppercase">{profile?.full_name?.split(' ')[0] || 'المشرف'}</span>
-            <span className="text-[9px] text-gray-500 mt-0.5 font-bold">{profile?.user_type === 'admin' ? 'مدير النظام' : 'صلاحية محدودة'}</span>
+        <Link to="/profile" className={cn(
+          "flex items-center gap-2 sm:gap-3 text-sm p-1 pr-2 sm:pr-3 rounded-full transition-all group border border-transparent hover:border-[#5F6F52]",
+          isDarkMode ? "text-gray-300 hover:bg-[#2B2B40] hover:text-white" : "text-[#7C755E] hover:bg-[#FAF5E9] hover:text-[#3D3929]"
+        )}>
+          <div className="hidden md:flex flex-col items-end justify-center leading-none">
+            <span className={cn(
+              "font-bold text-[13px] group-hover:text-[#5F6F52] transition-colors uppercase whitespace-nowrap",
+              isDarkMode ? "text-white" : "text-[#3D3929]"
+            )}>{profile?.full_name?.split(' ')[0] || 'المشرف'}</span>
+            <span className="text-[9px] text-[#7C755E] mt-0.5 font-bold whitespace-nowrap">{profile?.user_type === 'admin' ? 'مدير النظام' : 'صلاحية محدودة'}</span>
           </div>
-          <div className="w-9 h-9 bg-emerald-500 rounded-xl flex items-center justify-center overflow-hidden border border-emerald-500 group-hover:border-emerald-500 transition-all">
+          <div className="w-8 h-8 sm:w-9 h-9 bg-[#5F6F52] rounded-full flex items-center justify-center overflow-hidden border border-[#5F6F52] group-hover:border-[#5F6F52] transition-all shrink-0 shadow-sm">
             {profile?.avatar_url ? (
               <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
             ) : (
-              <UserIcon className="w-5 h-5 text-emerald-500" />
+              <UserIcon className="w-4 h-4 sm:w-5 h-5 text-white" />
             )}
           </div>
         </Link>
-        
-        <button
-          onClick={signOut}
-          className="p-2.5 text-gray-400 hover:text-white hover:bg-red-500 rounded-xl transition-all group"
-          title="تسجيل الخروج"
-        >
-          <LogOut className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-        </button>
       </div>
     </header>
   );

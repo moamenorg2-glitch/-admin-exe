@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../lib/supabase';
@@ -7,7 +7,6 @@ import { useSearchParams } from 'react-router-dom';
 import { 
   MessageSquare, 
   Search, 
-  Clock, 
   User, 
   Loader2, 
   AlertCircle,
@@ -222,7 +221,7 @@ export default function SupportChats() {
                         <span className="font-bold text-gray-900 text-sm truncate pr-2">
                           {room.master_orders?.customer?.full_name || getRoomTypeLabel(room.room_type)}
                         </span>
-                        <span className="text-[10px] font-medium text-gray-400 whitespace-nowrap bg-gray-50 px-1.5 py-0.5 rounded">
+                        <span className="text-[11px] font-medium text-gray-400 whitespace-nowrap bg-gray-50 px-1.5 py-0.5 rounded">
                           {format(new Date(room.updated_at), 'aa hh:mm', { locale: ar })}
                         </span>
                       </div>

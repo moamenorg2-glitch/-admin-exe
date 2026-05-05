@@ -43,9 +43,9 @@ export const getSupabaseAdmin = () => {
           detectSessionInUrl: false,
           storageKey: 'supabase-admin-auth-token',
           storage: {
-            getItem: (key) => null,
-            setItem: (key, value) => {},
-            removeItem: (key) => {}
+            getItem: (_key) => null,
+            setItem: (_key, _value) => {},
+            removeItem: (_key) => {}
           }
         }
       }
@@ -69,9 +69,9 @@ export const supabaseAdmin = globalForSupabaseAdmin.supabaseAdmin ?? createClien
       detectSessionInUrl: false,
       storageKey: 'supabase-admin-auth-token',
       storage: {
-        getItem: (key) => null,
-        setItem: (key, value) => {},
-        removeItem: (key) => {}
+        getItem: (_key) => null,
+        setItem: (_key, _value) => {},
+        removeItem: (_key) => {}
       }
     }
   }

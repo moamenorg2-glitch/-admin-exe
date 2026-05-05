@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { X, ChevronDown } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { navigation } from '../../constants';
 import { useAuthStore } from '../../store/authStore';
@@ -10,30 +10,17 @@ import { supabase } from '../../lib/supabase';
 interface SidebarProps {
   isOpen: boolean;
   isCollapsed: boolean;
+  isDarkMode: boolean;
   onClose: () => void;
 }
 
-export default function Sidebar({ isOpen, isCollapsed, onClose }: SidebarProps) {
+export default function Sidebar({ isOpen, isCollapsed, isDarkMode, onClose }: SidebarProps) {
   const { profile } = useAuthStore();
   const location = useLocation();
   const queryClient = useQueryClient();
   const isSuperAdmin = profile?.email === 'moamen.org2@gmail.com';
-  const isAdmin = profile?.user_type === 'admin';
-
   const [openGroups, setOpenGroups] = useState<string[]>([]);
-
-  const { data: settings } = useQuery({
-    queryKey: ['system-settings'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('system_settings')
-        .select('appLogo, app_name')
-        .single();
-      if (error) throw error;
-      return data;
-    }
-  });
-
+  
   const { data: permissions } = useQuery({
     queryKey: ['permissions', profile?.user_id],
     queryFn: async () => {
@@ -183,34 +170,11 @@ export default function Sidebar({ isOpen, isCollapsed, onClose }: SidebarProps) 
       )}
 
       <aside className={cn(
-        "fixed inset-y-0 right-0 z-30 bg-[#1E1E2D] flex flex-col h-full transition-all duration-300 ease-in-out lg:relative lg:translate-x-0",
+        "fixed inset-y-0 right-0 z-30 flex flex-col h-full transition-all duration-300 ease-in-out lg:relative lg:translate-x-0 border-l",
+        isDarkMode ? "bg-[#1E1E2D] border-gray-800" : "bg-[#F7F4EC] border-[#E9E2D0] shadow-md transition-shadow duration-300",
         isOpen ? "translate-x-0" : "translate-x-full lg:translate-x-0",
         isCollapsed ? "w-20" : "w-56"
       )}>
-        <div className="h-16 flex items-center justify-between border-b border-gray-800 px-6 flex-shrink-0">
-          <div className="flex items-center gap-3 overflow-hidden">
-            <div className={cn(
-              "flex-shrink-0 flex items-center justify-center overflow-hidden transition-all duration-300",
-              settings?.appLogo ? "" : "bg-emerald-600 rounded-xl shadow-lg shadow-emerald-500/20 rotate-3 border border-emerald-500/30",
-              isCollapsed ? "w-10 h-10" : "w-9 h-9"
-            )}>
-              {settings?.appLogo ? (
-                <img src={settings.appLogo} alt="Logo" className="w-full h-full object-contain" />
-              ) : (
-                <span className="text-white font-black text-lg italic">Z</span>
-              )}
-            </div>
-            {!isCollapsed && (
-              <h1 className="text-lg font-black text-white uppercase tracking-tight truncate">
-                {settings?.app_name || 'زاجل'}
-              </h1>
-            )}
-          </div>
-          <button onClick={onClose} className="lg:hidden p-2 text-gray-400 hover:text-white hover:bg-[#FFFFFF80] rounded-lg">
-            <X className="w-6 h-6" />
-          </button>
-        </div>
-        
         <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-2 custom-scrollbar">
           {Object.entries(groupedNavigation).map(([group, items]) => (
             <div key={`nav-group-${group}`} className="space-y-1">
@@ -224,8 +188,10 @@ export default function Sidebar({ isOpen, isCollapsed, onClose }: SidebarProps) 
                     className={({ isActive }) =>
                       cn(
                         isActive
-                          ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600'
-                          : 'text-gray-400 hover:bg-emerald-500 hover:text-white',
+                          ? 'bg-[#5F6F52] text-white shadow-lg shadow-[#5F6F52]/30'
+                          : isDarkMode 
+                            ? 'text-gray-400 hover:bg-[#5F6F52] hover:text-white'
+                            : 'text-[#7C755E] hover:bg-[#FAF5E9] hover:text-[#5F6F52]',
                         'group flex items-center px-3 py-2.5 text-sm font-bold rounded-xl transition-all duration-300 mb-1',
                         isCollapsed && 'justify-center px-0 mx-2'
                       )
@@ -234,23 +200,26 @@ export default function Sidebar({ isOpen, isCollapsed, onClose }: SidebarProps) 
                     {({ isActive }) => (
                       <>
                         <div className="relative flex-shrink-0 flex items-center justify-center">
-                          <item.icon
-                            className={cn(
-                              'h-5 w-5 transition-transform duration-300 group-hover:scale-110',
-                              !isCollapsed && 'ml-3',
-                              isActive ? 'text-white' : 'text-gray-500 group-hover:text-emerald-400'
+                            <item.icon
+                              className={cn(
+                                'h-5 w-5 transition-transform duration-300 group-hover:scale-110',
+                                !isCollapsed && 'ml-3',
+                                isActive 
+                                  ? 'text-white' 
+                                  : isDarkMode ? 'text-gray-500 group-hover:text-[#5F6F52]' : 'text-[#7C755E] group-hover:text-[#5F6F52]'
+                              )}
+                              aria-hidden="true"
+                            />
+                            {counts && (counts as any)[item.name] > 0 && (
+                              <span className={cn(
+                                "absolute -top-2 flex h-[18px] min-w-[18px] items-center justify-center rounded-lg bg-red-500 px-1 text-[11px] font-black text-white shadow-lg shadow-red-500 border-2",
+                                isDarkMode ? "border-[#1E1E2D]" : "border-[#F7F4EC]",
+                                isCollapsed ? "-right-2" : "right-1"
+                              )}>
+                                {(counts as any)[item.name]}
+                              </span>
                             )}
-                            aria-hidden="true"
-                          />
-                          {counts && (counts as any)[item.name] > 0 && (
-                            <span className={cn(
-                              "absolute -top-2 flex h-[18px] min-w-[18px] items-center justify-center rounded-lg bg-red-500 px-1 text-[10px] font-black text-white shadow-lg shadow-red-500 border-2 border-[#1E1E2D]",
-                              isCollapsed ? "-right-2" : "right-1"
-                            )}>
-                              {(counts as any)[item.name]}
-                            </span>
-                          )}
-                        </div>
+                          </div>
                         {!isCollapsed && (
                           <div className="flex items-center justify-between flex-1">
                             <span className="tracking-tight">{item.name}</span>
@@ -265,12 +234,17 @@ export default function Sidebar({ isOpen, isCollapsed, onClose }: SidebarProps) 
                   {!isCollapsed ? (
                     <button
                       onClick={() => toggleGroup(group)}
-                      className="w-full flex items-center justify-between px-3 py-2 text-sm font-bold text-gray-400 hover:text-white hover:bg-[#2B2B40] rounded-lg transition-colors group/header"
+                      className={cn(
+                        "w-full flex items-center justify-between px-3 py-2 text-sm font-bold rounded-lg transition-all group/header",
+                        isDarkMode 
+                          ? "text-gray-400 hover:text-white hover:bg-[#2B2B40]" 
+                          : "text-[#7C755E] hover:text-[#3D3929] hover:bg-[#FAF5E9]"
+                      )}
                     >
                       <div className="flex items-center gap-2">
                         <span>{group}</span>
                         {groupCounts[group] > 0 && (
-                          <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-black text-white shadow-lg shadow-red-500">
+                          <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[11px] font-black text-white shadow-lg shadow-red-500">
                             {groupCounts[group]}
                           </span>
                         )}
@@ -283,7 +257,10 @@ export default function Sidebar({ isOpen, isCollapsed, onClose }: SidebarProps) 
                       />
                     </button>
                   ) : (
-                    <div className="h-px bg-gray-800 my-4 mx-2" />
+                    <div className={cn(
+                      "h-px my-4 mx-2 transition-colors",
+                      isDarkMode ? "bg-gray-800" : "bg-[#E9E2D0]"
+                    )} />
                   )}
                   
                   <div 
@@ -302,8 +279,10 @@ export default function Sidebar({ isOpen, isCollapsed, onClose }: SidebarProps) 
                         className={({ isActive }) =>
                           cn(
                             isActive
-                              ? 'bg-emerald-600 text-emerald-500 font-bold'
-                              : 'text-gray-400 hover:bg-emerald-500 hover:text-white',
+                              ? isDarkMode ? 'bg-[#5F6F52]/10 text-[#5F6F52] font-bold' : 'bg-[#FAF5E9] text-[#5F6F52] font-bold'
+                              : isDarkMode
+                                ? 'text-gray-400 hover:bg-[#5F6F52] hover:text-white'
+                                : 'text-[#7C755E] hover:bg-[#FAF5E9] hover:text-[#5F6F52]',
                             'group flex items-center px-4 py-2 text-sm rounded-xl transition-all duration-300',
                             !isCollapsed && 'mr-4 mb-0.5',
                             isCollapsed && 'justify-center px-0 mb-1'
@@ -317,13 +296,16 @@ export default function Sidebar({ isOpen, isCollapsed, onClose }: SidebarProps) 
                                 className={cn(
                                   'h-4 w-4 transition-transform duration-300 group-hover:scale-110',
                                   !isCollapsed && 'ml-3',
-                                  isActive ? 'text-emerald-500' : 'text-gray-500 group-hover:text-emerald-400'
+                                  isActive 
+                                    ? 'text-[#5F6F52]' 
+                                    : isDarkMode ? 'text-gray-500 group-hover:text-[#5F6F52]' : 'text-[#7C755E] group-hover:text-[#5F6F52]'
                                 )}
                                 aria-hidden="true"
                               />
                               {counts && (counts as any)[item.name] > 0 && (
                                 <span className={cn(
-                                  "absolute -top-2 flex h-[16px] min-w-[16px] items-center justify-center rounded-md bg-red-500 px-1 text-[9px] font-black text-white shadow-lg shadow-red-500 border-2 border-[#1E1E2D]",
+                                  "absolute -top-2 flex h-[16px] min-w-[16px] items-center justify-center rounded-md bg-red-500 px-1 text-[9px] font-black text-white shadow-lg shadow-red-500 border-2",
+                                  isDarkMode ? "border-[#1E1E2D]" : "border-[#F7F4EC]",
                                   isCollapsed ? "-right-2" : "right-1"
                                 )}>
                                   {(counts as any)[item.name]}

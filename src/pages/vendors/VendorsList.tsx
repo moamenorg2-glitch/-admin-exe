@@ -10,7 +10,6 @@ import { vendorService } from '../../services/vendorService';
 import { userService } from '../../services/userService';
 import { uploadService } from '../../services/uploadService';
 import { handleGlobalError } from '../../utils/errorHandler';
-import { getApiUrl } from '../../utils/apiUtils';
 
 export default function VendorsList() {
   const [page, setPage] = useState(0);
@@ -845,11 +844,11 @@ export default function VendorsList() {
                     
                     <div className="pt-4 border-t border-emerald-100 grid grid-cols-2 gap-4">
                       <div className="flex flex-col items-center">
-                        <span className="text-[10px] font-bold text-emerald-500 uppercase">مكتمل اليوم</span>
+                        <span className="text-[11px] font-bold text-emerald-500 uppercase">مكتمل اليوم</span>
                         <span className="text-lg font-black text-emerald-600">{selectedVendor.completed_today || 0}</span>
                       </div>
                       <div className="flex flex-col items-center border-r border-emerald-100">
-                        <span className="text-[10px] font-bold text-red-500 uppercase">ملغي اليوم</span>
+                        <span className="text-[11px] font-bold text-red-500 uppercase">ملغي اليوم</span>
                         <span className="text-lg font-black text-red-600">{selectedVendor.cancelled_today || 0}</span>
                       </div>
                     </div>
@@ -942,6 +941,17 @@ export default function VendorsList() {
                       onChange={(e) => setFormData({ ...formData, min_order_value: Number(e.target.value) })}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
                       min="0"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-sm font-medium text-gray-700">البريد الإلكتروني (اختياري)</label>
+                    <input
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
+                      placeholder="example@mail.com"
+                      dir="ltr"
                     />
                   </div>
                   <div className="space-y-1">

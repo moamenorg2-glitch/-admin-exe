@@ -1,1 +1,0 @@
-import{j as s}from"./index-CuKZSDSK.js";const e=()=>s.jsxs("div",{className:"p-6",children:[s.jsx("h1",{className:"text-2xl font-bold mb-4",children:"لوحة تحكم السائق"}),s.jsx("p",{children:"مرحباً بك في لوحة تحكم السائق. يمكنك هنا استقبال الطلبات ومتابعة أرباحك."})]});export{e as default};

@@ -316,13 +316,13 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ roomId, onClose, orderNumber, i
                     }`}
                   >
                     {!isMe && (
-                      <p className="text-[10px] font-bold mb-1 opacity-70">
+                      <p className="text-[11px] font-bold mb-1 opacity-70">
                         {msg.sender?.full_name || 'مستخدم'}
                       </p>
                     )}
                     <p className="text-sm leading-relaxed">{msg.message_content}</p>
                     <p
-                      className={`text-[10px] mt-1 text-right ${
+                      className={`text-[11px] mt-1 text-right ${
                         isMe ? 'text-gray-200' : 'text-gray-400'
                       }`}
                     >

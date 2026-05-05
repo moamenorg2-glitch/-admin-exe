@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
 import { Search, Plus, Edit, Trash2, Store, X } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { ImageManager } from '../../components/ImageManager';
 
 interface Category {
   id: string;
@@ -253,15 +254,23 @@ export default function CategoriesList() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">رابط الأيقونة</label>
-                <input
-                  type="url"
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all font-medium text-left"
-                  dir="ltr"
-                  value={formData.icon_url || ''}
-                  onChange={(e) => setFormData({ ...formData, icon_url: e.target.value })}
-                  placeholder="https://example.com/icon.png"
-                />
+                <label className="block text-sm font-bold text-gray-700 mb-2">أيقونة التصنيف</label>
+                <div className="flex flex-col gap-3">
+                  <ImageManager
+                    bucket="categories"
+                    path={`icons/${editingCategory?.id || 'new'}_${Date.now()}`}
+                    currentImageUrl={formData.icon_url || ''}
+                    onImageChanged={(newUrl) => setFormData({ ...formData, icon_url: newUrl })}
+                  />
+                  <input
+                    type="url"
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all font-medium text-left"
+                    dir="ltr"
+                    value={formData.icon_url || ''}
+                    onChange={(e) => setFormData({ ...formData, icon_url: e.target.value })}
+                    placeholder="https://example.com/icon.png أو ارفع صورة"
+                  />
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">ترتيب العرض</label>

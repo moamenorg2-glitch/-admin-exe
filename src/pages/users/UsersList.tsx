@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../../lib/supabase';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { Search, Filter, Shield, User, Store, Car, Edit, Ban, CheckCircle, Plus, X, Loader2, Download, Eye, Trash2, Info } from 'lucide-react';
@@ -12,7 +11,6 @@ import { exportToCSV } from '../../utils/export';
 import { userService } from '../../services/userService';
 import { uploadService } from '../../services/uploadService';
 import { handleGlobalError } from '../../utils/errorHandler';
-import { getApiUrl } from '../../utils/apiUtils';
 
 type UserType = 'admin' | 'customer' | 'driver' | 'vendor' | 'All';
 
@@ -451,7 +449,7 @@ export default function UsersList({ fixedRole }: UsersListProps) {
                                 const activeCount = activeMasterOrderIds.size;
                                 return (
                                   <span className={cn(
-                                    "text-[10px] px-1.5 py-0.5 rounded-full font-bold",
+                                    "text-[11px] px-1.5 py-0.5 rounded-full font-bold",
                                     activeCount > 0
                                       ? "bg-amber-100 text-amber-700"
                                       : "bg-gray-100 text-gray-600"

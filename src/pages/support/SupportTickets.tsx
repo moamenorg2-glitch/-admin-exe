@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
-import { Search, Filter, MessageSquare, Clock, CheckCircle, AlertCircle, X, User, Phone, Hash, Calendar, Scale, ShieldAlert, BarChart3, TrendingUp, HelpCircle } from 'lucide-react';
+import { Search, Filter, MessageSquare, Clock, CheckCircle, AlertCircle, X, User, Phone, Hash, Scale, ShieldAlert, BarChart3, TrendingUp, HelpCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { cn } from '../../lib/utils';

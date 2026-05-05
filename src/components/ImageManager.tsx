@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Loader2, Upload, Trash2, Edit } from 'lucide-react';
+import { Loader2, Upload, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { handleGlobalError } from '../utils/errorHandler';
 import { uploadService } from '../services/uploadService';
@@ -16,7 +16,7 @@ export const ImageManager: React.FC<ImageManagerProps> = ({ bucket, path, curren
   const [isUploading, setIsUploading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>, isUpdate: boolean) => {
+  const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -71,7 +71,7 @@ export const ImageManager: React.FC<ImageManagerProps> = ({ bucket, path, curren
             className="hidden"
             accept="image/*"
             disabled={isUploading}
-            onChange={(e) => handleUpload(e, !!currentImageUrl)}
+            onChange={(e) => handleUpload(e)}
           />
         </label>
       )}

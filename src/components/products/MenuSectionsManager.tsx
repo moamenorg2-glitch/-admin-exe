@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
 import { X, Plus, Trash2, GripVertical, Save, Edit2 } from 'lucide-react';
-import { cn } from '../../lib/utils';
 import toast from 'react-hot-toast';
 import ConfirmModal from '../ui/ConfirmModal';
 

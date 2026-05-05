@@ -6,7 +6,7 @@ import { supabase } from '../../lib/supabase';
 import { promotionSchema, PromotionFormValues } from './types';
 import { savePromotion } from './api';
 import toast from 'react-hot-toast';
-import { X, Plus, Trash2, Save, ArrowRight } from 'lucide-react';
+import { Plus, Trash2, Save, ArrowRight } from 'lucide-react';
 import Select from 'react-select';
 
 interface PromotionFormProps {
@@ -16,7 +16,6 @@ interface PromotionFormProps {
 
 export default function PromotionForm({ initialData, onClose }: PromotionFormProps) {
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<'basic' | 'conditions' | 'rewards' | 'time_slots' | 'exclusions'>('basic');
 
   const {
     register,
@@ -40,6 +39,8 @@ export default function PromotionForm({ initialData, onClose }: PromotionFormPro
       priority: 0,
       stackable: false,
       usage_per_order: 1,
+      is_hidden: false,
+      assigned_user_ids: [],
       applicable_to: ['all'],
       conditions: [],
       rewards: [],
@@ -55,8 +56,23 @@ export default function PromotionForm({ initialData, onClose }: PromotionFormPro
   const promoType = watch('type');
   const ownerType = watch('owner_type');
   const vendorIds = watch('vendor_ids');
+  const isHidden = watch('is_hidden');
 
   // Fetch reference data
+  const { data: customers } = useQuery({
+    queryKey: ['customers-ref'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('user_id, full_name, primary_phone')
+        .eq('user_type', 'customer');
+      return data?.map(c => ({ 
+        value: c.user_id, 
+        label: `${c.full_name} (${c.primary_phone})` 
+      })) || [];
+    }
+  });
+
   const { data: vendors } = useQuery({
     queryKey: ['vendors-ref'],
     queryFn: async () => {
@@ -203,6 +219,10 @@ export default function PromotionForm({ initialData, onClose }: PromotionFormPro
   const { fields: exclusions, append: appendExclusion, remove: removeExclusion } = useFieldArray({ control, name: 'exclusions' });
 
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showAssignedList, setShowAssignedList] = useState(false);
+
+  const assignedUserIds = watch('assigned_user_ids') || [];
+  const selectedCustomersData = customers?.filter(c => assignedUserIds.includes(c.value)) || [];
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden bg-gray-500 bg-opacity-75 flex justify-end">
@@ -453,9 +473,85 @@ export default function PromotionForm({ initialData, onClose }: PromotionFormPro
                     <input
                       type="number"
                       {...register('per_user_limit', { setValueAs: v => v === '' ? null : Number(v) })}
-                      placeholder="غير محدود"
-                      className="w-full bg-gray-50 border-gray-300 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500"
+                      placeholder="مثال: 1 (لمرة واحدة)"
+                      className="w-full bg-gray-50 border-gray-300 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 text-gray-900"
                     />
+                    <p className="mt-1 text-xs text-gray-500">ادخل 1 لجعل العرض يستخدم لمرة واحدة فقط لكل عميل.</p>
+                  </div>
+                </div>
+
+                <div className="border-t border-gray-200 pt-6">
+                  <h4 className="text-base font-medium text-gray-900 mb-4">خصوصية العرض</h4>
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                       <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          className="sr-only peer"
+                          {...register('is_hidden')}
+                        />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                      </label>
+                      <span className="text-sm font-medium text-gray-700">عرض خاص (مخفي من السلايدر العام ومخصص لعملاء محددين)</span>
+                    </div>
+
+                    {isHidden && (
+                      <div className="animate-in fade-in slide-in-from-top-2">
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="block text-sm font-medium text-gray-700">العملاء المخصص لهم العرض *</label>
+                          {assignedUserIds.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => setShowAssignedList(!showAssignedList)}
+                              className="text-xs text-emerald-600 hover:text-emerald-700 font-medium flex items-center gap-1"
+                            >
+                              {showAssignedList ? 'إخفاء القائمة' : `عرض قائمة العملاء (${assignedUserIds.length})`}
+                            </button>
+                          )}
+                        </div>
+                        <Controller
+                          name="assigned_user_ids"
+                          control={control}
+                          render={({ field }) => (
+                            <Select
+                              styles={selectStyles}
+                              isMulti
+                              options={customers}
+                              value={customers?.filter(c => field.value?.includes(c.value))}
+                              onChange={(val) => field.onChange(val.map(c => c.value))}
+                              placeholder="ابحث عن العملاء بالاسم أو الهاتف..."
+                              className="react-select-container"
+                              classNamePrefix="react-select"
+                              noOptionsMessage={() => "لم يتم العثور على عملاء"}
+                            />
+                          )}
+                        />
+                        <p className="mt-1 text-xs text-gray-500">سيظهر هذا العرض فقط في قسم "القسائم" لهؤلاء العملاء.</p>
+
+                        {showAssignedList && assignedUserIds.length > 0 && (
+                          <div className="mt-3 border border-gray-200 rounded-lg bg-white overflow-hidden animate-in zoom-in-95 duration-200">
+                            <table className="w-full text-right text-xs">
+                              <thead className="bg-gray-50">
+                                <tr>
+                                  <th className="px-3 py-2 text-gray-500">الاسم</th>
+                                  <th className="px-3 py-2 text-gray-500 text-left">رقم الهاتف</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-gray-100">
+                                {selectedCustomersData.map((c) => (
+                                  <tr key={c.value} className="hover:bg-gray-50">
+                                    <td className="px-3 py-2 font-medium text-gray-900">{c.label.split(' (')[0]}</td>
+                                    <td className="px-3 py-2 text-gray-500 font-mono text-left" dir="ltr">
+                                      {c.label.match(/\((.*?)\)/)?.[1]}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
 

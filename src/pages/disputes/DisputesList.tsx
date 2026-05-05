@@ -1,12 +1,11 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
-import { Search, Filter, AlertCircle, CheckCircle, Clock, Eye, Scale, ChevronLeft, ChevronRight, User, Plus, ShieldAlert, MessageSquare, TrendingUp, AlertTriangle } from 'lucide-react';
+import { Search, AlertCircle, CheckCircle, Clock, Eye, Scale, ChevronLeft, ChevronRight, User, Plus, ShieldAlert, MessageSquare, TrendingUp } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import toast from 'react-hot-toast';
-import { Link } from 'react-router-dom';
 import DisputeDetailsModal from '../../components/disputes/DisputeDetailsModal';
 import DisputeFormModal from '../../components/disputes/DisputeFormModal';
 import PenaltyFormModal from '../../components/penalties/PenaltyFormModal';

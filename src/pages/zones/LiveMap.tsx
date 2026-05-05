@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Map as MapIcon, Activity, Users, Car, MapPin } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Map as MapIcon, Activity, Users, Car } from 'lucide-react';
 import OpenLayerMap from '../../components/map/OpenLayerMap';
 import { driverService } from '../../services/driverService';
 import { vendorService } from '../../services/vendorService';
@@ -180,10 +180,9 @@ export default function LiveMap({ embedded = false, initialType = 'all', initial
         }
 
         let orderStatuses = ['Active', 'OnTheWay'];
-        let searchQuery = '';
         if (filterType === 'order' && filterId) {
           orderStatuses = []; // fetch all statuses for that specific order if we're searching by ID
-          searchQuery = filterId; // We'll pass it to searchQuery, or if orderService supports `id`, that is better.
+          // We'll pass it to searchQuery, or if orderService supports `id`, that is better.
         }
 
         const [driversRes, vendorsRes, ordersRes] = await Promise.all([
@@ -405,7 +404,7 @@ export default function LiveMap({ embedded = false, initialType = 'all', initial
                <div className="text-lg lg:text-xl font-black text-blue-600 font-mono">
                  {markers.filter(m => m.type === 'driver').length}
                </div>
-               <div className="text-[10px] lg:text-xs text-gray-500 font-bold flex items-center justify-center gap-1">
+               <div className="text-[11px] lg:text-xs text-gray-500 font-bold flex items-center justify-center gap-1">
                  <Car className="w-3 h-3" /> متصل
                </div>
              </div>
@@ -413,7 +412,7 @@ export default function LiveMap({ embedded = false, initialType = 'all', initial
                  <div className="text-lg lg:text-xl font-black text-red-600 font-mono">
                    {markers.filter(m => m.type === 'order').length}
                  </div>
-                 <div className="text-[10px] lg:text-xs text-gray-500 font-bold flex items-center justify-center gap-1">
+                 <div className="text-[11px] lg:text-xs text-gray-500 font-bold flex items-center justify-center gap-1">
                    <MapIcon className="w-3 h-3" /> عملاء
                  </div>
                </div>
@@ -421,7 +420,7 @@ export default function LiveMap({ embedded = false, initialType = 'all', initial
                <div className="text-lg lg:text-xl font-black text-emerald-600 font-mono">
                  {markers.filter(m => m.type === 'vendor').length}
                </div>
-               <div className="text-[10px] lg:text-xs text-gray-500 font-bold flex items-center justify-center gap-1">
+               <div className="text-[11px] lg:text-xs text-gray-500 font-bold flex items-center justify-center gap-1">
                  <Users className="w-3 h-3" /> متاجر
                </div>
              </div>
@@ -488,7 +487,7 @@ export default function LiveMap({ embedded = false, initialType = 'all', initial
 
       {/* Map Container - Must have enough height/flex to show up */}
       <div className={cn(
-        "w-full relative flex-1 min-h-[400px]", 
+        "w-full relative flex-1 min-h-[600px]", 
         !hideControls && "px-4 lg:px-0"
       )}>
         <div className={cn(

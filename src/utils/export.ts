@@ -23,8 +23,6 @@ export function exportToCSV(data: any[], filename: string) {
 
   // Add BOM for UTF-8 to support Arabic characters in Excel
   const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('url');
-  
   // Create download link
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');

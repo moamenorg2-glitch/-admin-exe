@@ -1,14 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/authStore';
-import { User, Mail, Phone, Shield, Camera, Save, Loader2 } from 'lucide-react';
+import { User, Mail, Phone, Shield, Camera, Save, Loader2, LogOut } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { handleGlobalError } from '../../utils/errorHandler';
 import { uploadService } from '../../services/uploadService';
 
 export default function AdminProfile() {
-  const { profile, user, setProfile } = useAuthStore();
+  const { profile, user, setProfile, signOut } = useAuthStore();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -20,6 +20,15 @@ export default function AdminProfile() {
 
   const [isEditing, setIsEditing] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      toast.success('تم تسجيل الخروج بنجاح');
+    } catch (error: any) {
+      handleGlobalError(error, 'تسجيل الخروج');
+    }
+  };
 
   useEffect(() => {
     if (profile) {
@@ -109,14 +118,23 @@ export default function AdminProfile() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">الملف الشخصي</h1>
-        {!isEditing && (
+        <div className="flex items-center gap-3">
+          {!isEditing && (
+            <button
+              onClick={() => setIsEditing(true)}
+              className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+            >
+              تعديل البيانات
+            </button>
+          )}
           <button
-            onClick={() => setIsEditing(true)}
-            className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+            onClick={handleLogout}
+            className="flex items-center gap-2 bg-red-50 text-red-600 border border-red-200 px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors"
           >
-            تعديل البيانات
+            <LogOut className="w-4 h-4" />
+            تسجيل الخروج
           </button>
-        )}
+        </div>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">

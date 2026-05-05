@@ -10,7 +10,6 @@ import { driverService } from '../../services/driverService';
 import { userService } from '../../services/userService';
 import { uploadService } from '../../services/uploadService';
 import { handleGlobalError } from '../../utils/errorHandler';
-import { getApiUrl } from '../../utils/apiUtils';
 
 export default function DriversList() {
   const [page, setPage] = useState(0);
@@ -417,7 +416,7 @@ export default function DriversList() {
                 </tr>
               ) : (
                 data?.drivers?.map((driver, idx) => (
-                  <tr key={driver.user_id || `driver-${idx}`} className="hover:bg-gray-50 transition-colors even:bg-gray-100">
+                  <tr key={driver.user_id || `driver-${idx}`} className="hover:bg-gray-50 dark:hover:bg-slate-700/20 transition-colors group">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10 bg-indigo-100 rounded-full flex items-center justify-center overflow-hidden">
@@ -883,6 +882,17 @@ export default function DriversList() {
                     />
                   </div>
                   <div className="space-y-1">
+                    <label className="text-sm font-medium text-gray-700">البريد الإلكتروني (اختياري)</label>
+                    <input
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-primary outline-none transition-all"
+                      placeholder="example@mail.com"
+                      dir="ltr"
+                    />
+                  </div>
+                  <div className="space-y-1">
                     <label className="text-sm font-medium text-gray-700">كلمة المرور (للتغيير)</label>
                     <input
                       type="text"
@@ -956,11 +966,11 @@ export default function DriversList() {
                   
                   <div className="pt-4 border-t border-emerald-100 grid grid-cols-2 gap-4">
                     <div className="flex flex-col items-center">
-                      <span className="text-[10px] font-bold text-emerald-500 uppercase">مكتمل اليوم</span>
+                      <span className="text-[11px] font-bold text-emerald-500 uppercase">مكتمل اليوم</span>
                       <span className="text-lg font-black text-emerald-600">{selectedDriver.completed_today || 0}</span>
                     </div>
                     <div className="flex flex-col items-center border-r border-emerald-100">
-                      <span className="text-[10px] font-bold text-red-500 uppercase">ملغي اليوم</span>
+                      <span className="text-[11px] font-bold text-red-500 uppercase">ملغي اليوم</span>
                       <span className="text-lg font-black text-red-600">{selectedDriver.cancelled_today || 0}</span>
                     </div>
                   </div>

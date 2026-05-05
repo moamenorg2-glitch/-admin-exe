@@ -1,4 +1,3 @@
-import React from 'react';
 import { X, Motorbike, Phone, MessageSquare } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
@@ -23,21 +22,25 @@ export default function AssignDriverModal({ isOpen, onClose, onAssign, isAssigni
             user_id,
             vehicle_type,
             is_busy,
+            is_online,
             user:profiles!driver_details_user_id_fkey(full_name, primary_phone, avatar_url),
             active_orders:order_delivery_team(
               master_order:master_orders!fk_order_delivery_team_master_order(status, id)
             )
-          `)
-          .eq('is_online', true);
+          `);
 
-        if (excludeDriverIds && excludeDriverIds.length > 0) {
-          query = query.not('user_id', 'in', excludeDriverIds);
-        }
-
-        const { data, error } = await query.order('is_busy', { ascending: true });
+        const { data, error } = await query
+          .order('is_online', { ascending: false })
+          .order('is_busy', { ascending: true });
           
         if (error) throw error;
-        return data;
+        
+        let filteredData = data;
+        if (excludeDriverIds && excludeDriverIds.length > 0) {
+          filteredData = data.filter(d => !excludeDriverIds.includes(d.user_id));
+        }
+        
+        return filteredData;
       } catch (error) {
         handleGlobalError(error, 'Fetch Available Drivers');
         throw error;
@@ -85,24 +88,21 @@ export default function AssignDriverModal({ isOpen, onClose, onAssign, isAssigni
                   <div className="text-right">
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="text-sm font-bold text-gray-900">{driver.user?.full_name}</p>
-                      {driver.is_busy && (
-                        <span className="text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-sm font-medium">
+                      {driver.is_busy && driver.is_online && (
+                        <span className="text-[11px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-sm font-medium">
                           مشغول
                         </span>
                       )}
-                      {(() => {
-                        const activeMasterOrderIds = new Set(
-                          (driver as any).active_orders
-                            ?.filter((ao: any) => ao.master_order && !['Completed', 'Cancelled'].includes(ao.master_order.status))
-                            .map((ao: any) => ao.master_order.id)
-                        );
-                        const activeCount = activeMasterOrderIds.size;
-                        return activeCount > 0 && (
-                          <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-sm font-medium">
-                            {activeCount} طلب نشط
-                          </span>
-                        );
-                      })()}
+                      {!driver.is_online && (
+                        <span className="text-[11px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-sm font-medium">
+                          غير متصل
+                        </span>
+                      )}
+                      {(driver.active_orders?.filter((ao: any) => ao.master_order && !['Completed', 'Cancelled', 'Rejected'].includes(ao.master_order.status)).length || 0) > 0 && (
+                        <span className="text-[11px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-sm font-medium">
+                          {new Set(driver.active_orders.filter((ao: any) => ao.master_order && !['Completed', 'Cancelled', 'Rejected'].includes(ao.master_order.status)).map((ao: any) => ao.master_order.id)).size} طلب نشط
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>

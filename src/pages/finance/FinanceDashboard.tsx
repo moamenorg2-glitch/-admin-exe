@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
-import { Search, Filter, Wallet, ArrowUpRight, ArrowDownRight, Lock, X } from 'lucide-react';
+import { Search, Filter, Wallet, Lock, X } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { format } from 'date-fns';
 import { financeService } from '../../services/financeService';
 import { toast } from 'react-hot-toast';
 import { handleGlobalError } from '../../utils/errorHandler';

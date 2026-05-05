@@ -1,28 +1,27 @@
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
+@custom-variant dark (&:is(.dark *));
 
 @theme {
-  --color-primary: #10b981; /* emerald-500 */
-  --color-secondary: #4f46e5; /* indigo-600 */
+  --color-primary: #5F6F52; /* Sage Green */
+  --color-primary-light: #E9E1CC; /* Darker Base Background for contrast */
+  --color-primary-dark: #3D3929; /* Primary Text */
+  --color-secondary: #7C755E; /* Secondary Text */
+  --color-accent: #E9E2D0; /* Borders */
   --font-sans: "Cairo", "Inter", ui-sans-serif, system-ui, sans-serif;
+  
+  --animate-bg-pulse: bg-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --keyframes-bg-pulse: {
+    0%, 100% { background-color: var(--color-red-200); }
+    50% { background-color: var(--color-red-400); }
+  };
 }
 
 body {
-  @apply font-sans;
-}
-
-@keyframes bg-pulse {
-  0%, 100% { background-color: #fecaca; } /* red-200 */
-  50% { background-color: #f87171; } /* red-400 */
-}
-.animate-bg-pulse {
-  animation: bg-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-body {
-  @apply bg-[#F3F6F9] transition-colors duration-300 antialiased;
-  user-select: none; /* Desktop app feel: no text selection on layout */
+  @apply font-sans bg-[#E9E1CC] text-[#3D3929] transition-colors duration-300 antialiased;
+  font-weight: 500;
+  user-select: none;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -34,8 +33,8 @@ input, textarea, [contenteditable="true"], .selectable-text {
 
 /* Custom Selection Color */
 ::selection {
-  background-color: rgba(16, 185, 129, 0.2);
-  color: #065f46;
+  background-color: rgba(95, 111, 82, 0.2);
+  color: #3D3929;
 }
 
 .dark ::selection {
@@ -52,28 +51,133 @@ input, textarea, [contenteditable="true"], .selectable-text {
   @apply !bg-[#1E1E2D];
 }
 
-.dark .text-gray-900 {
+.dark .bg-gray-50, .dark .bg-slate-50 {
+  @apply !bg-[#2B2B40];
+}
+
+.dark .bg-gray-100, .dark .bg-slate-100 {
+  @apply !bg-[#32324A];
+}
+
+.dark .bg-emerald-50 {
+  @apply !bg-emerald-500/10;
+}
+
+.dark .bg-emerald-100 {
+  @apply !bg-emerald-500/20;
+}
+
+.bg-white {
+  @apply bg-[#F7F4EC]; /* More muted, less radiating cream color for components */
+}
+
+.bg-gray-50, .bg-slate-50 {
+  @apply bg-[#F1EFE0]; /* Slightly darker than card background for contrast */
+}
+
+.bg-gray-100, .bg-slate-100 {
+  @apply bg-[#E9E2D0];
+}
+
+.bg-emerald-50 {
+  @apply bg-[#F1F4EE]; /* Muted Sage Light */
+}
+
+.bg-emerald-100 {
+  @apply bg-[#E9EFDF];
+}
+
+.text-gray-900, .text-slate-900 {
+  @apply text-[#3D3929];
+}
+
+.text-gray-800, .text-slate-800 {
+  @apply text-[#4D4939];
+}
+
+.text-gray-700, .text-slate-700 {
+  @apply text-[#5D5949];
+}
+
+.text-gray-600, .text-gray-500, .text-slate-500, .text-slate-600 {
+  @apply text-[#746E58]; /* Darkened slightly for better visibility */
+}
+
+.text-gray-400, .text-slate-400 {
+  @apply text-[#8B856E]; /* Visible grey-brown for secondary text in light mode */
+}
+
+.border-gray-50, .border-gray-100, .border-gray-200 {
+  @apply border-[#E9E2D0];
+}
+
+.border-emerald-100 {
+  @apply border-[#D5DDC5];
+}
+
+.shadow-emerald-200, .shadow-emerald-500\/20, .shadow-emerald-600 {
+  @apply shadow-[#5F6F52]/20;
+}
+
+.bg-emerald-600 {
+  @apply bg-[#5F6F52];
+}
+
+.bg-emerald-700 {
+  @apply bg-[#4D5D41];
+}
+
+.bg-emerald-500 {
+  @apply bg-[#5F6F52]; /* Map 500 to our primary sage for better consistency */
+}
+
+.text-emerald-500, .text-emerald-600, .text-emerald-700 {
+  @apply text-[#5F6F52];
+}
+
+.ring-emerald-500, .ring-emerald-600, .focus\:ring-emerald-500:focus, .focus\:border-emerald-500:focus {
+  @apply ring-[#5F6F52] border-[#5F6F52];
+}
+
+/* Semi-transparent white overrides */
+.bg-\[\#FFFFFF80\] {
+  @apply bg-[#F7F4EC80];
+}
+
+.dark .text-emerald-500,
+.dark .text-emerald-600,
+.dark .text-emerald-700 {
+  @apply !text-emerald-400;
+}
+
+.dark .text-gray-900,
+.dark .text-slate-900 {
   @apply !text-white;
 }
 
-.dark .text-gray-800 {
+.dark .text-gray-800,
+.dark .text-slate-800 {
+  @apply !text-gray-100;
+}
+
+.dark .text-gray-700,
+.dark .text-slate-700 {
   @apply !text-gray-200;
 }
 
-.dark .text-gray-700 {
+.dark .text-gray-600,
+.dark .text-slate-600 {
+  @apply !text-gray-200;
+}
+
+.dark .text-gray-500,
+.dark .text-slate-500 {
   @apply !text-gray-300;
 }
 
-.dark .text-gray-600 {
-  @apply !text-gray-400;
-}
-
-.dark .text-gray-500 {
-  @apply !text-gray-500;
-}
-
-.dark .text-gray-400 {
-  @apply !text-gray-500;
+.dark .text-gray-400,
+.dark .text-slate-400 {
+  @apply !text-gray-300;
 }
 
 .dark .border-gray-50,
@@ -83,9 +187,7 @@ input, textarea, [contenteditable="true"], .selectable-text {
   @apply !border-gray-700;
 }
 
-.dark .bg-gray-50,
-.dark .bg-gray-50\/50,
-.dark .bg-gray-50\/30 {
+.dark .bg-gray-50 {
   @apply !bg-[#2B2B40];
 }
 
@@ -106,7 +208,7 @@ input, textarea, [contenteditable="true"], .selectable-text {
 }
 
 .bg-zap-gradient {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: linear-gradient(135deg, #5F6F52 0%, #3D3929 100%);
 }
 
 .dark .bg-zap-gradient {
@@ -126,6 +228,27 @@ input, textarea, [contenteditable="true"], .selectable-text {
   @apply hover:!bg-[#2B2B40];
 }
 
+.prose td, .prose th {
+  text-align: right !important;
+  direction: rtl;
+}
+
+table th {
+  @apply text-[#5D5949] font-bold uppercase tracking-wider;
+}
+
+table tbody tr {
+  @apply border-b border-[#DCD5C4] transition-colors duration-200;
+}
+
+table tbody tr:last-child {
+  @apply border-b-0;
+}
+
+.dark table tbody tr {
+  @apply border-b border-gray-700;
+}
+
 .dark table thead {
   @apply !bg-[#2B2B40];
 }
@@ -134,14 +257,26 @@ input, textarea, [contenteditable="true"], .selectable-text {
   @apply !text-gray-400;
 }
 
-.dark table tbody tr:nth-child(even) {
-  @apply !bg-[#1E1E2D]/50;
-}
-
 .dark input, 
 .dark select, 
 .dark textarea {
   @apply !bg-[#1E1E2D] !border-gray-600 !text-white focus:!border-emerald-500 focus:!ring-1 focus:!ring-emerald-500;
+}
+
+.shadow-sm {
+  box-shadow: 0 4px 12px rgba(139, 126, 116, 0.15);
+}
+
+.shadow-md {
+  box-shadow: 0 8px 24px rgba(139, 126, 116, 0.18);
+}
+
+.shadow-lg {
+  box-shadow: 0 12px 32px -4px rgba(139, 126, 116, 0.22);
+}
+
+.shadow-xl {
+  box-shadow: 0 24px 48px -12px rgba(139, 126, 116, 0.25);
 }
 
 .dark .shadow-sm,
@@ -153,7 +288,7 @@ input, textarea, [contenteditable="true"], .selectable-text {
 }
 
 /* Status Badges & Color Accents in Dark Mode */
-.dark .bg-emerald-50, .dark .bg-emerald-50\/30, .dark .bg-emerald-50\/50 { @apply !bg-emerald-900; }
+.dark .bg-emerald-50 { @apply !bg-emerald-900; }
 .dark .text-emerald-700, .dark .text-emerald-800 { @apply !text-emerald-400; }
 .dark .text-emerald-600 { @apply !text-emerald-500; }
 .dark .border-emerald-100, .dark .border-emerald-200 { @apply !border-emerald-900; }
@@ -196,39 +331,43 @@ input, textarea, [contenteditable="true"], .selectable-text {
 
 /* Modal Backdrops */
 .dark .bg-black.bg-opacity-25,
-.dark .bg-black\/50,
-.dark .bg-black\/60,
 .dark .bg-gray-600.bg-opacity-75 {
   @apply !bg-[#000000B3];
 }
 
 /* Custom Global Scrollbar for Desktop App */
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: rgba(139, 133, 110, 0.05);
+  border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: #cbd5e1; /* slate-300 */
-  border-radius: 20px;
-  border: 3px solid #F3F6F9;
+  background-color: #A39D85;
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: content-box;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background-color: #94a3b8; /* slate-400 */
+  background-color: #5F6F52; /* Our primary Sage Green */
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
 }
 
 .dark ::-webkit-scrollbar-thumb {
-  background-color: #334155; /* slate-700 */
-  border: 3px solid #151521;
+  background-color: #3F4254;
+  border: 2px solid transparent;
 }
 
 .dark ::-webkit-scrollbar-thumb:hover {
-  background-color: #475569; /* slate-600 */
+  background-color: #10B981; /* Emerald-500 for clear visibility in dark mode */
 }
 
 /* Drag area for potential frameless window customization */

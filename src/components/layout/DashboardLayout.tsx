@@ -42,7 +42,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <div className={cn(
       "flex flex-col h-screen overflow-hidden transition-colors duration-300",
-      isDarkMode ? "bg-[#151521]" : "bg-[#F3F6F9]"
+      isDarkMode ? "bg-[#151521]" : "bg-[#E9E1CC]"
     )}>
       <Header 
         onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} 
@@ -55,6 +55,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         <Sidebar 
           isOpen={isSidebarOpen} 
           isCollapsed={isSidebarCollapsed}
+          isDarkMode={isDarkMode}
           onClose={() => setIsSidebarOpen(false)} 
         />
         <main className="flex-1 overflow-y-auto p-4 lg:p-6 custom-scrollbar">

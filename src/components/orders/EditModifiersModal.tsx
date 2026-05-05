@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Check, Loader2, Plus } from 'lucide-react';
+import { X, Check, Loader2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { cn } from '../../lib/utils';
 
@@ -17,7 +17,6 @@ interface EditModifiersModalProps {
 export const EditModifiersModal: React.FC<EditModifiersModalProps> = ({
   isOpen,
   onClose,
-  itemId,
   productId,
   currentModifiers,
   onUpdate,
@@ -128,10 +127,10 @@ export const EditModifiersModal: React.FC<EditModifiersModalProps> = ({
                     <h4 className="font-black text-gray-900 flex items-center gap-2">
                       {group.title_ar}
                       {group.min_selection > 0 && (
-                        <span className="text-[10px] bg-red-50 text-red-600 px-2 py-0.5 rounded-full">إجباري</span>
+                        <span className="text-[11px] bg-red-50 text-red-600 px-2 py-0.5 rounded-full">إجباري</span>
                       )}
                     </h4>
-                    <span className="text-[10px] text-gray-400 font-bold">
+                    <span className="text-[11px] text-gray-400 font-bold">
                       {group.max_selection === 1 ? 'اختر واحد' : `بحد أقصى ${group.max_selection || 'غير محدود'}`}
                     </span>
                   </div>

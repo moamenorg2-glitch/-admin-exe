@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
 import { X, Scale, Search, ShoppingBag } from 'lucide-react';
-import { cn } from '../../lib/utils';
 import toast from 'react-hot-toast';
 
 interface DisputeFormModalProps {

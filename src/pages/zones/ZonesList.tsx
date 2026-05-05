@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Search, Filter, Map, Edit, Plus, Zap, CheckCircle, XCircle, X, MapPin } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import toast from 'react-hot-toast';
-import { locationService, Zone } from '../../services/locationService';
+import { locationService } from '../../services/locationService';
 import { handleGlobalError } from '../../utils/errorHandler';
 
 interface ZoneFormData {

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
-import { X, Plus, Trash2, Save, Edit2, ChevronDown, ChevronUp, Settings2 } from 'lucide-react';
+import { X, Plus, Trash2, ChevronDown, ChevronUp, Settings2 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import toast from 'react-hot-toast';
 import ConfirmModal from '../ui/ConfirmModal';
@@ -252,16 +252,16 @@ export default function ModifiersManager({ productId, vendorId, sectionId, onClo
                       <div className="flex flex-col">
                         <span className="font-black text-gray-900">{group.title_ar}</span>
                         <div className="flex gap-2 mt-1">
-                          <span className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-lg font-bold">
+                          <span className="text-[11px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-lg font-bold">
                             {group.options?.length || 0} خيارات
                           </span>
                           {!group.product_id && !group.section_id && (
-                            <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-lg font-bold">
+                            <span className="text-[11px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-lg font-bold">
                               عام للمتجر
                             </span>
                           )}
                           {group.section_id && (
-                            <span className="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-lg font-bold">
+                            <span className="text-[11px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-lg font-bold">
                               عام للفئة
                             </span>
                           )}
@@ -287,7 +287,7 @@ export default function ModifiersManager({ productId, vendorId, sectionId, onClo
                       {/* Add New Option */}
                       <div className="flex items-end gap-2 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
                         <div className="flex-1 space-y-1">
-                          <label className="text-[10px] font-black text-gray-400 mr-1">اسم الخيار</label>
+                          <label className="text-[11px] font-black text-gray-400 mr-1">اسم الخيار</label>
                           <input
                             type="text"
                             value={newOptionName}
@@ -297,7 +297,7 @@ export default function ModifiersManager({ productId, vendorId, sectionId, onClo
                           />
                         </div>
                         <div className="w-24 space-y-1">
-                          <label className="text-[10px] font-black text-gray-400 mr-1">السعر</label>
+                          <label className="text-[11px] font-black text-gray-400 mr-1">السعر</label>
                           <input
                             type="number"
                             value={newOptionPrice}

@@ -1,11 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
-import { Search, Filter, History, User, Table, Info, X, Trash2 } from 'lucide-react';
+import { Search, Filter, History, Info, X, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
-import { cn } from '../../lib/utils';
-import { handleGlobalError } from '../../utils/errorHandler';
 import { toast } from 'react-hot-toast';
 import { supabaseAdmin, isAdminKeyAvailable } from '../../lib/supabaseAdmin';
 
@@ -310,7 +308,7 @@ export default function AuditLogs() {
       return (
         <span className="inline-flex items-center gap-1.5">
           <span className="text-emerald-600 font-bold">{resolvedNames[val]}</span>
-          <span className="text-[10px] text-gray-400 font-mono">({val.substring(0, 5)}...)</span>
+          <span className="text-[11px] text-gray-400 font-mono">({val.substring(0, 5)}...)</span>
         </span>
       );
     }
@@ -384,7 +382,7 @@ export default function AuditLogs() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {Object.entries(data).map(([key, value]) => (
           <div key={key} className="flex flex-col p-3 bg-gray-50 rounded-xl border border-gray-100">
-            <span className="text-[10px] font-black text-gray-400 uppercase mb-1">
+            <span className="text-[11px] font-black text-gray-400 uppercase mb-1">
               {fieldNamesAr[key] || key}
             </span>
             <div className="text-sm font-bold text-gray-700 break-all">

@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../lib/supabase';
-import { format, differenceInMinutes } from 'date-fns';
+import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { Search, Filter, Eye, AlertCircle, Clock, Motorbike, User, Store, MessageSquare, X, Download, RefreshCw, History, Settings, Phone, CheckCircle2, MapPin, ChevronDown, ArrowUp, ArrowDown, UserPlus, Zap, Trash2, Hash, LayoutGrid, List } from 'lucide-react';
 import { cn } from '../../lib/utils';
@@ -13,7 +13,7 @@ import LiveMap from '../zones/LiveMap';
 import { orderService } from '../../services/orderService';
 import { handleGlobalError } from '../../utils/errorHandler';
 import toast from 'react-hot-toast';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { useInfiniteOrders } from '../../hooks/useOrders';
 import { useInView } from 'react-intersection-observer';
 import { useDebounce } from '../../hooks/useDebounce';
@@ -58,23 +58,12 @@ const paymentMethodStyles: Record<string, string> = {
   'wallet': 'bg-emerald-100 text-emerald-800 border-emerald-200',
 };
 
-const statusOrder: Record<OrderStatus, number> = {
-  Pending: 1,
-  Active: 2,
-  OnTheWay: 3,
-  Completed: 4,
-  Rejected: 5,
-  Cancelled: 6,
-};
-
-
 const CURRENT_AVAILABLE_STATUSES: OrderStatus[] = ['Pending', 'Active', 'OnTheWay'];
 const COMPLETED_AVAILABLE_STATUSES: OrderStatus[] = ['Completed'];
 const CANCELLED_AVAILABLE_STATUSES: OrderStatus[] = ['Cancelled', 'Rejected'];
 
 export default function OrdersList() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const initialOrderId = searchParams.get('orderId');
 
@@ -92,6 +81,7 @@ export default function OrdersList() {
   const [selectedHistoryOrder, setSelectedHistoryOrder] = useState<any | null>(null);
   const [activeTab, setActiveTab] = useState<'current' | 'completed' | 'cancelled'>('current');
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
+  const [showFilters, setShowFilters] = useState(false);
   
   // Thresholds state
   const [prepThreshold, setPrepThreshold] = useState(() => {
@@ -164,6 +154,7 @@ export default function OrdersList() {
     meta: { suppressGlobalError: true },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] }).catch(console.error);
+      queryClient.invalidateQueries({ queryKey: ['infinite-orders'] }).catch(console.error);
       toast.success('تم إزالة السائق بنجاح');
     },
     onError: (error: any) => {
@@ -178,6 +169,7 @@ export default function OrdersList() {
     meta: { suppressGlobalError: true },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] }).catch(console.error);
+      queryClient.invalidateQueries({ queryKey: ['infinite-orders'] }).catch(console.error);
       toast.success('تم تعيين السائق بنجاح');
       setAssigningDriverOrderId(null);
     },
@@ -239,6 +231,7 @@ export default function OrdersList() {
     meta: { suppressGlobalError: true },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] }).catch(console.error);
+      queryClient.invalidateQueries({ queryKey: ['infinite-orders'] }).catch(console.error);
       toast.success('تم التعيين التلقائي للسائق بنجاح');
     },
     onError: (error: any) => {
@@ -498,6 +491,19 @@ export default function OrdersList() {
               >
                 <List className="w-4 h-4" />
               </button>
+              <div className="w-px bg-gray-300 dark:bg-slate-700 my-1 mx-1"></div>
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className={cn(
+                  "p-1.5 rounded-lg transition-all",
+                  showFilters 
+                    ? "bg-white dark:bg-slate-800 text-emerald-600 shadow-sm" 
+                    : "text-gray-500 hover:text-emerald-500"
+                )}
+                title={showFilters ? 'إخفاء الفلاتر المتقدمة' : 'إظهار الفلاتر المتقدمة'}
+              >
+                <Filter className="w-4 h-4" />
+              </button>
             </div>
             
             <div className="flex items-center gap-2 text-gray-400 text-xs font-bold">
@@ -522,8 +528,18 @@ export default function OrdersList() {
                 className="block w-full pr-12 pl-4 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:bg-white dark:focus:bg-slate-800 text-sm font-bold transition-all shadow-inner dark:text-white"
               />
             </div>
+          </div>
 
-            <div className="w-full lg:w-56 relative group">
+          <AnimatePresence>
+            {showFilters && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="space-y-5 overflow-hidden"
+              >
+                <div className="flex flex-col lg:flex-row gap-3">
+                  <div className="w-full lg:w-56 relative group">
               <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
                 <Filter className="h-4 w-4 text-gray-400 dark:text-gray-500 group-focus-within:text-emerald-500 transition-colors" />
               </div>
@@ -537,58 +553,58 @@ export default function OrdersList() {
                 <option value="week">هذا الأسبوع</option>
                 <option value="month">هذا الشهر</option>
                 <option value="custom">تاريخ مخصص</option>
-              </select>
-            </div>
-            
-            {(selectedStatuses.length > 0 || dateRange !== 'all' || searchQuery) && (
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={clearFilters}
-                className="inline-flex items-center justify-center px-4 py-3 bg-red-50 dark:bg-red-900 text-red-600 dark:text-red-400 font-black text-xs rounded-xl hover:bg-red-100 dark:hover:bg-red-900 transition-all border border-red-100 dark:border-red-900 cursor-pointer lg:w-auto w-full shrink-0"
-              >
-                <X className="w-4 h-4 ml-1.5" />
-                مسح الفلاتر
-              </motion.button>
-            )}
-          </div>
-
-          <AnimatePresence>
-            {dateRange === 'custom' && (
-              <motion.div 
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="flex flex-wrap gap-4 items-center p-3.5 bg-gray-50 dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 overflow-hidden"
-              >
-                <div className="flex items-center gap-3">
-                  <label className="text-xs font-black text-gray-500 dark:text-gray-400">من:</label>
-                  <input
-                    type="date"
-                    value={customDateRange.start}
-                    onChange={(e) => setCustomDateRange(prev => ({ ...prev, start: e.target.value }))}
-                    className="bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg px-3 py-1.5 text-sm font-bold focus:ring-2 focus:ring-emerald-500 transition-all shadow-sm dark:text-white dark:color-scheme-dark"
-                  />
+                  </select>
                 </div>
-                <div className="flex items-center gap-3">
-                  <label className="text-xs font-black text-gray-500 dark:text-gray-400">إلى:</label>
-                  <input
-                    type="date"
-                    value={customDateRange.end}
-                    onChange={(e) => setCustomDateRange(prev => ({ ...prev, end: e.target.value }))}
-                    className="bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg px-3 py-1.5 text-sm font-bold focus:ring-2 focus:ring-emerald-500 transition-all shadow-sm dark:text-white dark:color-scheme-dark"
-                  />
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                
+                {(selectedStatuses.length > 0 || dateRange !== 'all') && (
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={clearFilters}
+                    className="inline-flex items-center justify-center px-4 py-3 bg-red-50 dark:bg-red-900 text-red-600 dark:text-red-400 font-black text-xs rounded-xl hover:bg-red-100 dark:hover:bg-red-900 transition-all border border-red-100 dark:border-red-900 cursor-pointer lg:w-auto w-full shrink-0"
+                  >
+                    <X className="w-4 h-4 ml-1.5" />
+                    مسح الفلاتر
+                  </motion.button>
+                )}
+              </div>
 
-          {/* Unified Actions Row: Status, Sort, and Quick Actions */}
-          <div className="flex flex-col xl:flex-row xl:items-end gap-5 p-5 bg-gray-50 dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700">
+              <AnimatePresence>
+                {dateRange === 'custom' && (
+                  <motion.div 
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="flex flex-wrap gap-4 items-center p-3.5 bg-gray-50 dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 overflow-hidden"
+                  >
+                    <div className="flex items-center gap-3">
+                      <label className="text-xs font-black text-gray-500 dark:text-gray-400">من:</label>
+                      <input
+                        type="date"
+                        value={customDateRange.start}
+                        onChange={(e) => setCustomDateRange(prev => ({ ...prev, start: e.target.value }))}
+                        className="bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg px-3 py-1.5 text-sm font-bold focus:ring-2 focus:ring-emerald-500 transition-all shadow-sm dark:text-white dark:color-scheme-dark"
+                      />
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <label className="text-xs font-black text-gray-500 dark:text-gray-400">إلى:</label>
+                      <input
+                        type="date"
+                        value={customDateRange.end}
+                        onChange={(e) => setCustomDateRange(prev => ({ ...prev, end: e.target.value }))}
+                        className="bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg px-3 py-1.5 text-sm font-bold focus:ring-2 focus:ring-emerald-500 transition-all shadow-sm dark:text-white dark:color-scheme-dark"
+                      />
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Unified Actions Row: Status, Sort, and Quick Actions */}
+              <div className="flex flex-col xl:flex-row xl:items-end gap-5 p-5 bg-gray-50 dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700">
             {activeTab === 'current' && (
               <>
                 <div className="flex-1 space-y-2.5">
-                  <span className="flex items-center gap-1.5 text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest pl-1">
+                  <span className="flex items-center gap-1.5 text-[11px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest pl-1">
                     <Filter className="w-3.5 h-3.5" /> تصفية حسب الحالة
                   </span>
                   <div className="flex flex-wrap gap-2">
@@ -618,7 +634,7 @@ export default function OrdersList() {
             )}
 
             <div className="space-y-2.5 flex-1 xl:flex-none">
-              <span className="flex items-center gap-1.5 text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest pl-1">
+              <span className="flex items-center gap-1.5 text-[11px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest pl-1">
                 <ArrowDown className="w-3.5 h-3.5" /> ترتيب بواسطة
               </span>
               <div className="flex flex-wrap gap-2">
@@ -634,7 +650,7 @@ export default function OrdersList() {
                     whileTap={{ scale: 0.95 }}
                     onClick={() => handleSort(col.key)}
                     className={cn(
-                      "px-3 py-1.5 rounded-xl text-[10px] font-black transition-all border flex items-center gap-1 cursor-pointer",
+                      "px-3 py-1.5 rounded-xl text-[11px] font-black transition-all border flex items-center gap-1 cursor-pointer",
                       sortConfig?.key === col.key 
                         ? "bg-emerald-50 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800"
                         : "bg-white dark:bg-slate-700 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-slate-600 hover:bg-emerald-50 dark:hover:bg-slate-600 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-200 dark:hover:border-emerald-700 shadow-sm"
@@ -652,7 +668,7 @@ export default function OrdersList() {
             <div className="w-px h-12 bg-gray-200 dark:bg-slate-600 hidden xl:block mx-1"></div>
 
             <div className="space-y-2.5 flex-1 xl:flex-none">
-              <span className="flex items-center gap-1.5 text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest pl-1">
+              <span className="flex items-center gap-1.5 text-[11px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest pl-1">
                 <Settings className="w-3.5 h-3.5" /> إجراءات
               </span>
               <div className="flex flex-wrap items-center gap-2.5">
@@ -660,7 +676,7 @@ export default function OrdersList() {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={handleExport}
-                  className="inline-flex items-center justify-center px-4 py-1.5 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 shadow-sm text-[10px] font-black rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-600 hover:border-gray-300 transition-all cursor-pointer h-[34px]"
+                  className="inline-flex items-center justify-center px-4 py-1.5 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 shadow-sm text-[11px] font-black rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-600 hover:border-gray-300 transition-all cursor-pointer h-[34px]"
                 >
                   <Download className="w-3.5 h-3.5 ml-1.5 text-blue-500 dark:text-blue-400" />
                   تصدير
@@ -669,7 +685,7 @@ export default function OrdersList() {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => setIsSettingsOpen(true)}
-                  className="inline-flex items-center justify-center px-4 py-1.5 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 shadow-sm text-[10px] font-black rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-600 hover:border-gray-300 transition-all cursor-pointer h-[34px]"
+                  className="inline-flex items-center justify-center px-4 py-1.5 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 shadow-sm text-[11px] font-black rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-600 hover:border-gray-300 transition-all cursor-pointer h-[34px]"
                 >
                   <Clock className="w-3.5 h-3.5 ml-1.5 text-amber-500 dark:text-amber-400" />
                   الوقت
@@ -685,6 +701,9 @@ export default function OrdersList() {
               </div>
             </div>
           </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
       </div>
@@ -775,7 +794,7 @@ export default function OrdersList() {
                 <div className="p-3.5 flex-1 flex flex-col gap-3.5">
                   {true && (
                     <div className="flex flex-col gap-1.5">
-                      <span className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest pl-1">العميل</span>
+                      <span className="text-[11px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest pl-1">العميل</span>
                       <motion.button 
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
@@ -800,10 +819,10 @@ export default function OrdersList() {
                         <div className="mr-2.5 overflow-hidden flex-1 flex flex-row items-center justify-between gap-2">
                           <div className="text-sm font-bold text-gray-800 dark:text-gray-200 group-hover/info:text-emerald-700 dark:group-hover/info:text-emerald-400 truncate">{order.customer?.full_name || 'غير معروف'}</div>
                           <div className="flex items-center gap-1.5 shrink-0">
-                            <span className="text-[10px] bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-400 px-1.5 py-0.5 rounded-md font-bold" title="طلبات مكتملة">
+                            <span className="text-[11px] bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-400 px-1.5 py-0.5 rounded-md font-bold" title="طلبات مكتملة">
                               ✓ {order.customer?.order_history?.filter((h: any) => h.status === 'Completed').length || 0}
                             </span>
-                            <span className="text-[10px] bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-400 px-1.5 py-0.5 rounded-md font-bold" title="طلبات ملغية">
+                            <span className="text-[11px] bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-400 px-1.5 py-0.5 rounded-md font-bold" title="طلبات ملغية">
                               ✗ {order.customer?.order_history?.filter((h: any) => ['Cancelled', 'Rejected'].includes(h.status)).length || 0}
                             </span>
                           </div>
@@ -814,7 +833,7 @@ export default function OrdersList() {
 
                   {true && (
                     <div className="flex flex-col gap-1.5 border-t border-gray-100 dark:border-slate-700 pt-3">
-                      <span className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest pl-1">المتاجر</span>
+                      <span className="text-[11px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest pl-1">المتاجر</span>
                       {order.sub_orders?.length > 1 ? (
                         <div className="relative">
                           <motion.button
@@ -852,7 +871,7 @@ export default function OrdersList() {
                                       </div>
                                       <span className="truncate max-w-[120px]">{so.vendor?.brand_name || 'غير معروف'}</span>
                                     </div>
-                                    <span className="text-[10px] bg-emerald-50 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-400 px-1.5 py-0.5 rounded-lg border border-emerald-100 dark:border-emerald-800">
+                                    <span className="text-[11px] bg-emerald-50 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-400 px-1.5 py-0.5 rounded-lg border border-emerald-100 dark:border-emerald-800">
                                       {so.order_items?.length || 0} منتج
                                     </span>
                                   </motion.button>
@@ -877,7 +896,7 @@ export default function OrdersList() {
                                 )}
                               </div>
                               <span className="group-hover/vinfo:text-emerald-700 dark:group-hover/vinfo:text-emerald-400 flex-1 text-right truncate">{so.vendor?.brand_name || 'متجر غير معروف'}</span>
-                              <span className="text-[10px] bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 px-1.5 py-0.5 rounded-lg font-bold border border-emerald-200 dark:border-emerald-800 shrink-0">
+                              <span className="text-[11px] bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 px-1.5 py-0.5 rounded-lg font-bold border border-emerald-200 dark:border-emerald-800 shrink-0">
                                 {so.order_items?.length || 0} منتج
                               </span>
                             </motion.button>
@@ -889,7 +908,7 @@ export default function OrdersList() {
 
                   {true && (
                     <div className="flex flex-col gap-1.5 border-t border-gray-100 pt-2">
-                      <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">المندوب</span>
+                      <span className="text-[11px] font-black text-gray-400 uppercase tracking-widest">المندوب</span>
                       {order.delivery_team && order.delivery_team.length > 0 ? (
                         <div className="flex flex-col gap-1.5">
                           {order.delivery_team.map((teamMember: any) => {
@@ -929,7 +948,7 @@ export default function OrdersList() {
                                   <div className="mr-3 flex flex-row items-center gap-2 overflow-hidden w-full">
                                     <span className="text-sm font-black text-gray-900 group-hover/dinfo:text-indigo-700 truncate">{teamMember.driver?.user?.full_name}</span>
                                     {activeCount > 0 && !['Completed', 'Cancelled', 'Rejected'].includes(order.status) && (
-                                      <span className="text-[10px] bg-amber-500 text-white px-2 py-0.5 rounded-full font-bold shrink-0 shadow-sm">
+                                      <span className="text-[11px] bg-amber-500 text-white px-2 py-0.5 rounded-full font-bold shrink-0 shadow-sm">
                                         {activeCount} طلب
                                       </span>
                                     )}
@@ -988,7 +1007,7 @@ export default function OrdersList() {
                   <div className="flex flex-wrap gap-x-4 gap-y-2 border-t border-gray-100 dark:border-slate-700 pt-2 mt-1">
                     {true && (
                       <div className="flex flex-col gap-0.5 flex-1 min-w-[30%]">
-                        <span className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest leading-tight">الإجمالي</span>
+                        <span className="text-[11px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest leading-tight">الإجمالي</span>
                         <div className="flex items-baseline flex-wrap gap-1.5">
                           <span className="text-base font-black text-gray-900 dark:text-gray-100 leading-tight">{order.grand_total} <span className="text-xs text-gray-500 dark:text-gray-400 font-bold">ج.م</span></span>
                           <span className={cn(
@@ -1002,13 +1021,13 @@ export default function OrdersList() {
                     )}
                     {true && (
                       <div className="flex flex-col gap-0.5 flex-1 min-w-[25%]">
-                        <span className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest leading-tight">التوصيل</span>
+                        <span className="text-[11px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest leading-tight">التوصيل</span>
                         <span className="text-sm font-bold text-gray-800 dark:text-gray-200 leading-tight">{order.delivery_fee?.toFixed(2) || '0.00'}</span>
                       </div>
                     )}
                     {true && (
                       <div className="flex flex-col gap-0.5 flex-1 min-w-[25%]">
-                        <span className="text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest leading-tight">المسافة</span>
+                        <span className="text-[11px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest leading-tight">المسافة</span>
                         <span className="text-sm font-bold text-gray-800 dark:text-gray-200 leading-tight flex items-center gap-0.5">
                            {order.total_distance ? order.total_distance.toFixed(1) : '0.0'} <MapPin className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
                         </span>
@@ -1140,16 +1159,26 @@ export default function OrdersList() {
                         <td className="px-6 py-4">
                           <div className="flex flex-col gap-1">
                             <span className="text-sm font-black text-gray-900 dark:text-white">#{order.order_number}</span>
-                            <span className="text-[10px] text-gray-500 font-bold flex items-center gap-1"><Clock className="w-3 h-3" /> {format(new Date(order.created_at), 'PPpp', { locale: ar })}</span>
+                            <span className="text-[11px] text-gray-500 font-bold flex items-center gap-1"><Clock className="w-3 h-3" /> {format(new Date(order.created_at), 'PPpp', { locale: ar })}</span>
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <button onClick={() => setInfoModal({ type: 'customer', data: { ...order.customer, address: order.address, masterOrderId: order.id } })} className="flex items-center gap-2 group-hover/row:text-emerald-700 dark:group-hover/row:text-emerald-400 text-right cursor-pointer">
-                            <div className="h-8 w-8 rounded-full bg-emerald-50 dark:bg-slate-700 flex items-center justify-center overflow-hidden shrink-0 border border-emerald-100 dark:border-slate-600">
-                              {order.customer?.avatar_url ? <img src={order.customer.avatar_url} alt="" className="h-full w-full object-cover" /> : <User className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />}
+                          <div className="flex flex-col gap-1 items-start">
+                            <button onClick={() => setInfoModal({ type: 'customer', data: { ...order.customer, address: order.address, masterOrderId: order.id } })} className="flex items-center gap-2 group-hover/row:text-emerald-700 dark:group-hover/row:text-emerald-400 text-right cursor-pointer">
+                              <div className="h-8 w-8 rounded-full bg-emerald-50 dark:bg-slate-700 flex items-center justify-center overflow-hidden shrink-0 border border-emerald-100 dark:border-slate-600">
+                                {order.customer?.avatar_url ? <img src={order.customer.avatar_url} alt="" className="h-full w-full object-cover" /> : <User className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />}
+                              </div>
+                              <span className="text-sm font-bold text-gray-800 dark:text-gray-200">{order.customer?.full_name || 'غير معروف'}</span>
+                            </button>
+                            <div className="flex items-center gap-1.5 shrink-0 mt-1">
+                              <span className="text-[11px] bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-400 px-1.5 py-0.5 rounded-md font-bold" title="طلبات مكتملة">
+                                ✓ {order.customer?.order_history?.filter((h: any) => h.status === 'Completed').length || 0}
+                              </span>
+                              <span className="text-[11px] bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-400 px-1.5 py-0.5 rounded-md font-bold" title="طلبات ملغية">
+                                ✗ {order.customer?.order_history?.filter((h: any) => ['Cancelled', 'Rejected'].includes(h.status)).length || 0}
+                              </span>
                             </div>
-                            <span className="text-sm font-bold text-gray-800 dark:text-gray-200">{order.customer?.full_name || 'غير معروف'}</span>
-                          </button>
+                          </div>
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex flex-col gap-2 relative">
@@ -1208,7 +1237,7 @@ export default function OrdersList() {
                                                     <span className="text-[11px] font-black text-gray-700 dark:text-gray-200 truncate">{so.vendor?.brand_name}</span>
                                                   </div>
                                                   <div className="flex items-center gap-1.5 shrink-0">
-                                                    <span className="text-[10px] font-bold text-gray-400 bg-gray-50 dark:bg-slate-700 px-1.5 py-0.5 rounded-md border border-gray-100 dark:border-slate-600">
+                                                    <span className="text-[11px] font-bold text-gray-400 bg-gray-50 dark:bg-slate-700 px-1.5 py-0.5 rounded-md border border-gray-100 dark:border-slate-600">
                                                       {itemCount} قطع
                                                     </span>
                                                     <Eye className="w-3.5 h-3.5 text-emerald-600 opacity-0 group-hover/vitem:opacity-100 transition-all" />
@@ -1223,50 +1252,79 @@ export default function OrdersList() {
                                   </AnimatePresence>
                                 </div>
                               ) : (
-                                <span className="text-[10px] text-gray-400 italic">بدون متجر</span>
+                                <span className="text-[11px] text-gray-400 italic">بدون متجر</span>
                               )}
                               
-                              <div className="px-1.5 py-0.5 bg-gray-100 dark:bg-slate-700 rounded text-[10px] font-black text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-slate-600 shrink-0 shadow-sm" title="إجمالي عدد المنتجات في الطلب">
+                              <div className="px-1.5 py-0.5 bg-gray-100 dark:bg-slate-700 rounded text-[11px] font-black text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-slate-600 shrink-0 shadow-sm" title="إجمالي عدد المنتجات في الطلب">
                                 {order.sub_orders?.reduce((sum, so) => sum + (so.order_items?.reduce((iSum, item) => iSum + (item.requested_qty || 0), 0) || 0), 0) || 0}
                                 <span className="mr-0.5 font-medium">قطع</span>
                               </div>
                             </div>
                             
                             {order.delivery_team && order.delivery_team.length > 0 ? (
-                              <div className="flex items-center gap-2">
-                                <button className="flex items-center gap-1.5 text-xs text-indigo-600 dark:text-indigo-400 font-bold cursor-pointer hover:underline group/driver whitespace-nowrap" onClick={(e) => { e.stopPropagation(); setInfoModal({ type: 'driver', data: { ...order.delivery_team[0].driver?.user, user_id: order.delivery_team[0].driver_id }}) }}>
-                                  <Motorbike className="w-3.5 h-3.5 group-hover/driver:translate-x-1 transition-transform" />
-                                  <span>{order.delivery_team[0].driver?.user?.full_name}</span>
-                                </button>
-                                {(() => {
-                                  const driver = order.delivery_team[0]?.driver;
-                                  if (!driver) return null;
-                                  const activeCount = driver.active_orders?.filter(
-                                    (ao: any) => {
-                                      const status = ao.master_order?.status;
-                                      return status && !['Completed', 'Cancelled', 'Rejected'].includes(status);
-                                    }
-                                  ).length || 0;
-                                  return activeCount > 0 && (
-                                    <div className="px-2 py-0.5 bg-amber-50 dark:bg-amber-900/30 rounded-lg text-[10px] font-black text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-800/50 flex items-center gap-1 shadow-sm" title="عدد الطلبات النشطة حالياً">
-                                      <Zap className="w-2.5 h-2.5 fill-current" />
-                                      {activeCount}
-                                    </div>
-                                  );
-                                })()}
+                              <div className="flex flex-col gap-2">
+                                {order.delivery_team.map((teamMember: any) => (
+                                  <div key={teamMember.id} className="flex items-center gap-2">
+                                    <button className="flex items-center gap-1.5 text-xs text-indigo-600 dark:text-indigo-400 font-bold cursor-pointer hover:underline group/driver whitespace-nowrap" onClick={(e) => { e.stopPropagation(); setInfoModal({ type: 'driver', data: { ...teamMember.driver?.user, user_id: teamMember.driver_id }}) }}>
+                                      <Motorbike className="w-3.5 h-3.5 group-hover/driver:translate-x-1 transition-transform" />
+                                      <span>{teamMember.driver?.user?.full_name}</span>
+                                    </button>
+                                    {(teamMember.driver?.active_orders?.filter(
+                                      (ao: any) => {
+                                        const status = ao.master_order?.status;
+                                        return status && !['Completed', 'Cancelled', 'Rejected'].includes(status);
+                                      }
+                                    ).length || 0) > 0 && (
+                                      <div className="px-2 py-0.5 bg-amber-50 dark:bg-amber-900/30 rounded-lg text-[11px] font-black text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-800/50 flex items-center gap-1 shadow-sm" title="عدد الطلبات النشطة حالياً">
+                                        <Zap className="w-2.5 h-2.5 fill-current" />
+                                        {teamMember.driver.active_orders.filter(
+                                          (ao: any) => {
+                                            const status = ao.master_order?.status;
+                                            return status && !['Completed', 'Cancelled', 'Rejected'].includes(status);
+                                          }
+                                        ).length}
+                                      </div>
+                                    )}
+                                    {!['Completed', 'Cancelled', 'Rejected'].includes(order.status) && (
+                                      <div className="flex items-center gap-1.5 shrink-0 pr-2">
+                                        <motion.button 
+                                          whileHover={{ scale: 1.1 }}
+                                          whileTap={{ scale: 0.9 }}
+                                          onClick={(e) => { e.stopPropagation(); setAssigningDriverOrderId(order.id); }}
+                                          className="p-1 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 rounded transition-colors cursor-pointer"
+                                          title="إضافة مندوب إضافي"
+                                        >
+                                          <UserPlus className="w-3 h-3" />
+                                        </motion.button>
+                                        <motion.button 
+                                          whileHover={{ scale: 1.1 }}
+                                          whileTap={{ scale: 0.9 }}
+                                          onClick={(e) => { 
+                                            e.stopPropagation(); 
+                                            removeDriverMutation.mutate({ teamId: teamMember.id, driverId: teamMember.driver_id });
+                                          }}
+                                          className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/50 rounded transition-colors cursor-pointer"
+                                          title="إزالة المندوب"
+                                        >
+                                          <Trash2 className="w-3 h-3" />
+                                        </motion.button>
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
                               </div>
                             ) : (
                               !['Completed', 'Cancelled', 'Rejected'].includes(order.status) && (
-                                <button onClick={(e) => { e.stopPropagation(); setAssigningDriverOrderId(order.id); }} className="text-[10px] font-black bg-indigo-50 dark:bg-indigo-900 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 px-2 py-1.5 rounded-lg w-fit hover:bg-indigo-100 cursor-pointer shadow-sm">تعيين مندوب</button>
+                                <button onClick={(e) => { e.stopPropagation(); setAssigningDriverOrderId(order.id); }} className="text-[11px] font-black bg-indigo-50 dark:bg-indigo-900 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 px-2 py-1.5 rounded-lg w-fit hover:bg-indigo-100 cursor-pointer shadow-sm">تعيين مندوب</button>
                               )
                             )}
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <div className="flex flex-col gap-2 items-center justify-center min-w-[100px]">
+                          <div className="flex flex-row flex-wrap gap-1.5 items-center justify-center min-w-[160px] whitespace-nowrap">
                             {order.status !== 'Pending' && (
                               <div className={cn(
-                                "flex items-center gap-1 px-2 py-0.5 rounded-lg border font-bold text-[10px] w-full justify-center transition-colors shadow-sm",
+                                "flex items-center gap-1 px-2 py-0.5 rounded-lg border font-bold text-[11px] justify-center transition-colors shadow-sm shrink-0",
                                 delay.isDelayed && delay.type === 'prep' 
                                   ? "bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border-red-100 dark:border-red-900" 
                                   : "bg-gray-50 dark:bg-slate-700 text-gray-500 dark:text-gray-400 border-gray-100 dark:border-slate-600"
@@ -1277,7 +1335,7 @@ export default function OrdersList() {
                             )}
                             {['OnTheWay', 'Completed', 'Cancelled', 'Rejected'].includes(order.status) ? (
                               <div className={cn(
-                                "flex items-center gap-1 px-2 py-0.5 rounded-lg border font-bold text-[10px] w-full justify-center transition-colors shadow-sm",
+                                "flex items-center gap-1 px-2 py-0.5 rounded-lg border font-bold text-[11px] justify-center transition-colors shadow-sm shrink-0",
                                 delay.isDelayed && delay.type === 'delivery' 
                                   ? "bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border-red-100 dark:border-red-900" 
                                   : "bg-gray-50 dark:bg-slate-700 text-gray-500 dark:text-gray-400 border-gray-100 dark:border-slate-600"
@@ -1286,9 +1344,9 @@ export default function OrdersList() {
                                 <span>توصيل: {delay.deliveryElapsed} د</span>
                               </div>
                             ) : order.status === 'Pending' ? (
-                              <span className="text-[10px] text-amber-500 font-bold animate-pulse">في انتظار القبول</span>
+                              <span className="text-[11px] text-amber-500 font-bold animate-pulse">في انتظار القبول</span>
                             ) : (
-                              <div className="h-5 w-full bg-gray-50 dark:bg-slate-700/30 rounded-lg flex items-center justify-center opacity-30">
+                              <div className="h-5 px-3 bg-gray-50 dark:bg-slate-700/30 rounded-lg flex items-center justify-center opacity-30 shrink-0">
                                 <span className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">بانتظار التحميل</span>
                               </div>
                             )}
@@ -1298,7 +1356,7 @@ export default function OrdersList() {
                           <div className="flex flex-col gap-1">
                             <span className="text-sm font-black text-gray-900 dark:text-gray-100">{order.grand_total} ج.م</span>
                             <span className={cn(
-                              "px-2 py-0.5 rounded-md font-bold text-[10px] uppercase tracking-wider w-fit border shadow-sm", 
+                              "px-2 py-0.5 rounded-md font-bold text-[11px] uppercase tracking-wider w-fit border shadow-sm", 
                               paymentMethodStyles[order.payment_method] || 'bg-gray-50 dark:bg-slate-700 text-gray-800 dark:text-gray-200 border-gray-200 dark:border-slate-600'
                             )}>
                               {order.payment_method || 'نقداً'}
@@ -1311,7 +1369,7 @@ export default function OrdersList() {
                             <button 
                               onClick={() => setSelectedHistoryOrder(order)} 
                               className={cn(
-                                "px-3 py-1 inline-flex items-center gap-1.5 text-[10px] font-black rounded-lg border uppercase shadow-sm whitespace-nowrap cursor-pointer transition-colors w-full justify-center", 
+                                "px-3 py-1 inline-flex items-center gap-1.5 text-[11px] font-black rounded-lg border uppercase shadow-sm whitespace-nowrap cursor-pointer transition-colors w-full justify-center", 
                                 statusColors[order.status as OrderStatus], 
                                 "dark:bg-opacity-20"
                               )}
@@ -1326,7 +1384,7 @@ export default function OrdersList() {
                                   whileHover={{ scale: 1.05 }} 
                                   whileTap={{ scale: 0.95 }} 
                                   onClick={() => handleQuickAccept(order.id)} 
-                                  className="flex-1 text-white bg-emerald-500 hover:bg-emerald-600 shadow-sm py-1.5 rounded-lg font-black text-[10px] transition-all flex items-center justify-center gap-1 cursor-pointer border border-emerald-400/30 whitespace-nowrap px-2"
+                                  className="flex-1 text-white bg-emerald-500 hover:bg-emerald-600 shadow-sm py-1.5 rounded-lg font-black text-[11px] transition-all flex items-center justify-center gap-1 cursor-pointer border border-emerald-400/30 whitespace-nowrap px-2"
                                 >
                                   <CheckCircle2 className="w-3 h-3" /> قبول
                                 </motion.button>
@@ -1337,7 +1395,7 @@ export default function OrdersList() {
                                   whileHover={{ scale: 1.05 }} 
                                   whileTap={{ scale: 0.95 }} 
                                   onClick={() => setTrackingTarget({ type: 'order', id: order.id, name: `طلب #${order.order_number}`, orderData: order })}
-                                  className="flex-1 text-white bg-indigo-500 hover:bg-indigo-600 shadow-sm py-1.5 rounded-lg font-black text-[10px] transition-all flex items-center justify-center gap-1 cursor-pointer border border-indigo-400/30 whitespace-nowrap px-2"
+                                  className="flex-1 text-white bg-indigo-500 hover:bg-indigo-600 shadow-sm py-1.5 rounded-lg font-black text-[11px] transition-all flex items-center justify-center gap-1 cursor-pointer border border-indigo-400/30 whitespace-nowrap px-2"
                                   title="تتبع على الخريطة"
                                 >
                                   <MapPin className="w-3 h-3" /> تتبع
@@ -1348,7 +1406,7 @@ export default function OrdersList() {
                                 whileHover={{ scale: 1.05 }} 
                                 whileTap={{ scale: 0.95 }} 
                                 onClick={() => setSelectedOrderId(order.id)} 
-                                className="flex-1 text-gray-700 dark:text-gray-300 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 py-1.5 rounded-lg font-black text-[10px] transition-all border border-gray-200 dark:border-slate-600 flex items-center justify-center gap-1 cursor-pointer shadow-sm whitespace-nowrap px-2"
+                                className="flex-1 text-gray-700 dark:text-gray-300 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 py-1.5 rounded-lg font-black text-[11px] transition-all border border-gray-200 dark:border-slate-600 flex items-center justify-center gap-1 cursor-pointer shadow-sm whitespace-nowrap px-2"
                               >
                                 <Eye className="w-3 h-3" /> عرض
                               </motion.button>
@@ -1393,10 +1451,7 @@ export default function OrdersList() {
           }
         }}
         isAssigning={assignDriverMutation.isPending}
-        excludeDriverIds={(() => {
-          const order = allOrders.find(o => o.id === assigningDriverOrderId);
-          return order?.delivery_team?.map((dt: any) => dt.driver_id) || [];
-        })()}
+        excludeDriverIds={allOrders.find(o => o.id === assigningDriverOrderId)?.delivery_team?.map((dt: any) => dt.driver_id) || []}
       />
 
       {/* Info Modal */}
@@ -1522,7 +1577,6 @@ export default function OrdersList() {
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.98 }}
                           onClick={() => {
-                            const zoneId = infoModal.type === 'customer' ? infoModal.data.address?.zone_id : infoModal.data.zone_id;
                             const id = infoModal.type === 'customer' ? infoModal.data.masterOrderId : (infoModal.data.user_id || infoModal.data.id);
                             const type = infoModal.type === 'customer' ? 'order' : 'vendor';
                             const name = infoModal.type === 'customer' ? infoModal.data.full_name : infoModal.data.brand_name;
@@ -1551,7 +1605,6 @@ export default function OrdersList() {
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         onClick={() => {
-                          const zoneId = infoModal.data.zone_id;
                           const id = infoModal.data.user_id || infoModal.data.id;
                           const name = infoModal.data.full_name;
                           setTrackingTarget({ type: 'driver', id, name });
@@ -1686,22 +1739,16 @@ export default function OrdersList() {
               </div>
 
               <div className="p-6 max-h-[60vh] overflow-y-auto custom-scrollbar">
-                {(() => {
-                  const history = selectedHistoryOrder.sub_orders?.flatMap((so: any) => so.order_status_history || []) || [];
-                  const sortedHistory = [...history].sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-                  
-                  if (sortedHistory.length === 0) {
-                    return (
-                      <div className="text-center py-8">
-                        <History className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                        <p className="text-gray-500 font-medium">لا يوجد سجل متاح لهذا الطلب</p>
-                      </div>
-                    );
-                  }
-                  
-                  return (
-                    <div className="space-y-6 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-gray-200 before:to-transparent">
-                      {sortedHistory.map((h: any, idx: number) => (
+                {(!selectedHistoryOrder.sub_orders?.flatMap((so: any) => so.order_status_history || [])?.length) ? (
+                  <div className="text-center py-8">
+                    <History className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                    <p className="text-gray-500 font-medium">لا يوجد سجل متاح لهذا الطلب</p>
+                  </div>
+                ) : (
+                  <div className="space-y-6 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-gray-200 before:to-transparent">
+                    {([...(selectedHistoryOrder.sub_orders?.flatMap((so: any) => so.order_status_history || []) || [])]
+                      .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                      .map((h: any, idx: number) => (
                         <div key={h.id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
                           <div className={cn(
                             "flex items-center justify-center w-10 h-10 rounded-full border-4 border-white shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow-sm",
@@ -1721,10 +1768,10 @@ export default function OrdersList() {
                             </div>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  );
-                })()}
+                      ))
+                    )}
+                  </div>
+                )}
               </div>
             </motion.div>
           </div>

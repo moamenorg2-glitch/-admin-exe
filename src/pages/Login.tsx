@@ -135,11 +135,11 @@ export default function Login() {
             <img 
               src={settings.appLogo} 
               alt="Logo" 
-              className="w-24 h-24 sm:w-28 sm:h-28 object-contain rounded-2xl shadow-xl bg-white dark:bg-[#1E1E2D] p-2"
+              className="w-24 h-24 sm:w-28 sm:h-28 object-cover rounded-full shadow-xl bg-white dark:bg-[#1E1E2D] p-1 border-2 border-emerald-500/20"
               referrerPolicy="no-referrer"
             />
           ) : (
-            <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl flex items-center justify-center text-white font-bold text-4xl shadow-xl shadow-emerald-500">
+            <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-[#5F6F52] to-[#4D5D41] rounded-full flex items-center justify-center text-white font-bold text-4xl shadow-xl shadow-[#5F6F52]/30">
               {settings?.app_name?.charAt(0) || 'Z'}
             </div>
           )}

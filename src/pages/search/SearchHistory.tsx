@@ -4,7 +4,6 @@ import { supabase } from '../../lib/supabase';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { Search, User, Clock, Tag } from 'lucide-react';
-import { cn } from '../../lib/utils';
 
 export default function SearchHistory() {
   const [page, setPage] = useState(0);

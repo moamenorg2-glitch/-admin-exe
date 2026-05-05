@@ -1,5 +1,5 @@
-import { ShoppingCart, Users, Store, Bike, AlertCircle, Download, Calendar, Filter,
-  ChevronDown, MoreHorizontal, Activity, TrendingUp, DollarSign, ArrowUpRight, ArrowDownRight, Package, XCircle
+import { ShoppingCart, Store, Bike, AlertCircle, Download, Calendar, Filter,
+  ChevronDown, MoreHorizontal, Package, XCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -190,7 +190,7 @@ export default function Dashboard() {
                   {conflicts.map((order: any) => (
                     <div key={order.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2 bg-[#FFFFFF80] dark:bg-[#000000B3] rounded-lg border border-amber-100 dark:border-amber-800">
                       <p className="text-[11px] text-amber-800 dark:text-amber-300 font-medium">الطلب <span className="font-mono">#{order.order_number || order.id.substring(0, 6)}</span> قيمته مرتفعة جداً ({order.grand_total} ج.م) ولم يتم تأكيده بعد.</p>
-                      <button className="text-[10px] font-black bg-amber-600 text-white px-3 py-1 rounded-md hover:bg-amber-700 transition-colors whitespace-nowrap">اقتراح معالجة الـ AI</button>
+                      <button className="text-[11px] font-black bg-amber-600 text-white px-3 py-1 rounded-md hover:bg-amber-700 transition-colors whitespace-nowrap">اقتراح معالجة الـ AI</button>
                     </div>
                   ))}
                 </div>
@@ -210,7 +210,7 @@ export default function Dashboard() {
               </div>
               <div className="overflow-hidden">
                 <h3 className="text-xl font-black text-slate-900 dark:text-white leading-none mb-1">{card.value.toLocaleString()}</h3>
-                <span className="text-[10px] font-bold text-slate-400 whitespace-nowrap block truncate">{card.name}</span>
+                <span className="text-[11px] font-bold text-slate-400 whitespace-nowrap block truncate">{card.name}</span>
               </div>
             </div>
             <div className="flex items-center justify-between mt-3">
@@ -224,7 +224,7 @@ export default function Dashboard() {
       </div>
 
       {/* Row 2: Full Width Map */}
-      <div className="w-full bg-white dark:bg-slate-800 rounded-xl overflow-hidden shadow-sm mb-6 h-[450px]">
+      <div className="w-full bg-white dark:bg-slate-800 rounded-xl overflow-hidden shadow-sm mb-6 h-[750px]">
         <LiveMap embedded={true} hideControls={true} />
       </div>
 
@@ -234,7 +234,7 @@ export default function Dashboard() {
         <div className="w-full lg:w-1/3 bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-100 dark:border-slate-700 shadow-sm">
           <div className="mb-8">
             <h3 className="text-sm font-bold text-slate-900 dark:text-white">الفئات الأكثر نشاطاً</h3>
-            <p className="text-[10px] text-slate-400">تحليل أداء الأقسام</p>
+            <p className="text-[11px] text-slate-400">تحليل أداء الأقسام</p>
           </div>
 
           <div className="space-y-6">
@@ -242,7 +242,7 @@ export default function Dashboard() {
               <div key={i}>
                 <div className="flex justify-between text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-2">
                   <span>{cat.name}</span>
-                  <span className="text-[10px] font-bold text-slate-400" dir="ltr">{cat.value}%</span>
+                  <span className="text-[11px] font-bold text-slate-400" dir="ltr">{cat.value}%</span>
                 </div>
                 <div className="w-full h-3 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden flex">
                   <div className="h-full" style={{ width: `${cat.value}%`, backgroundColor: cat.color }}></div>
@@ -259,11 +259,11 @@ export default function Dashboard() {
           <div className="flex justify-between items-start mb-6 border-b border-slate-50 dark:border-slate-700 pb-4">
             <div>
               <h3 className="text-sm font-bold text-slate-900 dark:text-white">إجمالي الإيرادات</h3>
-              <p className="text-[10px] text-slate-400 leading-tight">ملخص مبيعات المنصة</p>
+              <p className="text-[11px] text-slate-400 leading-tight">ملخص مبيعات المنصة</p>
             </div>
             <div className="text-left" dir="ltr">
                <div className="text-lg font-black text-slate-900 dark:text-white">{dashboardData?.stats?.revenue?.toLocaleString() || 0} ج.م</div>
-               <div className="text-[10px] text-slate-400 font-medium">إجمالي المبيعات المكتملة</div>
+               <div className="text-[11px] text-slate-400 font-medium">إجمالي المبيعات المكتملة</div>
             </div>
           </div>
           
@@ -291,7 +291,7 @@ export default function Dashboard() {
         <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-100 dark:border-slate-700 shadow-sm">
           <div className="mb-8">
             <h3 className="text-sm font-bold text-slate-900 dark:text-white">المتاجر الأكثر طلباً</h3>
-            <p className="text-[10px] text-slate-400">حصة المبيعات لكل متجر</p>
+            <p className="text-[11px] text-slate-400">حصة المبيعات لكل متجر</p>
           </div>
 
           <div className="space-y-6">
@@ -299,7 +299,7 @@ export default function Dashboard() {
               <div key={i}>
                 <div className="flex justify-between text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-2">
                   <span>{vendor.name}</span>
-                  <span className="text-[10px] font-bold text-slate-400" dir="ltr">{vendor.value}%</span>
+                  <span className="text-[11px] font-bold text-slate-400" dir="ltr">{vendor.value}%</span>
                 </div>
                 <div className="w-full h-3 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden flex">
                   <div className="h-full" style={{ width: `${vendor.value}%`, backgroundColor: vendor.color }}></div>
@@ -315,7 +315,7 @@ export default function Dashboard() {
         <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-100 dark:border-slate-700 shadow-sm">
           <div className="mb-6">
             <h3 className="text-sm font-bold text-slate-900 dark:text-white">المنتجات الأكثر طلباً</h3>
-            <p className="text-[10px] text-slate-400">توزيع الطلبات على المنتجات</p>
+            <p className="text-[11px] text-slate-400">توزيع الطلبات على المنتجات</p>
           </div>
           <div className="flex flex-col items-center">
             <div className="w-40 h-40 relative mb-6" style={{ minWidth: '160px', minHeight: '160px' }}>
@@ -338,9 +338,9 @@ export default function Dashboard() {
                 <div key={i} className="flex justify-between items-center bg-slate-50 dark:bg-slate-700 rounded-lg p-2 border border-slate-100 dark:border-slate-700">
                   <div className="flex items-center gap-2 overflow-hidden">
                     <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: item.color }}></div>
-                    <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 truncate">{item.name}</span>
+                    <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 truncate">{item.name}</span>
                   </div>
-                  <span className="text-[10px] font-black text-slate-800 dark:text-white bg-white dark:bg-slate-800 px-1.5 py-0.5 rounded shadow-sm leading-none">{item.value}</span>
+                  <span className="text-[11px] font-black text-slate-800 dark:text-white bg-white dark:bg-slate-800 px-1.5 py-0.5 rounded shadow-sm leading-none">{item.value}</span>
                 </div>
               )) : (
                 <div className="text-center py-4 text-slate-400 text-xs font-medium">لا توجد بيانات متاحة</div>
@@ -353,7 +353,7 @@ export default function Dashboard() {
         <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-100 dark:border-slate-700 shadow-sm">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-sm font-bold text-slate-900 dark:text-white">مناديب التوصيل</h3>
-            <Link to="/drivers" className="text-[10px] font-bold text-slate-400 cursor-pointer hover:text-blue-500">عرض الكل</Link>
+            <Link to="/drivers" className="text-[11px] font-bold text-slate-400 cursor-pointer hover:text-blue-500">عرض الكل</Link>
           </div>
           <div className="space-y-4">
             {(dashboardData?.recentDrivers?.length ? dashboardData.recentDrivers : []).slice(0, 5).length > 0 ? (dashboardData?.recentDrivers || []).slice(0, 5).map((driver: any, i: number) => {
@@ -366,14 +366,14 @@ export default function Dashboard() {
                   </div>
                   <div className="overflow-hidden">
                      <p className="text-[12px] font-bold text-slate-800 dark:text-white truncate">{driver.profile?.full_name || 'سائق غير معروف'}</p>
-                     <p className="text-[10px] font-medium text-slate-400">انضم {format(new Date(driver.created_at || new Date()), "d MMM yyyy", { locale: ar })}</p>
+                     <p className="text-[11px] font-medium text-slate-400">انضم {format(new Date(driver.created_at || new Date()), "d MMM yyyy", { locale: ar })}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-700 px-2 py-1 rounded">
                    {isOnline ? (
-                      <><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span> <span className="text-[10px] text-slate-700 dark:text-slate-300 font-bold">متصل</span></>
+                      <><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span> <span className="text-[11px] text-slate-700 dark:text-slate-300 font-bold">متصل</span></>
                    ) : (
-                      <><span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span> <span className="text-[10px] text-slate-400 font-bold">غير متصل</span></>
+                      <><span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span> <span className="text-[11px] text-slate-400 font-bold">غير متصل</span></>
                    )}
                 </div>
               </div>
@@ -416,7 +416,7 @@ export default function Dashboard() {
                   <td className="py-5 px-6 text-slate-400">{format(new Date(order.created_at || new Date()), "dd MMMM yyyy", { locale: ar })}</td>
                   <td className="py-5 px-6 text-slate-800 dark:text-white font-bold">{order.grand_total?.toLocaleString() || 0} ج.م</td>
                   <td className="py-5 px-6">
-                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                    <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold ${
                       order.status === 'Pending' ? 'bg-amber-100 text-amber-700' :
                       ['OnTheWay', 'Active', 'Arrived'].includes(order.status) ? 'bg-blue-100 text-blue-700' :
                       order.status === 'Completed' ? 'bg-emerald-100 text-emerald-700' :

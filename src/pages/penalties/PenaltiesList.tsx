@@ -1,11 +1,9 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
-import { Search, Filter, AlertTriangle, ShieldAlert, History, User, DollarSign, Clock } from 'lucide-react';
-import { cn } from '../../lib/utils';
+import { Search, AlertTriangle, ShieldAlert, History, User, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
-import toast from 'react-hot-toast';
 import PenaltyFormModal from '../../components/penalties/PenaltyFormModal';
 import PenaltyDetailsModal from '../../components/penalties/PenaltyDetailsModal';
 
@@ -16,7 +14,6 @@ export default function PenaltiesList() {
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [selectedPenalty, setSelectedPenalty] = useState<any>(null);
   const pageSize = 15;
-  const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
     queryKey: ['penalties', page, searchQuery, categoryFilter],

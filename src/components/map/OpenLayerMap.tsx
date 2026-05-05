@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import Map from 'ol/Map';
 import View from 'ol/View';
 import TileLayer from 'ol/layer/Tile';
@@ -425,7 +425,7 @@ export default function OpenLayerMap({ markers, center = [31.2357, 30.0444], zoo
                   <div className="text-xs text-gray-700 bg-gray-50 p-2 rounded-lg flex items-start gap-1.5 border border-gray-100">
                     <span className="text-indigo-400 mt-0.5">📍</span>
                     <div className="flex flex-col">
-                      <span className="text-[10px] text-gray-400 font-bold mb-0.5">العنوان:</span>
+                      <span className="text-[11px] text-gray-400 font-bold mb-0.5">العنوان:</span>
                       <span className="leading-tight">{selectedFeature.address}</span>
                     </div>
                   </div>

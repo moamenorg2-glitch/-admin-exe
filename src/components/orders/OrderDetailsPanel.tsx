@@ -1,9 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { format, differenceInMinutes } from 'date-fns';
+import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
-import { X, MapPin, Phone, User, Clock, CheckCircle, AlertCircle, Motorbike, UserPlus, ShieldAlert, Star, Scale, MessageSquare, Plus, Minus, Trash2, CreditCard, ReceiptText, Printer, History, Zap, Edit2, ShoppingBag, Store, ChevronDown, Quote, Tag, Wallet, Settings2, Bell } from 'lucide-react';
+import { X, MapPin, Phone, User, Clock, CheckCircle, AlertCircle, Motorbike, Truck, Heart, Calculator, Banknote, UserPlus, Star, Scale, Plus, Minus, Trash2, CreditCard, ReceiptText, Printer, History, Zap, Edit2, ShoppingBag, Store, ChevronDown, Quote, Tag, Wallet, Settings2, Bell } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import toast from 'react-hot-toast';
 
@@ -38,7 +38,6 @@ export default function OrderDetailsPanel({ orderId, onClose, prepThreshold, del
   const queryClient = useQueryClient();
   const [newStatus, setNewStatus] = useState<'Pending' | 'Active' | 'OnTheWay' | 'Completed' | 'Cancelled' | 'Rejected' | ''>('');
   const [isAssigningDriver, setIsAssigningDriver] = useState(false);
-  const [selectedSubOrderId, setSelectedSubOrderId] = useState<string | null>(null);
   const [driverToRemove, setDriverToRemove] = useState<{ teamId: string, driverId: string } | null>(null);
   const [activeChatRoomId, setActiveChatRoomId] = useState<string | null>(null);
   const [addProductModal, setAddProductModal] = useState<{ isOpen: boolean, subOrderId: string, vendorId: string } | null>(null);
@@ -536,23 +535,23 @@ export default function OrderDetailsPanel({ orderId, onClose, prepThreshold, del
       />
       
       {/* Panel */}
-      <div className="fixed inset-y-0 left-0 w-full max-w-lg bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out flex flex-col border-r border-gray-200">
+      <div className="fixed inset-y-0 left-0 w-full max-w-lg bg-white dark:bg-slate-900 shadow-2xl z-50 transform transition-transform duration-300 ease-in-out flex flex-col border-r border-gray-200 dark:border-slate-800">
         {/* Header */}
-        <div className="px-6 py-6 border-b border-gray-100 flex items-center justify-between bg-[#FFFFFF80]  sticky top-0 z-30">
+        <div className="px-6 py-6 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between bg-white/80 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-30">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-emerald-600 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-200 rotate-3 group-hover:rotate-0 transition-transform">
+            <div className="w-12 h-12 bg-emerald-600 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-200 dark:shadow-none rotate-3 group-hover:rotate-0 transition-transform">
               <ReceiptText className="w-6 h-6 text-white" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-2xl font-black text-gray-900 tracking-tight">
+                <h2 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">
                   طلب <span className="text-emerald-600">#{order?.order_number || '...'}</span>
                 </h2>
                 {order?.payment_status === 'Paid' && (
-                  <span className="bg-emerald-100 text-emerald-700 text-[10px] font-black px-2 py-0.5 rounded-full border border-emerald-200">مدفوع</span>
+                  <span className="bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-[11px] font-black px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-500/30">مدفوع</span>
                 )}
               </div>
-              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1 flex items-center gap-1">
+              <p className="text-[11px] text-gray-400 dark:text-slate-400 font-bold uppercase tracking-widest mt-1 flex items-center gap-1">
                 <Clock className="w-3 h-3" />
                 {order?.created_at ? format(new Date(order.created_at), 'PPp', { locale: ar }) : ''}
               </p>
@@ -561,14 +560,14 @@ export default function OrderDetailsPanel({ orderId, onClose, prepThreshold, del
           <div className="flex items-center gap-2">
             <button 
               onClick={() => window.print()}
-              className="p-2.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all border border-transparent hover:border-emerald-100"
+              className="p-2.5 text-gray-400 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 rounded-xl transition-all border border-transparent hover:border-emerald-100 dark:hover:border-emerald-500/20"
               title="طباعة الطلب"
             >
               <Printer className="w-5 h-5" />
             </button>
             <button 
               onClick={onClose}
-              className="p-2.5 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all border border-transparent hover:border-gray-200"
+              className="p-2.5 text-gray-400 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-800 rounded-xl transition-all border border-transparent hover:border-gray-200 dark:hover:border-slate-700"
             >
               <X className="w-6 h-6" />
             </button>
@@ -604,7 +603,7 @@ export default function OrderDetailsPanel({ orderId, onClose, prepThreshold, del
                     "bg-emerald-600 border-emerald-500 text-white shadow-emerald-100"
                   )}>
                     <div className="flex items-center justify-between mb-4">
-                      <span className="text-[10px] font-black uppercase tracking-widest opacity-80">حالة الطلب</span>
+                      <span className="text-[11px] font-black uppercase tracking-widest opacity-80">حالة الطلب</span>
                       {order.status === 'Completed' ? <CheckCircle className="w-5 h-5" /> : <Clock className="w-5 h-5" />}
                     </div>
                     <span className="text-2xl font-black tracking-tight">{statusNames[order.status]}</span>
@@ -612,13 +611,13 @@ export default function OrderDetailsPanel({ orderId, onClose, prepThreshold, del
 
                   <div className="p-5 bg-white rounded-3xl border border-gray-100 shadow-sm flex flex-col justify-between">
                     <div className="flex items-center justify-between mb-4">
-                      <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">طريقة الدفع</span>
+                      <span className="text-[11px] font-black text-gray-400 uppercase tracking-widest">طريقة الدفع</span>
                       <CreditCard className="w-5 h-5 text-emerald-600" />
                     </div>
                     <div>
                       <span className="text-xl font-black text-gray-900">{order.payment_method === 'Wallet' ? 'المحفظة' : 'نقداً'}</span>
                       <p className={cn(
-                        "text-[10px] font-bold mt-1",
+                        "text-[11px] font-bold mt-1",
                         order.payment_status === 'Paid' ? "text-emerald-600" : "text-amber-600"
                       )}>
                         {order.payment_status === 'Paid' ? 'تم التحصيل' : 'بانتظار التحصيل'}
@@ -748,6 +747,83 @@ export default function OrderDetailsPanel({ orderId, onClose, prepThreshold, del
                   </div>
                 </div>
 
+                {/* Delivery Team (Master Order Level) */}
+                <div className="bg-white border border-gray-100 rounded-[2rem] overflow-hidden shadow-sm">
+                  <div className="p-5 bg-emerald-50 border-b border-emerald-100 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-emerald-100">
+                        <Motorbike className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest">فريق التوصيل</h3>
+                        <p className="text-[11px] text-emerald-600 font-bold">إدارة المناديب وتعيينهم</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => autoAssignDriverMutation.mutate()}
+                        disabled={autoAssignDriverMutation.isPending}
+                        className="p-2.5 bg-white text-blue-600 rounded-xl hover:bg-blue-50 transition-all border border-blue-100 shadow-sm disabled:opacity-50"
+                        title="تعيين تلقائي"
+                      >
+                        <Zap className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={() => setIsAssigningDriver(true)}
+                        className="p-2.5 bg-white text-emerald-600 rounded-xl hover:bg-emerald-50 transition-all border border-emerald-100 shadow-sm"
+                        title="تعيين يدوي"
+                      >
+                        <UserPlus className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className="p-5 space-y-3">
+                    {order.delivery_team && order.delivery_team.length > 0 ? (
+                      order.delivery_team.map((team: any) => (
+                        <div key={team.id} className="flex items-center justify-between bg-gray-50 p-3 rounded-2xl border border-gray-100 group/driver">
+                          <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-emerald-600 shadow-sm border border-gray-100 overflow-hidden">
+                              {team.driver?.user?.avatar_url ? (
+                                <img 
+                                  src={team.driver.user.avatar_url} 
+                                  alt="" 
+                                  className="w-full h-full object-cover rounded-full"
+                                  referrerPolicy="no-referrer"
+                                />
+                              ) : (
+                                <User className="w-5 h-5" />
+                              )}
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm font-black text-gray-900">{team.driver?.user?.full_name}</p>
+                                {(team.driver?.active_orders?.filter((ao: any) => ao.master_order && !['Completed', 'Cancelled', 'Rejected'].includes(ao.master_order.status)).length || 0) > 0 && (
+                                  <span className="text-[8px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-md font-black uppercase tracking-tighter">
+                                    {new Set(team.driver.active_orders.filter((ao: any) => ao.master_order && !['Completed', 'Cancelled', 'Rejected'].includes(ao.master_order.status)).map((ao: any) => ao.master_order.id)).size} طلب نشط
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-[11px] text-gray-400 font-bold mt-0.5" dir="ltr">{team.driver?.user?.primary_phone}</p>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => setDriverToRemove({ teamId: team.id, driverId: team.driver_id })}
+                            className="w-8 h-8 flex items-center justify-center text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover/driver:opacity-100"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-8 border-2 border-dashed border-emerald-100 rounded-[2rem] bg-emerald-50">
+                        <Motorbike className="w-8 h-8 text-emerald-200 mx-auto mb-2" />
+                        <p className="text-[11px] text-emerald-400 font-black uppercase tracking-widest">بانتظار تعيين مندوب</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
                 {/* Tracking & Timeline Bento */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Time Stats */}
@@ -757,14 +833,14 @@ export default function OrderDetailsPanel({ orderId, onClose, prepThreshold, del
                         <Clock className="w-4 h-4 text-emerald-600" />
                         مؤشرات الوقت
                       </h3>
-                      <span className="text-[10px] font-black text-gray-400 bg-gray-50 px-2 py-1 rounded-lg">
+                      <span className="text-[11px] font-black text-gray-400 bg-gray-50 px-2 py-1 rounded-lg">
                         إجمالي: {(timeStats?.prepElapsed || 0) + (timeStats?.deliveryElapsed || 0)} د
                       </span>
                     </div>
 
                     <div className="space-y-4">
                       <div className="relative">
-                        <div className="flex justify-between text-[10px] font-black text-gray-400 uppercase mb-2">
+                        <div className="flex justify-between text-[11px] font-black text-gray-400 uppercase mb-2">
                           <span>التحضير</span>
                           <span>{timeStats?.prepElapsed} / {timeStats?.maxVendorPrep} د</span>
                         </div>
@@ -781,7 +857,7 @@ export default function OrderDetailsPanel({ orderId, onClose, prepThreshold, del
                       </div>
 
                       <div className="relative">
-                        <div className="flex justify-between text-[10px] font-black text-gray-400 uppercase mb-2">
+                        <div className="flex justify-between text-[11px] font-black text-gray-400 uppercase mb-2">
                           <span>التوصيل</span>
                           <span>{['OnTheWay', 'Completed'].includes(order.status) ? `${timeStats?.deliveryElapsed} / ${deliveryThreshold} د` : '--'}</span>
                         </div>
@@ -809,30 +885,34 @@ export default function OrderDetailsPanel({ orderId, onClose, prepThreshold, del
                       {(() => {
                         const history = order.sub_orders?.flatMap((so: any) => so.order_status_history || []) || [];
                         const sortedHistory = [...history].sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-                        
-                        if (sortedHistory.length === 0) {
-                          return <div className="text-center py-4 text-gray-400 italic text-xs font-bold">لا يوجد سجل متاح</div>;
-                        }
-
-                        return sortedHistory.map((h: any, idx: number) => (
-                          <div key={idx} className="flex gap-4 relative">
-                            <div className={cn(
-                              "w-2.5 h-2.5 rounded-full mt-1.5 shrink-0",
-                              idx === 0 ? "bg-emerald-500 ring-4 ring-emerald-50" : "bg-gray-200"
-                            )} />
-                            <div className="flex-1">
-                              <div className="flex items-center justify-between">
-                                <span className={cn("text-xs font-black", idx === 0 ? "text-emerald-600" : "text-gray-700")}>
-                                  {statusNames[h.status] || h.status}
-                                </span>
-                                <span className="text-[9px] text-gray-400 font-bold">
-                                  {format(new Date(h.created_at), 'p', { locale: ar })}
-                                </span>
+                        return { sortedHistory };
+                      })().sortedHistory.length === 0 ? (
+                        <div className="text-center py-4 text-gray-400 italic text-xs font-bold">لا يوجد سجل متاح</div>
+                      ) : (
+                        (() => {
+                          const history = order.sub_orders?.flatMap((so: any) => so.order_status_history || []) || [];
+                          return [...history]
+                            .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                            .map((h: any, idx: number) => (
+                              <div key={idx} className="flex gap-4 relative">
+                                <div className={cn(
+                                  "w-2.5 h-2.5 rounded-full mt-1.5 shrink-0",
+                                  idx === 0 ? "bg-emerald-500 ring-4 ring-emerald-50" : "bg-gray-200"
+                                )} />
+                                <div className="flex-1">
+                                  <div className="flex items-center justify-between">
+                                    <span className={cn("text-xs font-black", idx === 0 ? "text-emerald-600" : "text-gray-700")}>
+                                      {statusNames[h.status] || h.status}
+                                    </span>
+                                    <span className="text-[9px] text-gray-400 font-bold">
+                                      {format(new Date(h.created_at), 'p', { locale: ar })}
+                                    </span>
+                                  </div>
+                                </div>
                               </div>
-                            </div>
-                          </div>
-                        ));
-                      })()}
+                            ));
+                        })()
+                      )}
                     </div>
                   </div>
                 </div>
@@ -844,7 +924,7 @@ export default function OrderDetailsPanel({ orderId, onClose, prepThreshold, del
                       <ShoppingBag className="w-4 h-4 text-emerald-600" />
                       محتويات الطلب
                     </h3>
-                    <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-100">
+                    <span className="text-[11px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-100">
                       {order.sub_orders?.length || 0} متاجر
                     </span>
                   </div>
@@ -856,9 +936,7 @@ export default function OrderDetailsPanel({ orderId, onClose, prepThreshold, del
                         <div className="p-5 bg-gray-50 border-b border-gray-100 flex justify-between items-center relative group">
                           <button
                             onClick={() => {
-                              if (window.confirm('هل أنت متأكد من إزالة هذا المتجر من الطلب؟')) {
-                                removeSubOrderMutation.mutate(subOrder.id);
-                              }
+                              removeSubOrderMutation.mutate(subOrder.id);
                             }}
                             className="absolute -top-2 -right-2 w-8 h-8 bg-white text-red-500 shadow-sm border border-red-50 rounded-full flex items-center justify-center hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100 z-10"
                             title="إزالة المتجر"
@@ -884,7 +962,7 @@ export default function OrderDetailsPanel({ orderId, onClose, prepThreshold, del
                                 <h4 className="text-lg font-black text-gray-900">{subOrder.vendor?.brand_name}</h4>
                                 <button
                                   onClick={() => setAddProductModal({ isOpen: true, subOrderId: subOrder.id, vendorId: subOrder.vendor_id })}
-                                  className="text-[10px] bg-emerald-600 text-white hover:bg-emerald-700 px-2 py-1 rounded-lg font-bold transition-all flex items-center gap-1 shadow-sm shadow-emerald-100"
+                                  className="text-[11px] bg-emerald-600 text-white hover:bg-emerald-700 px-2 py-1 rounded-lg font-bold transition-all flex items-center gap-1 shadow-sm shadow-emerald-100"
                                 >
                                   <Plus className="w-3 h-3" />
                                   إضافة
@@ -892,12 +970,12 @@ export default function OrderDetailsPanel({ orderId, onClose, prepThreshold, del
                               </div>
                               <div className="flex items-center gap-3 mt-1">
                                 <div className="flex items-center gap-1.5">
-                                  <span className="text-[10px] text-gray-400 font-bold uppercase">التحضير:</span>
+                                  <span className="text-[11px] text-gray-400 font-bold uppercase">التحضير:</span>
                                   <div className="flex items-center bg-white border border-gray-200 rounded-lg px-2 py-0.5">
                                     <input
                                       type="number"
                                       defaultValue={subOrder.preparation_time_override || subOrder.vendor?.preparation_time_avg}
-                                      className="w-8 text-center text-[10px] font-black outline-none"
+                                      className="w-8 text-center text-[11px] font-black outline-none"
                                       onBlur={(e) => {
                                         const val = parseInt(e.target.value);
                                         if (!isNaN(val) && val !== (subOrder.preparation_time_override || subOrder.vendor?.preparation_time_avg)) {
@@ -905,11 +983,11 @@ export default function OrderDetailsPanel({ orderId, onClose, prepThreshold, del
                                         }
                                       }}
                                     />
-                                    <span className="text-[10px] text-gray-400 font-bold ml-1">د</span>
+                                    <span className="text-[11px] text-gray-400 font-bold ml-1">د</span>
                                   </div>
                                 </div>
                                 <div className="w-1 h-1 bg-gray-200 rounded-full" />
-                                <span className="text-[10px] text-emerald-600 font-bold">
+                                <span className="text-[11px] text-emerald-600 font-bold">
                                   {subOrder.items?.length || 0} أصناف
                                 </span>
                               </div>
@@ -921,7 +999,7 @@ export default function OrderDetailsPanel({ orderId, onClose, prepThreshold, del
                               value={subOrder.sub_status}
                               onChange={(e) => updateSubOrderStatusMutation.mutate({ subOrderId: subOrder.id, status: e.target.value })}
                               className={cn(
-                                "pl-8 pr-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer appearance-none transition-all",
+                                "pl-8 pr-3 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-widest border outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer appearance-none transition-all",
                                 subOrder.sub_status === 'Delivered' ? "bg-green-50 border-green-100 text-green-600" :
                                 subOrder.sub_status === 'Ready' ? "bg-emerald-50 border-emerald-100 text-emerald-600" :
                                 subOrder.sub_status === 'Preparing' ? "bg-blue-50 border-blue-100 text-blue-600" :
@@ -946,9 +1024,7 @@ export default function OrderDetailsPanel({ orderId, onClose, prepThreshold, del
                             <div key={item.id} className="group/item relative bg-white hover:bg-gray-50 rounded-2xl p-4 transition-all flex gap-4 border border-transparent hover:border-gray-100">
                               <button
                                 onClick={() => {
-                                  if (window.confirm('هل أنت متأكد من إزالة هذا المنتج؟')) {
-                                    removeOrderItemMutation.mutate(item.id);
-                                  }
+                                  removeOrderItemMutation.mutate(item.id);
                                 }}
                                 className="absolute -top-1 -right-1 w-6 h-6 bg-white text-red-500 shadow-sm border border-red-50 rounded-full flex items-center justify-center hover:bg-red-50 transition-all opacity-0 group-hover/item:opacity-100 z-10"
                                 title="إزالة المنتج"
@@ -985,16 +1061,15 @@ export default function OrderDetailsPanel({ orderId, onClose, prepThreshold, del
                                         <span className="text-[9px] text-emerald-600 font-black bg-emerald-50 px-1.5 py-0.5 rounded-md border border-emerald-100 uppercase">
                                           {(() => {
                                             const v = item.variant_name_snapshot || item.variant?.variant_name;
-                                            if (typeof v === 'object' && v !== null) {
-                                              return v.name_ar || v.name || v.variant_name || JSON.stringify(v);
-                                            }
-                                            return v;
+                                            return typeof v === 'object' && v !== null 
+                                              ? (v.name_ar || v.name || v.variant_name || JSON.stringify(v))
+                                              : v;
                                           })()}
                                         </span>
                                       )}
                                     </div>
                                     <div className="flex items-center gap-3 mt-1">
-                                      <span className="text-[10px] text-gray-400 font-bold">
+                                      <span className="text-[11px] text-gray-400 font-bold">
                                         {(item.unit_price_snapshot || 0).toFixed(2)} ج.م / وحدة
                                       </span>
                                       <button
@@ -1004,7 +1079,7 @@ export default function OrderDetailsPanel({ orderId, onClose, prepThreshold, del
                                           productId: item.product_id,
                                           currentModifiers: item.selected_modifiers
                                         })}
-                                        className="text-[10px] text-emerald-600 hover:underline font-black flex items-center gap-1"
+                                        className="text-[11px] text-emerald-600 hover:underline font-black flex items-center gap-1"
                                       >
                                         <Edit2 className="w-2.5 h-2.5" />
                                         تعديل الإضافات
@@ -1014,19 +1089,15 @@ export default function OrderDetailsPanel({ orderId, onClose, prepThreshold, del
                                   <div className="text-left">
                                     <p className="text-[9px] text-gray-400 font-black uppercase tracking-tighter mb-0.5">الإجمالي</p>
                                     <p className="text-sm font-black text-emerald-600">
-                                      {(() => {
-                                        const total = Number(item.total_line_price);
-                                        if (total > 0) return total.toFixed(2);
-                                        let calculatedTotal = (item.unit_price_snapshot || 0) * (item.requested_qty || 0);
-                                        if (item.selected_modifiers && typeof item.selected_modifiers === 'object') {
-                                          Object.values(item.selected_modifiers).forEach((m: any) => {
-                                            if (m && typeof m === 'object' && m.price) {
-                                              calculatedTotal += Number(m.price) * (item.requested_qty || 0);
-                                            }
-                                          });
-                                        }
-                                        return calculatedTotal.toFixed(2);
-                                      })()} <span className="text-[10px]">ج.م</span>
+                                      {Number(item.total_line_price) > 0 
+                                        ? Number(item.total_line_price).toFixed(2)
+                                        : (
+                                            (Number(item.unit_price_snapshot) || 0) * (Number(item.requested_qty) || 0) + 
+                                            (item.selected_modifiers && typeof item.selected_modifiers === 'object'
+                                              ? Number((Object.values(item.selected_modifiers) as any[]).reduce((acc: number, m: any) => acc + (Number(m?.price || 0) * (Number(item.requested_qty) || 0)), 0))
+                                              : 0)
+                                          ).toFixed(2)
+                                      } <span className="text-[11px]">ج.م</span>
                                     </p>
                                   </div>
                                 </div>
@@ -1059,90 +1130,7 @@ export default function OrderDetailsPanel({ orderId, onClose, prepThreshold, del
                     ))}
                   </div>
 
-                  {/* Delivery Team (Master Order Level) */}
-                  <div className="bg-white border border-gray-100 rounded-[2rem] overflow-hidden shadow-sm">
-                    <div className="p-5 bg-emerald-50 border-b border-emerald-100 flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-emerald-100">
-                          <Motorbike className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest">فريق التوصيل</h3>
-                          <p className="text-[10px] text-emerald-600 font-bold">إدارة المناديب وتعيينهم</p>
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <button 
-                          onClick={() => autoAssignDriverMutation.mutate()}
-                          disabled={autoAssignDriverMutation.isPending}
-                          className="p-2.5 bg-white text-blue-600 rounded-xl hover:bg-blue-50 transition-all border border-blue-100 shadow-sm disabled:opacity-50"
-                          title="تعيين تلقائي"
-                        >
-                          <Zap className="w-4 h-4" />
-                        </button>
-                        <button 
-                          onClick={() => setIsAssigningDriver(true)}
-                          className="p-2.5 bg-white text-emerald-600 rounded-xl hover:bg-emerald-50 transition-all border border-emerald-100 shadow-sm"
-                          title="تعيين يدوي"
-                        >
-                          <UserPlus className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                    
-                    <div className="p-5 space-y-3">
-                      {order.delivery_team && order.delivery_team.length > 0 ? (
-                        order.delivery_team.map((team: any) => (
-                          <div key={team.id} className="flex items-center justify-between bg-gray-50 p-3 rounded-2xl border border-gray-100 group/driver">
-                            <div className="flex items-center gap-4">
-                              <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-emerald-600 shadow-sm border border-gray-100 overflow-hidden">
-                                {team.driver?.user?.avatar_url ? (
-                                  <img 
-                                    src={team.driver.user.avatar_url} 
-                                    alt="" 
-                                    className="w-full h-full object-cover rounded-full"
-                                    referrerPolicy="no-referrer"
-                                  />
-                                ) : (
-                                  <User className="w-5 h-5" />
-                                )}
-                              </div>
-                              <div>
-                                <div className="flex items-center gap-2">
-                                  <p className="text-sm font-black text-gray-900">{team.driver?.user?.full_name}</p>
-                                  {(() => {
-                                    const activeMasterOrderIds = new Set(
-                                      (team.driver as any).active_orders
-                                        ?.filter((ao: any) => ao.master_order && !['Completed', 'Cancelled'].includes(ao.master_order.status))
-                                        .map((ao: any) => ao.master_order.id)
-                                    );
-                                    const activeCount = activeMasterOrderIds.size;
-                                    return activeCount > 0 && (
-                                      <span className="text-[8px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-md font-black uppercase tracking-tighter">
-                                        {activeCount} طلب نشط
-                                      </span>
-                                    );
-                                  })()}
-                                </div>
-                                <p className="text-[10px] text-gray-400 font-bold mt-0.5" dir="ltr">{team.driver?.user?.primary_phone}</p>
-                              </div>
-                            </div>
-                            <button
-                              onClick={() => setDriverToRemove({ teamId: team.id, driverId: team.driver_id })}
-                              className="w-8 h-8 flex items-center justify-center text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover/driver:opacity-100"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="text-center py-8 border-2 border-dashed border-emerald-100 rounded-[2rem] bg-emerald-50">
-                          <Motorbike className="w-8 h-8 text-emerald-200 mx-auto mb-2" />
-                          <p className="text-[10px] text-emerald-400 font-black uppercase tracking-widest">بانتظار تعيين مندوب</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+
                 </section>
 
               {/* Reviews Section */}
@@ -1159,7 +1147,7 @@ export default function OrderDetailsPanel({ orderId, onClose, prepThreshold, del
                       <div key={review.id} className="bg-white p-5 rounded-2xl border border-amber-100 shadow-sm">
                         <div className="grid grid-cols-2 gap-6 mb-4">
                           <div className="space-y-1">
-                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">المطعم</span>
+                            <span className="text-[11px] font-black text-gray-400 uppercase tracking-widest">المطعم</span>
                             <div className="flex items-center gap-1 text-amber-500">
                               {[...Array(5)].map((_, i) => (
                                 <Star key={i} className={cn("w-3.5 h-3.5", i < review.vendor_rating ? "fill-current" : "text-gray-200")} />
@@ -1167,7 +1155,7 @@ export default function OrderDetailsPanel({ orderId, onClose, prepThreshold, del
                             </div>
                           </div>
                           <div className="space-y-1">
-                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">المندوب</span>
+                            <span className="text-[11px] font-black text-gray-400 uppercase tracking-widest">المندوب</span>
                             <div className="flex items-center gap-1 text-amber-500">
                               {[...Array(5)].map((_, i) => (
                                 <Star key={i} className={cn("w-3.5 h-3.5", i < review.driver_rating ? "fill-current" : "text-gray-200")} />
@@ -1190,86 +1178,78 @@ export default function OrderDetailsPanel({ orderId, onClose, prepThreshold, del
               )}
 
               {/* Financial Summary */}
-              <section className="bg-white border border-gray-100 rounded-[2rem] p-8 shadow-sm relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-2 bg-emerald-600" />
-                <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-8 flex items-center gap-2">
-                  <ReceiptText className="w-4 h-4 text-emerald-600" />
-                  تفاصيل الفاتورة
-                </h3>
+              <section className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm font-sans relative overflow-hidden">
+                <div className="flex justify-start items-center mb-6 gap-2">
+                  <ReceiptText className="w-5 h-5 text-[#EA580C]" />
+                  <h3 className="text-lg font-bold text-[#1E293B]">ملخص الطلب</h3>
+                </div>
                 
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center py-2">
-                    <span className="text-sm font-bold text-gray-500">المجموع الفرعي للأصناف</span>
-                    <span className="text-sm font-black text-gray-900">{(order.items_total || 0).toFixed(2)} ج.م</span>
+                <div className="space-y-4 text-sm font-medium">
+                  {/* Items */}
+                  <div className="flex justify-between items-center text-gray-600">
+                    <div className="flex items-center gap-2">
+                      <Calculator className="w-4 h-4 text-gray-400" />
+                      <span>مجموع المنتجات</span>
+                    </div>
+                    <span className="font-bold text-gray-900" dir="ltr">EGP {(order.items_total || 0).toFixed(2)}</span>
+                  </div>
+
+                  <div className="flex justify-between items-center text-gray-600">
+                    <div className="flex items-center gap-2">
+                      <Truck className="w-4 h-4 text-gray-400" />
+                      <span>رسوم التوصيل</span>
+                    </div>
+                    <span className="font-bold text-gray-900" dir="ltr">EGP {(order.delivery_fee || 0).toFixed(2)}</span>
+                  </div>
+
+                  <div className="flex justify-between items-center text-gray-600">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-gray-400" />
+                      <span>فرق المسافة</span>
+                    </div>
+                    <span className="font-bold text-gray-900" dir="ltr">EGP {(order.distance_fee || 0).toFixed(2)}</span>
                   </div>
                   
-                  <div className="space-y-2 py-4 border-y border-gray-50">
-                    {order.delivery_fee > 0 && (
-                      <div className="flex justify-between items-center text-xs font-bold text-gray-400">
-                        <span>رسوم التوصيل</span>
-                        <span>{(order.delivery_fee || 0).toFixed(2)} ج.م</span>
-                      </div>
-                    )}
-                    {order.distance_fee > 0 && (
-                      <div className="flex justify-between items-center text-xs font-bold text-gray-400">
-                        <span>رسوم المسافة الإضافية</span>
-                        <span>{(order.distance_fee || 0).toFixed(2)} ج.م</span>
-                      </div>
-                    )}
-                    {order.service_fee > 0 && (
-                      <div className="flex justify-between items-center text-xs font-bold text-gray-400">
-                        <span>رسوم الخدمة والمنصة</span>
-                        <span>{(order.service_fee || 0).toFixed(2)} ج.م</span>
-                      </div>
-                    )}
-                    {order.total_tax > 0 && (
-                      <div className="flex justify-between items-center text-xs font-bold text-gray-400">
-                        <span>ضريبة القيمة المضافة</span>
-                        <span>{(order.total_tax || 0).toFixed(2)} ج.م</span>
-                      </div>
-                    )}
+                  <div className="flex justify-between items-center text-gray-600">
+                    <div className="flex items-center gap-2">
+                      <ReceiptText className="w-4 h-4 text-gray-400" />
+                      <span>الضريبة ({(order.total_tax > 0 ? '14' : '0')}%)</span>
+                    </div>
+                    <span className="font-bold text-gray-900" dir="ltr">EGP {(order.total_tax || 0).toFixed(2)}</span>
+                  </div>
+                  
+                  <div className="flex justify-between items-center text-gray-600">
+                    <div className="flex items-center gap-2">
+                      <Heart className="w-4 h-4 text-gray-400" />
+                      <span>بقشيش السائق</span>
+                    </div>
+                    <span className="font-bold text-gray-900" dir="ltr">EGP 0.00</span>
                   </div>
 
-                  <div className="space-y-2 py-2">
-                    {order.delivery_discount > 0 && (
-                      <div className="flex justify-between items-center text-xs font-black text-red-500">
-                        <span className="flex items-center gap-1">
-                          <Tag className="w-3 h-3" />
-                          خصم المتجر
-                        </span>
-                        <span dir="ltr">-{(order.delivery_discount || 0).toFixed(2)} ج.م</span>
+                  {(order.delivery_discount > 0 || order.platform_discount > 0) && (
+                    <div className="flex justify-between items-center text-[#10B981]">
+                      <div className="flex items-center gap-2">
+                        <Tag className="w-4 h-4" />
+                        <span>الخصم</span>
                       </div>
-                    )}
-                    {order.platform_discount > 0 && (
-                      <div className="flex justify-between items-center text-xs font-black text-red-500">
-                        <span className="flex items-center gap-1">
-                          <Tag className="w-3 h-3" />
-                          خصم المنصة
-                        </span>
-                        <span dir="ltr">-{(order.platform_discount || 0).toFixed(2)} ج.م</span>
-                      </div>
-                    )}
-                  </div>
+                      <span className="font-bold text-[#10B981]" dir="ltr">EGP -{((order.delivery_discount || 0) + (order.platform_discount || 0)).toFixed(2)}</span>
+                    </div>
+                  )}
+                </div>
 
-                  <div className="pt-6 mt-4 border-t-2 border-dashed border-gray-100 flex justify-between items-end">
-                    <div>
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">المبلغ الإجمالي</p>
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-4xl font-black text-emerald-600 tracking-tighter">{order.grand_total.toFixed(2)}</span>
-                        <span className="text-sm font-black text-emerald-600">ج.م</span>
-                      </div>
-                    </div>
-                    <div className="text-left">
-                      <div className={cn(
-                        "inline-flex items-center gap-2 px-4 py-2 rounded-2xl border font-black text-xs transition-all",
-                        order.payment_status === 'Paid' ? "bg-emerald-50 border-emerald-100 text-emerald-600" : "bg-amber-50 border-amber-100 text-amber-600"
-                      )}>
-                        {order.payment_method === 'Wallet' ? <Wallet className="w-4 h-4" /> : <CreditCard className="w-4 h-4" />}
-                        {order.payment_method === 'Wallet' ? 'محفظة' : 'نقدي'}
-                        <div className="w-1 h-1 bg-current rounded-full mx-1 opacity-30" />
-                        {order.payment_status === 'Paid' ? 'مدفوع' : 'غير مدفوع'}
-                      </div>
-                    </div>
+                <div className="border-t border-dashed border-gray-200 my-6"></div>
+
+                <div className="flex justify-between items-center mb-8">
+                  <div className="flex items-center gap-2">
+                    <Banknote className="w-6 h-6 text-[#EA580C]" />
+                    <span className="text-xl font-bold text-gray-900">الإجمالي الكلي</span>
+                  </div>
+                  <span className="text-2xl font-black text-[#EA580C]" dir="ltr">EGP {order.grand_total.toFixed(2)}</span>
+                </div>
+
+                <div className="flex justify-center border-none">
+                  <div className="bg-slate-100 text-slate-500 px-6 py-3 rounded-xl text-[13px] font-bold flex items-center justify-center gap-2 mx-auto">
+                    طريقة الدفع: {order.payment_method === 'Wallet' ? 'محفظة' : 'الدفع عند الاستلام'}
                   </div>
                 </div>
               </section>

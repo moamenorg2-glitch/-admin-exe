@@ -60,7 +60,8 @@ export function useOrders(page: number, pageSize: number, filters: any) {
     }
     invalidationTimeoutRef.current = setTimeout(() => {
       queryClient.invalidateQueries({ queryKey: ['orders'] }).catch(console.error);
-    }, 1500); // Wait 1.5 seconds after the LAST event before refetching to batch updates
+      queryClient.invalidateQueries({ queryKey: ['infinite-orders'] }).catch(console.error);
+    }, 300); // Batched short timeout for instant updates
   }, [queryClient]);
 
   // Real-time subscription
@@ -138,7 +139,7 @@ export function useOrders(page: number, pageSize: number, filters: any) {
     },
     // Technical Stability Improvements for React Query
     placeholderData: (previousData) => previousData,
-    staleTime: 10000, // Data remains fresh for 10 seconds (don't refetch on window focus immediately)
+    staleTime: 0, // Instant refresh
     // gcTime: 1000 * 60 * 5, // Keep in cache for 5 minutes (default in v5 is 5 mins anyway)
     retry: 2, // Retry failed requests twice
     refetchOnWindowFocus: true, // Keep updated when user returns to app
@@ -167,7 +168,8 @@ export function useInfiniteOrders(pageSize: number, filters: any) {
     }
     invalidationTimeoutRef.current = setTimeout(() => {
       queryClient.invalidateQueries({ queryKey: ['infinite-orders'] }).catch(console.error);
-    }, 1500);
+      queryClient.invalidateQueries({ queryKey: ['orders'] }).catch(console.error);
+    }, 300);
   }, [queryClient]);
 
   useEffect(() => {
@@ -218,7 +220,7 @@ export function useInfiniteOrders(pageSize: number, filters: any) {
     },
     initialPageParam: 0,
     getNextPageParam: (lastPage) => lastPage.nextPage,
-    staleTime: 10000,
+    staleTime: 0,
     retry: 2,
     refetchOnWindowFocus: true,
   });

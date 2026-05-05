@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
 import { X, ShieldAlert, Search, User } from 'lucide-react';
-import { cn } from '../../lib/utils';
 import toast from 'react-hot-toast';
 import { financeService } from '../../services/financeService';
 
@@ -46,7 +45,7 @@ export default function PenaltyFormModal({ onClose, initialUserId, initialUserNa
       if (!reason) throw new Error('يجب كتابة سبب الجزاء');
 
       // 1. Insert penalty
-      const { data: penalty, error: penaltyError } = await supabase
+      const { error: penaltyError } = await supabase
         .from('admin_penalties')
         .insert({
           target_user_id: selectedUser.user_id,

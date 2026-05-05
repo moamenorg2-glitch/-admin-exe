@@ -72,43 +72,22 @@ jobs:
           echo "AndroidManifest.xml content after injection:"
           cat android/app/src/main/AndroidManifest.xml
 
+      - name: Generate App Icons
+        run: |
+          if [ -f "assets/icon.png" ]; then
+            echo "Generating Android assets from assets/icon.png..."
+            npx -y @capacitor/assets generate --android
+          elif [ -f "icon.png" ]; then
+             echo "Icon found in root, moving to assets/ and generating..."
+             mkdir -p assets
+             cp icon.png assets/icon.png
+             npx -y @capacitor/assets generate --android
+          else
+            echo "No icon.png found in assets/ or root, skipping icon generation."
+          fi
+
       - name: Sync Capacitor
         run: npx cap sync android
-
-      - name: Generate Scaled Assets
-        run: |
-          mkdir -p assets
-          # وظيفة للتحقق مما إذا كان الملف بصيغة PNG صالحة
-          is_valid_png() {
-            if [ ! -f "$1" ]; then return 1; fi
-            if [ ! -s "$1" ]; then return 1; fi
-            # التحقق من توقيع PNG (أول 8 بايت)
-            if [ "$(head -c 8 "$1" | od -An -tx1 | tr -d ' ')" != "89504e470d0a1a0a" ]; then return 1; fi
-            return 0
-          }
-
-          FIX_REQUIRED=false
-          if ! is_valid_png "assets/icon.png"; then
-            echo "Warning: assets/icon.png is missing or corrupt."
-            FIX_REQUIRED=true
-          fi
-          if ! is_valid_png "assets/splash.png"; then
-            echo "Warning: assets/splash.png is missing or corrupt."
-            FIX_REQUIRED=true
-          fi
-
-          if [ "$FIX_REQUIRED" = "true" ]; then
-            echo "Replacing corrupt assets with valid placeholders to prevent build failure..."
-            node -e "const fs=require('fs'); const b=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', 'base64'); fs.writeFileSync('assets/icon.png', b); fs.writeFileSync('assets/splash.png', b);"
-          fi
-
-          echo "Generating Android assets..."
-          npx -y @capacitor/assets generate --android --iconBackgroundColor '#10b981' --splashBackgroundColor '#10b981' || {
-            echo "Asset generation failed again. Ensuring clean state."
-            # محاولة أخيرة للإصلاح إذا فشلت الأداة لسبب غير متوقع
-            node -e "const fs=require('fs'); const b=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', 'base64'); fs.writeFileSync('assets/icon.png', b); fs.writeFileSync('assets/splash.png', b);"
-            npx -y @capacitor/assets generate --android --iconBackgroundColor '#10b981' --splashBackgroundColor '#10b981'
-          }
 
       - name: Build APKs
         run: |

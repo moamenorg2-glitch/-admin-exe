@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { Search, Filter, Tag, Edit, Plus, CheckCircle, XCircle, Trash2, Eye, X } from 'lucide-react';
@@ -164,13 +164,18 @@ export default function PromotionsList() {
                           <div className="flex items-center gap-2">
                             <div className="text-sm font-bold text-gray-900 uppercase" dir="ltr">{promo.code}</div>
                             <span className={cn(
-                              "px-2 py-0.5 text-[10px] font-medium rounded-full",
+                              "px-2 py-0.5 text-[11px] font-medium rounded-full",
                               promo.vendor_ids && promo.vendor_ids.length > 0 
                                 ? "bg-purple-100 text-purple-800" 
                                 : "bg-blue-100 text-blue-800"
                             )}>
                               {promo.vendor_ids && promo.vendor_ids.length > 0 ? 'متجر' : 'منصة'}
                             </span>
+                            {(promo as any).is_hidden && (
+                              <span className="px-2 py-0.5 text-[11px] font-medium rounded-full bg-amber-100 text-amber-800">
+                                خاص
+                              </span>
+                            )}
                           </div>
                           <div className="text-sm text-gray-500">{promo.title_ar}</div>
                         </div>
@@ -188,7 +193,10 @@ export default function PromotionsList() {
                       <div>إلى: {format(new Date(promo.end_date), 'yyyy/MM/dd')}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {promo.usage_limit ? `الحد: ${promo.usage_limit}` : 'غير محدود'}
+                      <div>{promo.usage_limit ? `الإجمالي: ${promo.usage_limit}` : 'إجمالي: غير محدود'}</div>
+                      {promo.per_user_limit && (
+                        <div className="text-xs text-gray-500 mt-1">لكل عميل: {promo.per_user_limit}</div>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={cn(

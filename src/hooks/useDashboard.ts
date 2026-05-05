@@ -75,9 +75,12 @@ export function useDashboard() {
   // Derived Data
   const categoryData = useMemo(() => {
     const raw = dashboardData?.topCategories || [];
+    const totalVendors = raw.reduce((sum: number, cat: any) => sum + (cat.vendor_count || 0), 0);
+    
     return raw.map((cat: any, i: number) => ({
       name: cat.name_ar,
-      value: [85, 70, 55, 40][i % 4] || 30,
+      // Percentage relative to total vendors in these top categories, or relative to max for bar scaling
+      value: totalVendors > 0 ? Math.round(((cat.vendor_count || 0) / totalVendors) * 100) : 0,
       color: ['#8b5cf6', '#3b82f6', '#f59e0b', '#10b981'][i % 4]
     }));
   }, [dashboardData?.topCategories]);
