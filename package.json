@@ -64,6 +64,8 @@
     "@types/react-select": "^5.0.0",
     "@vitejs/plugin-legacy": "^6.0.0",
     "autoprefixer": "^10.4.21",
+    "electron": "^35.7.5",
+    "electron-builder": "^25.1.8",
     "tailwindcss": "^4.1.14",
     "terser": "^5.46.1",
     "tsx": "^4.21.0",

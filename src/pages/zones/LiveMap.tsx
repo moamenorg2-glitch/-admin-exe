@@ -487,7 +487,7 @@ export default function LiveMap({ embedded = false, initialType = 'all', initial
 
       {/* Map Container - Must have enough height/flex to show up */}
       <div className={cn(
-        "w-full relative flex-1 min-h-[600px]", 
+        "w-full relative flex-1 min-h-[800px]", 
         !hideControls && "px-4 lg:px-0"
       )}>
         <div className={cn(

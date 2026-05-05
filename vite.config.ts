@@ -20,6 +20,19 @@ export default defineConfig(({mode}) => {
       'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
       'import.meta.env.VITE_APP_URL': JSON.stringify(env.APP_URL),
     },
+    build: {
+      chunkSizeWarningLimit: 1000,
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+            'vendor-utils': ['@supabase/supabase-js', '@tanstack/react-query', 'framer-motion', 'lucide-react'],
+            'vendor-charts': ['recharts'],
+            'vendor-excel': ['xlsx'],
+          }
+        }
+      }
+    },
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
