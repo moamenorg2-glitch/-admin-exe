@@ -85,7 +85,8 @@ export default function EntityOrdersModal({ isOpen, onClose, type, entityId, ent
 
   const orders = useMemo(() => {
     if (!rawOrders) return [];
-    return rawOrders.filter((o: any) => {
+    return (rawOrders || []).filter((o: any) => {
+      if (!o) return false;
       const pmRaw = (o.master_order?.payment_method || 'cash').toLowerCase();
       const pmCategory = pmRaw === 'cash' ? 'cash' : 'online';
       const st = type === 'vendor' ? o.sub_status : o.master_order?.status;
@@ -500,8 +501,18 @@ export default function EntityOrdersModal({ isOpen, onClose, type, entityId, ent
                           )}
                           <td className="px-5 py-4 text-gray-500 dark:text-gray-400 font-bold whitespace-nowrap text-[13px]">
                             <div className="flex flex-col">
-                              <span>{format(new Date(o.created_at), 'yyyy/MM/dd')}</span>
-                              <span className="text-[11px] text-gray-400">{format(new Date(o.created_at), 'HH:mm a')}</span>
+                              <span>
+                                {o.created_at ? (() => {
+                                  try { return format(new Date(o.created_at), 'yyyy/MM/dd'); }
+                                  catch (e) { return '---'; }
+                                })() : '---'}
+                              </span>
+                              <span className="text-[11px] text-gray-400">
+                                {o.created_at ? (() => {
+                                  try { return format(new Date(o.created_at), 'HH:mm a'); }
+                                  catch (e) { return '---'; }
+                                })() : '---'}
+                              </span>
                             </div>
                           </td>
                         </tr>

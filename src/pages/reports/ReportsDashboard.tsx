@@ -86,24 +86,28 @@ export default function ReportsDashboard() {
         if (error) throw error;
 
         const ordersData = (data as any[]) || [];
+        if (ordersData.length === 0) {
+          return { total_orders: 0, totalSales: 0, total_commissions: 0, total_service_fees: 0, total_discounts: 0, platformProfit: 0, vendorDues: 0, driverDues: 0 };
+        }
+        
         const stats = {
           total_orders: ordersData.length,
           totalSales: ordersData.reduce((sum, o) => {
-            const subOrders = o.sub_orders as any[] || [];
-            return sum + subOrders.reduce((s: number, sub: any) => s + (Number(sub.sub_total) || 0), 0);
+            const subOrders = o?.sub_orders as any[] || [];
+            return sum + subOrders.reduce((s: number, sub: any) => s + (Number(sub?.sub_total) || 0), 0);
           }, 0),
           total_commissions: ordersData.reduce((sum, o) => {
-            const subOrders = o.sub_orders as any[] || [];
+            const subOrders = o?.sub_orders as any[] || [];
             return sum + subOrders.reduce((s: number, sub: any) => {
               // Calculate for past orders if 0 or use vendor value
-              const commRate = Number(sub.vendor?.commission_rate || 0);
-              const comm = Number(sub.vendor_commission) || 
-                ((Number(sub.sub_total) * commRate) / 100);
+              const commRate = Number(sub?.vendor?.commission_rate || 0);
+              const comm = Number(sub?.vendor_commission) || 
+                ((Number(sub?.sub_total || 0) * commRate) / 100);
               return s + comm;
             }, 0);
           }, 0),
-          total_service_fees: ordersData.reduce((sum, o) => sum + (Number(o.service_fee) || 0), 0),
-          total_discounts: ordersData.reduce((sum, o) => sum + (Number(o.platform_discount) || 0) + (Number(o.delivery_discount) || 0), 0),
+          total_service_fees: ordersData.reduce((sum, o) => sum + (Number(o?.service_fee) || 0), 0),
+          total_discounts: ordersData.reduce((sum, o) => sum + (Number(o?.platform_discount) || 0) + (Number(o?.delivery_discount) || 0), 0),
           platformProfit: 0,
           vendorDues: 0,
           driverDues: 0
@@ -148,9 +152,14 @@ export default function ReportsDashboard() {
         const { data, error } = await query;
         if (error) throw error;
 
+        if (!data || !Array.isArray(data)) return [];
+
         // Group by vendor
         const grouped = (data as any[]).reduce((acc, curr) => {
+          if (!curr) return acc;
           const vId = curr.vendor_id;
+          if (!vId) return acc;
+          
           if (!acc[vId]) {
             acc[vId] = { 
               vendor_id: vId, 
@@ -169,7 +178,7 @@ export default function ReportsDashboard() {
           // Calculate for past orders if 0 or use vendor value
           const commRate = Number(curr.vendor?.commission_rate || 0);
           const comm = Number(curr.vendor_commission) || 
-            ((Number(curr.sub_total) * commRate) / 100);
+            ((Number(curr.sub_total || 0) * commRate) / 100);
 
           const subTotal = Number(curr.sub_total) || 0;
           if (curr.master_order?.payment_method === 'cash') {
@@ -232,9 +241,12 @@ export default function ReportsDashboard() {
         const { data: activity, error: activityError } = await activityQuery;
         if (activityError) throw activityError;
 
+        if (!activity || !Array.isArray(activity)) return [];
+
         // Group activity by driver to identify active drivers
         const groupedMap: Record<string, any> = {};
         for (const item of (activity as any[])) {
+          if (!item) continue;
           const dId = item.driver_id;
           if (!dId) continue;
           if (!groupedMap[dId]) {
@@ -261,7 +273,9 @@ export default function ReportsDashboard() {
         }
 
         // 2. Process financial balances from wallets
-        for (const w of (walletData as any[])) {
+        const walletArray = Array.isArray(walletData) ? walletData : [];
+        for (const w of walletArray) {
+          if (!w) continue;
           const dId = w.user_id;
           if (!groupedMap[dId]) continue; 
           groupedMap[dId].actual_paid_earnings = Number(w.current_balance) || 0;
@@ -728,7 +742,15 @@ export default function ReportsDashboard() {
                               {t.priority === 'urgent' ? 'عاجل' : 'عادي'}
                            </span>
                         </td>
-                        <td className="px-6 py-4 text-slate-400 font-bold">{format(new Date(t.created_at), 'dd/MM/yyyy')}</td>
+                        <td className="px-6 py-4 text-slate-400 font-bold">
+                          {t.created_at ? (() => {
+                            try {
+                              return format(new Date(t.created_at), 'dd/MM/yyyy');
+                            } catch (e) {
+                              return '---';
+                            }
+                          })() : '---'}
+                        </td>
                      </tr>
                    ))}
                    {(!supportTickets || supportTickets.length === 0) && (

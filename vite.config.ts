@@ -13,7 +13,7 @@ export default defineConfig(({mode}) => {
       react(), 
       tailwindcss(),
       legacy({
-        targets: ['chrome 109', 'edge 109', 'firefox 115']
+        targets: ['defaults', 'not IE 11', 'Android >= 6', 'iOS >= 10']
       })
     ],
     define: {
