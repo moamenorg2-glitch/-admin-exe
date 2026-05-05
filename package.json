@@ -3,10 +3,12 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "main": "electron/main.cjs",
   "scripts": {
     "start": "npx tsx server.ts",
     "dev": "tsx server.ts",
     "build": "vite build",
+    "build:electron": "npm run build && electron-builder --win --ia32",
     "preview": "vite preview",
     "lint": "tsc --noEmit"
   },
@@ -52,6 +54,8 @@
   },
   "devDependencies": {
     "@capacitor/assets": "^3.0.5",
+    "electron": "^35.0.0",
+    "electron-builder": "^25.1.8",
     "@types/cors": "^2.8.19",
     "@types/express": "^4.17.21",
     "@types/multer": "^2.1.0",
@@ -61,11 +65,34 @@
     "@types/react-select": "^5.0.0",
     "@vitejs/plugin-legacy": "^6.0.0",
     "autoprefixer": "^10.4.21",
+    "electron": "^41.5.0",
+    "electron-builder": "^26.8.1",
     "tailwindcss": "^4.1.14",
     "terser": "^5.46.1",
     "tsx": "^4.21.0",
     "typescript": "~5.8.2",
     "vite": "^6.4.2",
     "vitest": "^4.1.5"
+  },
+  "build": {
+    "appId": "com.zajelexpress.admin",
+    "productName": "Zajel Admin",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "ia32"
+          ]
+        }
+      ]
+    }
   }
 }
