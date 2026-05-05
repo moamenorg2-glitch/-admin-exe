@@ -14,14 +14,24 @@ import { cn } from '../../lib/utils';
 import { askGemini } from '../../services/geminiService';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../lib/supabase';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 
 interface Message {
   role: 'user' | 'ai';
   content: string;
   timestamp: Date;
 }
+
+// Simple text formatter to replace react-markdown to prevent Regex crashes on Android WV
+const formatMessageContent = (text: string) => {
+  // Bold
+  let html = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  // Italic
+  html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+  // Newlines
+  html = html.replace(/\n/g, '<br/>');
+  
+  return <div dangerouslySetInnerHTML={{ __html: html }} />;
+};
 
 export default function ReportsAIAssistant() {
   const [isOpen, setIsOpen] = React.useState(false);
@@ -264,9 +274,7 @@ export default function ReportsAIAssistant() {
                           ? "bg-blue-600 text-white rounded-tl-none prose-headings:text-white prose-p:text-white prose-strong:text-white prose-ul:text-white prose-ol:text-white prose-li:text-white prose-a:text-white" 
                           : "bg-white dark:bg-slate-800 text-gray-800 dark:text-gray-100 border border-gray-100 dark:border-slate-700 prose-neutral dark:prose-invert overflow-hidden"
                       )}>
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                          {msg.content}
-                        </ReactMarkdown>
+                        {formatMessageContent(msg.content)}
                       </div>
                       <span className="text-[11px] text-gray-400 mt-1 font-medium px-2">
                         {(() => {

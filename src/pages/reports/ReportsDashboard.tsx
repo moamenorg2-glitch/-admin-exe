@@ -368,13 +368,18 @@ export default function ReportsDashboard() {
             <div className="relative flex items-center bg-slate-50 dark:bg-slate-900/50 px-3 py-2.5 rounded-xl border border-slate-100 dark:border-slate-700 hover:border-emerald-500/30 transition-colors cursor-pointer">
               <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
               <span className="text-xs font-black text-slate-700 dark:text-slate-200 mr-2 truncate">
-                {format(dateRange.start, "dd MMM yyyy", { locale: ar })}
+                {dateRange.start && !isNaN(dateRange.start.getTime()) ? format(dateRange.start, "dd MMM yyyy", { locale: ar }) : 'اختر تاريخ'}
               </span>
               <input 
                 type="date" 
                 className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                value={format(dateRange.start, 'yyyy-MM-dd')}
-                onChange={(e) => setDateRange(prev => ({ ...prev, start: startOfDay(new Date(e.target.value)) }))}
+                value={dateRange.start && !isNaN(dateRange.start.getTime()) ? format(dateRange.start, 'yyyy-MM-dd') : ''}
+                onChange={(e) => {
+                   const d = new Date(e.target.value);
+                   if (!isNaN(d.getTime())) {
+                     setDateRange(prev => ({ ...prev, start: startOfDay(d) }));
+                   }
+                }}
               />
             </div>
           </div>
@@ -385,13 +390,18 @@ export default function ReportsDashboard() {
             <div className="relative flex items-center bg-slate-50 dark:bg-slate-900/50 px-3 py-2.5 rounded-xl border border-slate-100 dark:border-slate-700 hover:border-emerald-500/30 transition-colors cursor-pointer">
               <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
               <span className="text-xs font-black text-slate-700 dark:text-slate-200 mr-2 truncate">
-                {format(dateRange.end, "dd MMM yyyy", { locale: ar })}
+                {dateRange.end && !isNaN(dateRange.end.getTime()) ? format(dateRange.end, "dd MMM yyyy", { locale: ar }) : 'اختر تاريخ'}
               </span>
               <input 
                 type="date" 
                 className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                value={format(dateRange.end, 'yyyy-MM-dd')}
-                onChange={(e) => setDateRange(prev => ({ ...prev, end: endOfDay(new Date(e.target.value)) }))}
+                value={dateRange.end && !isNaN(dateRange.end.getTime()) ? format(dateRange.end, 'yyyy-MM-dd') : ''}
+                onChange={(e) => {
+                   const d = new Date(e.target.value);
+                   if (!isNaN(d.getTime())) {
+                     setDateRange(prev => ({ ...prev, end: endOfDay(d) }));
+                   }
+                }}
               />
             </div>
           </div>
