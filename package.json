@@ -3,10 +3,27 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "main": "electron/main.cjs",
+  "build": {
+    "appId": "com.zajel.admin",
+    "productName": "Zajel Admin",
+    "directories": {
+      "output": "release"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ]
+  },
   "scripts": {
     "start": "npx tsx server.ts",
     "dev": "tsx server.ts",
     "build": "vite build",
+    "build:electron": "vite build && electron-builder --win --ia32",
     "preview": "vite preview",
     "lint": "tsc --noEmit"
   },
@@ -61,6 +78,8 @@
     "@types/react-select": "^5.0.0",
     "@vitejs/plugin-legacy": "^6.0.0",
     "autoprefixer": "^10.4.21",
+    "electron": "^42.0.0",
+    "electron-builder": "^26.8.1",
     "tailwindcss": "^4.1.14",
     "terser": "^5.46.1",
     "tsx": "^4.21.0",
