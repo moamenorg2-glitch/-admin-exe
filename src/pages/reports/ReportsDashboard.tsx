@@ -37,6 +37,34 @@ export default function ReportsDashboard() {
   const [refreshKey, setRefreshKey] = React.useState(0);
   const [activeModal, setActiveModal] = React.useState<{ type: 'vendor' | 'driver', id: string, name: string } | null>(null);
   const [isAIAssistantOpen, setIsAIAssistantOpen] = React.useState(false);
+  const [technicalError, setTechnicalError] = React.useState<{ message: string; details: any; type: string } | null>(null);
+
+  const handleError = (type: string, error: any) => {
+    console.error(`Technical Error [${type}]:`, error);
+    setTechnicalError({
+      type,
+      message: error.message || 'Unknown Error',
+      details: {
+        error,
+        timestamp: new Date().toISOString(),
+        userAgent: navigator.userAgent,
+        environment: {
+          onLine: navigator.onLine,
+          memory: (navigator as any).deviceMemory,
+          connection: (navigator as any).connection ? {
+            effectiveType: (navigator as any).connection.effectiveType,
+            saveData: (navigator as any).connection.saveData
+          } : 'N/A'
+        },
+        type: type,
+        message: error.message,
+        hint: error.hint,
+        details: error.details,
+        code: error.code
+      }
+    });
+    throw error;
+  };
 
   // Fetch Vendors for Filter
   const { data: vendors } = useQuery({
@@ -63,12 +91,11 @@ export default function ReportsDashboard() {
   });
 
   // 1. Platform Profit Stats (Direct Query to bypass broken RPC)
-  const { data: profitStats, isLoading: loadingProfits } = useQuery({
+  const { data: profitStats, isLoading: loadingProfits, error: profitError } = useQuery({
     queryKey: ['platform-profits', dateRange, selectedVendor, selectedDriver, refreshKey],
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
     queryFn: async () => {
-      try {
         let query = supabase
           .from('master_orders')
           .select(`
@@ -86,12 +113,8 @@ export default function ReportsDashboard() {
           .gte('created_at', format(dateRange.start, "yyyy-MM-dd'T'HH:mm:ss"))
           .lte('created_at', format(dateRange.end, "yyyy-MM-dd'T'HH:mm:ss"));
 
-        if (selectedVendor !== 'all') {
-            // Filter is applied later in the reduction if needed or we could add join filter
-        }
-
         const { data, error } = await query;
-        if (error) throw error;
+        if (error) return handleError('Platform Profits', error);
 
         const ordersData = (data as any[]) || [];
         const stats = {
@@ -103,7 +126,6 @@ export default function ReportsDashboard() {
           total_commissions: ordersData.reduce((sum, o) => {
             const subOrders = o.sub_orders as any[] || [];
             return sum + subOrders.reduce((s: number, sub: any) => {
-              // Calculate for past orders if 0 or use vendor value
               const commRate = Number(sub.vendor?.commission_rate || 0);
               const comm = Number(sub.vendor_commission) || 
                 ((Number(sub.sub_total) * commRate) / 100);
@@ -117,28 +139,20 @@ export default function ReportsDashboard() {
           driverDues: 0
         };
         stats.platformProfit = stats.total_commissions + stats.total_service_fees - stats.total_discounts;
-        
-        // Simple heuristic for vendor and driver dues for the summary cards
-        // In a real app we'd fetch these specifically or aggregate better
-        stats.vendorDues = stats.totalSales * 0.85; // Example estimation if not fully joined
-        stats.driverDues = stats.total_orders * 15; // Example estimation
+        stats.vendorDues = stats.totalSales * 0.85; 
+        stats.driverDues = stats.total_orders * 15; 
 
         return stats;
-      } catch (err) {
-        console.error("Platform Profits Exception:", err);
-        return { total_orders: 0, totalSales: 0, total_commissions: 0, total_service_fees: 0, total_discounts: 0, platformProfit: 0, vendorDues: 0, driverDues: 0 };
-      }
     }
   });
 
   // 2. Vendor Report (Direct Query)
-  const { data: vendorReport, isLoading: loadingVendors } = useQuery({
+  const { data: vendorReport, isLoading: loadingVendors, error: vendorError } = useQuery({
     queryKey: ['vendor-dues', dateRange, selectedVendor, refreshKey],
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
     enabled: !loadingProfits, // STAGGERED LOADING
     queryFn: async () => {
-      try {
         let query = supabase
           .from('sub_orders')
           .select(`
@@ -157,9 +171,8 @@ export default function ReportsDashboard() {
         }
 
         const { data, error } = await query;
-        if (error) throw error;
+        if (error) return handleError('Vendor Report', error);
 
-        // Group by vendor
         const grouped = (data || []).reduce((acc: any, curr: any) => {
           const vId = curr.vendor_id;
           if (!acc[vId]) {
@@ -177,7 +190,6 @@ export default function ReportsDashboard() {
             };
           }
           
-          // Calculate for past orders if 0 or use vendor value
           const commRate = Number(curr.vendor?.commission_rate || 0);
           const comm = Number(curr.vendor_commission) || 
             ((Number(curr.sub_total) * commRate) / 100);
@@ -197,33 +209,28 @@ export default function ReportsDashboard() {
         }, {});
 
         return Object.keys(grouped).map(key => grouped[key]);
-      } catch (err) {
-        console.error("Vendor Report Exception:", err);
-        return [];
-      }
     }
   });
 
   // 3. Driver Report (Fetched from order activity + transactions for accuracy)
-  const { data: driverReport, isLoading: loadingDrivers } = useQuery({
+  const { data: driverReport, isLoading: loadingDrivers, error: driverError } = useQuery({
     queryKey: ['driver-performance', dateRange, selectedDriver, refreshKey],
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
     enabled: !loadingVendors && !loadingProfits, // STAGGERED LOADING
     queryFn: async () => {
-      try {
-        // Fetch all drivers to ensure names are available
-        const { data: driversList } = await supabase
+        const { data: driversList, error: pError } = await supabase
           .from('profiles')
           .select('user_id, full_name, avatar_url')
           .eq('user_type', 'driver');
         
+        if (pError) return handleError('Driver Profiles', pError);
+
         const driversMap: Record<string, {name: string, avatar_url: string}> = {};
         driversList?.forEach(d => {
           driversMap[d.user_id] = { name: d.full_name || 'غير معروف', avatar_url: d.avatar_url || '' };
         });
 
-        // Fetch activity from order_delivery_team (Performance)
         let activityQuery = supabase
           .from('order_delivery_team')
           .select(`
@@ -244,9 +251,8 @@ export default function ReportsDashboard() {
         }
 
         const { data: activity, error: activityError } = await activityQuery;
-        if (activityError) throw activityError;
+        if (activityError) return handleError('Driver Activity', activityError);
 
-        // Group activity by driver to identify active drivers
         const groupedMap: Record<string, any> = {};
         for (const item of (activity || [])) {
           const dId = item.driver_id;
@@ -263,18 +269,18 @@ export default function ReportsDashboard() {
           groupedMap[dId].delivery_count++;
         }
 
-        // Fetch actual earnings from wallets (Financial Dues) for identified drivers
         const driverIds = Object.keys(groupedMap);
         let walletData: any[] = [];
         if (driverIds.length > 0) {
-          const { data: wallets } = await supabase
+          const { data: wallets, error: wError } = await supabase
             .from('wallets')
             .select('user_id, current_balance')
             .in('user_id', driverIds);
+          
+          if (wError) return handleError('Driver Wallets', wError);
           walletData = wallets || [];
         }
 
-        // 2. Process financial balances from wallets
         for (const w of (walletData || [])) {
           const dId = w.user_id;
           if (!groupedMap[dId]) continue; 
@@ -282,10 +288,6 @@ export default function ReportsDashboard() {
         }
 
         return Object.keys(groupedMap).map(key => groupedMap[key]);
-      } catch (err) {
-        console.error("Driver Report Exception:", err);
-        return [];
-      }
     }
   });
 
@@ -302,16 +304,13 @@ export default function ReportsDashboard() {
         .gte('created_at', dateRange.start.toISOString())
         .lte('created_at', dateRange.end.toISOString())
         .order('created_at', { ascending: false });
-      if (error) {
-        console.error("Penalties Query Error:", error);
-        return [];
-      }
+      if (error) return handleError('Penalties Report', error);
       return data;
     }
   });
 
   // 5. Support Tickets Report
-  const { data: supportTickets, isLoading: loadingSupport } = useQuery({
+  const { data: supportTickets, isLoading: loadingSupport, error: supportError } = useQuery({
     queryKey: ['support-tickets-report', dateRange, refreshKey],
     retry: 2,
     retryDelay: 2000,
@@ -323,10 +322,7 @@ export default function ReportsDashboard() {
         .gte('created_at', dateRange.start.toISOString())
         .lte('created_at', dateRange.end.toISOString())
         .order('created_at', { ascending: false });
-      if (error) {
-        console.error("Support Tickets Error:", error);
-        return [];
-      }
+      if (error) return handleError('Support Tickets', error);
       return data;
     }
   });
@@ -372,6 +368,56 @@ export default function ReportsDashboard() {
           </button>
         </div>
       </div>
+
+      {/* Technical Error Monitor - Detailed Breakdown for Android Debugging */}
+      {technicalError && (
+        <div className="mb-6 p-5 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900 rounded-3xl overflow-hidden shadow-xl shadow-rose-200/20" dir="rtl">
+          <div className="flex items-start justify-between gap-4 mb-4">
+            <div className="flex items-start gap-4">
+              <div className="p-3 bg-rose-500 text-white rounded-2xl shadow-lg shadow-rose-500/30 animate-pulse">
+                 <AlertCircle className="w-6 h-6" />
+              </div>
+              <div className="flex flex-col">
+                <h3 className="text-lg font-black text-rose-900 dark:text-rose-100">حدث خطأ تقني في: {technicalError.type}</h3>
+                <p className="text-sm font-bold text-rose-600 dark:text-rose-400 mt-1">المشكلة: {technicalError.message}</p>
+              </div>
+            </div>
+            <button 
+              onClick={() => setTechnicalError(null)}
+              className="p-2 hover:bg-rose-100 dark:hover:bg-rose-900/50 rounded-xl transition-colors text-rose-500"
+            >
+              إغلاق
+            </button>
+          </div>
+
+          <div className="bg-slate-900 rounded-2xl p-4 border border-rose-500/20">
+             <div className="flex items-center justify-between mb-3 border-b border-white/10 pb-2">
+                <span className="text-[10px] font-black text-rose-500 tracking-widest uppercase">مخرجات النظام التقني (Debug Log)</span>
+                <div className="flex gap-2">
+                   <button 
+                    onClick={() => {
+                        const logs = JSON.stringify(technicalError.details, null, 2);
+                        navigator.clipboard.writeText(logs);
+                        alert('تم نسخ السجل التقني، أرسله للمطور');
+                    }}
+                    className="text-[10px] bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg font-black transition-all"
+                   >
+                     نسخ السجل للتحليل
+                   </button>
+                   <button 
+                    onClick={() => window.location.reload()}
+                    className="text-[10px] bg-white text-slate-900 px-3 py-1.5 rounded-lg font-black transition-all"
+                   >
+                     تحديث الصفحة
+                   </button>
+                </div>
+             </div>
+             <pre className="text-[11px] font-mono text-rose-400 overflow-x-auto overflow-y-auto max-h-[300px] leading-relaxed">
+               {JSON.stringify(technicalError.details, null, 2)}
+             </pre>
+          </div>
+        </div>
+      )}
 
       {/* Unified Filter Bar */}
       <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm mb-6">
