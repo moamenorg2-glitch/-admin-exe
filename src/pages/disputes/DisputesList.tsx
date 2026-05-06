@@ -135,7 +135,6 @@ export default function DisputesList() {
       {/* Stats Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-indigo-50 to-white rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110" />
           <div className="relative z-10 flex items-start justify-between">
             <div className="space-y-2">
               <p className="text-sm font-bold text-gray-500">إجمالي النزاعات</p>
@@ -150,7 +149,6 @@ export default function DisputesList() {
         </div>
 
         <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-amber-50 to-white rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110" />
           <div className="relative z-10 flex items-start justify-between">
             <div className="space-y-2">
               <p className="text-sm font-bold text-gray-500">قيد المراجعة</p>
@@ -165,7 +163,6 @@ export default function DisputesList() {
         </div>
 
         <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-red-50 to-white rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110" />
           <div className="relative z-10 flex items-start justify-between">
             <div className="space-y-2">
               <p className="text-sm font-bold text-gray-500">تم التصعيد</p>
@@ -180,7 +177,6 @@ export default function DisputesList() {
         </div>
 
         <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-emerald-50 to-white rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110" />
           <div className="relative z-10 flex items-start justify-between">
             <div className="space-y-2">
               <p className="text-sm font-bold text-gray-500">تم الحل</p>

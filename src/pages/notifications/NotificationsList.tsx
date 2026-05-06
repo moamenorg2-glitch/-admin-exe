@@ -72,7 +72,7 @@ export default function NotificationsList() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h2 className="text-2xl font-bold text-gray-900">سجل الإشعارات</h2>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">سجل الإشعارات</h2>
         
         {/* Filters, Search & Actions */}
         <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
@@ -85,18 +85,18 @@ export default function NotificationsList() {
               placeholder="بحث بالعنوان أو المحتوى..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="block w-full sm:w-64 pr-10 border-gray-300 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm border py-2 px-3"
+              className="block w-full sm:w-64 pr-10 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm border py-2 px-3 bg-white dark:bg-slate-800 border-gray-300 dark:border-slate-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
             />
           </div>
 
           <div className="relative">
             <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-              <Filter className="h-4 w-4 text-gray-400" />
+              <Filter className="h-4 w-4 text-gray-400 dark:text-gray-500" />
             </div>
             <select
               value={readFilter}
               onChange={(e) => setReadFilter(e.target.value as any)}
-              className="block w-full sm:w-48 pr-10 border-gray-300 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm border py-2 pl-3"
+              className="block w-full sm:w-48 pr-10 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm border py-2 pl-3 bg-white dark:bg-slate-800 border-gray-300 dark:border-slate-700 text-gray-900 dark:text-white"
             >
               <option value="All">جميع الحالات</option>
               <option value="Read">مقروء</option>
@@ -115,29 +115,29 @@ export default function NotificationsList() {
       </div>
 
       {/* Table */}
-      <div className="bg-white shadow-sm overflow-hidden sm:rounded-2xl border border-gray-100">
+      <div className="bg-white dark:bg-slate-800 shadow-sm overflow-hidden sm:rounded-2xl border border-gray-100 dark:border-slate-700 transition-colors">
         <div className="overflow-x-auto">
           <table className="w-full text-right">
-            <thead className="bg-gray-50 border-b border-gray-100">
+            <thead className="bg-gray-50 dark:bg-slate-800/50 border-b border-gray-100 dark:border-slate-700">
               <tr>
-                <th scope="col" className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-4 text-right text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   الإشعار
                 </th>
-                <th scope="col" className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-4 text-right text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   المستلم
                 </th>
-                <th scope="col" className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-4 text-right text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   تاريخ الإرسال
                 </th>
-                <th scope="col" className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-4 text-right text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   الحالة
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-50">
+            <tbody className="bg-white dark:bg-slate-800 divide-y divide-gray-50 dark:divide-slate-700/50">
               {isLoading ? (
                 <tr>
-                  <td colSpan={4} className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan={4} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
                     <div className="flex justify-center items-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
                     </div>
@@ -145,40 +145,40 @@ export default function NotificationsList() {
                 </tr>
               ) : data?.notifications?.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan={4} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
                     لا توجد إشعارات تطابق معايير البحث
                   </td>
                 </tr>
               ) : (
                 data?.notifications?.map((notification) => (
-                  <tr key={notification.id} className={cn("hover:bg-gray-50 transition-colors", !notification.is_read && "bg-emerald-50")}>
+                  <tr key={notification.id} className={cn("hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors", !notification.is_read ? "bg-emerald-50 dark:bg-emerald-500/20" : "")}>
                     <td className="px-6 py-4">
                       <div className="flex items-start">
                         <div className={cn(
                           "flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center mt-1",
-                          notification.is_read ? "bg-gray-100" : "bg-emerald-100"
+                          notification.is_read ? "bg-gray-100 dark:bg-slate-700" : "bg-emerald-100 dark:bg-emerald-500/30"
                         )}>
-                          <Bell className={cn("h-5 w-5", notification.is_read ? "text-gray-500" : "text-emerald-600")} />
+                          <Bell className={cn("h-5 w-5", notification.is_read ? "text-gray-500 dark:text-gray-400" : "text-emerald-600 dark:text-emerald-400")} />
                         </div>
                         <div className="mr-4">
-                          <div className={cn("text-sm", notification.is_read ? "font-medium text-gray-900" : "font-bold text-gray-900")}>
+                          <div className={cn("text-sm", notification.is_read ? "font-medium text-gray-900 dark:text-gray-200" : "font-bold text-gray-900 dark:text-white")}>
                             {notification.title}
                           </div>
-                          <div className="text-sm text-gray-500 mt-1 line-clamp-2">{notification.content}</div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">{notification.content}</div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {notification.profiles ? (
                         <>
-                          <div className="text-sm font-medium text-gray-900">{notification.profiles.full_name}</div>
-                          <div className="text-xs text-gray-500">{getUserTypeLabel(notification.profiles.user_type)}</div>
+                          <div className="text-sm font-medium text-gray-900 dark:text-gray-200">{notification.profiles.full_name}</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">{getUserTypeLabel(notification.profiles.user_type)}</div>
                         </>
                       ) : (
-                        <span className="text-sm text-gray-500">إشعار عام</span>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">إشعار عام</span>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       <div className="flex items-center gap-1">
                         <Clock className="w-4 h-4" />
                         <span>{format(new Date(notification.created_at), 'PPp', { locale: ar })}</span>
@@ -186,19 +186,19 @@ export default function NotificationsList() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {notification.is_read ? (
-                        <span className="inline-flex items-center text-sm text-green-600">
+                        <span className="inline-flex items-center text-sm text-green-600 dark:text-emerald-400">
                           <CheckCircle className="w-4 h-4 ml-1" />
                           مقروء
                         </span>
                       ) : (
                         <div className="flex items-center gap-2">
-                          <span className="inline-flex items-center text-sm text-emerald-600 font-medium">
+                          <span className="inline-flex items-center text-sm text-emerald-600 dark:text-emerald-400 font-medium">
                             غير مقروء
                           </span>
                           <button 
                             onClick={() => markAsReadMutation.mutate(notification.id)}
                             disabled={markAsReadMutation.isPending}
-                            className="text-gray-400 hover:text-emerald-600 transition-colors"
+                            className="text-gray-400 dark:text-gray-500 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
                             title="تحديد كمقروء"
                           >
                             <Eye className="w-4 h-4" />
@@ -215,26 +215,26 @@ export default function NotificationsList() {
         
         {/* Pagination */}
         {data?.count && data.count > pageSize && (
-          <div className="bg-white px-4 py-3 border-t border-gray-200 flex items-center justify-between sm:px-6">
+          <div className="bg-white dark:bg-slate-800 px-4 py-3 border-t border-gray-200 dark:border-slate-700 flex items-center justify-between sm:px-6 transition-colors">
             <div className="flex-1 flex justify-between sm:hidden">
               <button
                 onClick={() => setPage(p => Math.max(0, p - 1))}
                 disabled={page === 0}
-                className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                className="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-slate-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 disabled:opacity-50"
               >
                 السابق
               </button>
               <button
                 onClick={() => setPage(p => p + 1)}
                 disabled={(page + 1) * pageSize >= data.count}
-                className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-slate-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 disabled:opacity-50"
               >
                 التالي
               </button>
             </div>
             <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
               <div>
-                <p className="text-sm text-gray-700">
+                <p className="text-sm text-gray-700 dark:text-gray-300">
                   عرض <span className="font-medium">{page * pageSize + 1}</span> إلى <span className="font-medium">{Math.min((page + 1) * pageSize, data.count)}</span> من أصل <span className="font-medium">{data.count}</span> إشعار
                 </p>
               </div>
@@ -243,14 +243,14 @@ export default function NotificationsList() {
                   <button
                     onClick={() => setPage(p => Math.max(0, p - 1))}
                     disabled={page === 0}
-                    className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                    className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-600 disabled:opacity-50"
                   >
                     السابق
                   </button>
                   <button
                     onClick={() => setPage(p => p + 1)}
                     disabled={(page + 1) * pageSize >= data.count}
-                    className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                    className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-600 disabled:opacity-50"
                   >
                     التالي
                   </button>

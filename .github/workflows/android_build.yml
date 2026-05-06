@@ -75,18 +75,23 @@ jobs:
       - name: Prepare Assets
         run: |
           mkdir -p assets
-          if [ -f "icon.png" ]; then
-            cp icon.png assets/icon.png
+          if [ ! -f "assets/icon.png" ]; then
+            if [ -f "icons/icon-512.webp" ]; then
+              cp icons/icon-512.webp assets/icon.png
+              cp icons/icon-512.webp assets/splash.png
+            elif [ -f "icon.png" ]; then
+              cp icon.png assets/icon.png
+            fi
           fi
-          ls -R assets/
 
       - name: Generate App Icons
         run: |
           if [ -f "assets/icon.png" ]; then
-            echo "Generating assets from assets/icon.png..."
+            echo "Generating assets..."
+            # Use -y to bypass confirmation if needed
             npx -y @capacitor/assets generate --android
           else
-            echo "Warning: No assets/icon.png found. Asset generation will be skipped, which might result in default icons."
+            echo "No assets/icon.png found, skipping generation"
           fi
 
       - name: Sync Capacitor

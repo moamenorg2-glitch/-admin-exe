@@ -110,11 +110,11 @@ export default function SupportChats() {
   }
 
   return (
-    <div id="support-chats-page" className="h-[calc(100vh-120px)] flex flex-col animate-in fade-in duration-500">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+    <div id="support-chats-page" className="h-[calc(100vh-80px)] md:h-[calc(100vh-120px)] flex flex-col animate-in fade-in duration-500">
+      <div className={`flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 ${selectedRoomId ? 'hidden md:flex' : 'flex'}`}>
         <div>
-          <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">محادثات الدعم</h2>
-          <p className="text-gray-500 mt-1">تتبع المحادثات المباشرة بين المستخدمين والدعم أو السائقين</p>
+          <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900 tracking-tight">محادثات الدعم</h2>
+          <p className="text-sm md:text-base text-gray-500 mt-1">تتبع المحادثات المباشرة بين المستخدمين والدعم أو السائقين</p>
         </div>
       </div>
 

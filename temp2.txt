@@ -649,13 +649,13 @@ export default function ReportsDashboard() {
                  <div className="p-4 bg-slate-50 dark:bg-slate-700/50 rounded-2xl border border-slate-100 dark:border-slate-600">
                     <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">جزاءات السائقين</p>
                     <h5 className="text-xl font-black text-slate-900 dark:text-white">
-                       {(penaltiesReport?.filter((p: any) => p.profile?.user_type === 'driver').reduce((sum: number, p: any) => sum + (p.penalty_amount || 0), 0) || 0).toLocaleString()} ج.م
+                       {penaltiesReport?.filter((p: any) => p.profile?.user_type === 'driver').reduce((sum: number, p: any) => sum + (p.penalty_amount || 0), 0).toLocaleString()} ج.م
                     </h5>
                  </div>
                  <div className="p-4 bg-slate-50 dark:bg-slate-700/50 rounded-2xl border border-slate-100 dark:border-slate-600">
                     <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">جزاءات المتاجر</p>
                     <h5 className="text-xl font-black text-slate-900 dark:text-white">
-                       {(penaltiesReport?.filter((p: any) => p.profile?.user_type === 'vendor').reduce((sum: number, p: any) => sum + (p.penalty_amount || 0), 0) || 0).toLocaleString()} ج.م
+                       {penaltiesReport?.filter((p: any) => p.profile?.user_type === 'vendor').reduce((sum: number, p: any) => sum + (p.penalty_amount || 0), 0).toLocaleString()} ج.م
                     </h5>
                  </div>
               </div>
@@ -673,7 +673,7 @@ export default function ReportsDashboard() {
                          <tr key={p.id || idx} className="hover:bg-slate-50 transition-colors">
                             <td className="py-3 font-bold text-slate-900 dark:text-white">{p.penalty_category}</td>
                             <td className="py-3 text-slate-500 font-medium">{p.profile?.user_type === 'driver' ? 'سائق' : 'متجر'}</td>
-                            <td className="py-3 text-left font-black text-rose-500">{(p.penalty_amount || 0).toLocaleString()} ج.م</td>
+                            <td className="py-3 text-left font-black text-rose-500">{p.penalty_amount.toLocaleString()} ج.م</td>
                          </tr>
                        ))}
                        {(!penaltiesReport || penaltiesReport.length === 0) && (
@@ -728,7 +728,7 @@ export default function ReportsDashboard() {
                               {t.priority === 'urgent' ? 'عاجل' : 'عادي'}
                            </span>
                         </td>
-                        <td className="px-6 py-4 text-slate-400 font-bold">{t.created_at ? format(new Date(t.created_at), 'dd/MM/yyyy') : '-'}</td>
+                        <td className="px-6 py-4 text-slate-400 font-bold">{format(new Date(t.created_at), 'dd/MM/yyyy')}</td>
                      </tr>
                    ))}
                    {(!supportTickets || supportTickets.length === 0) && (

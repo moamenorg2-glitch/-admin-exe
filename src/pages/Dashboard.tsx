@@ -224,7 +224,7 @@ export default function Dashboard() {
       </div>
 
       {/* Row 2: Full Width Map */}
-      <div className="w-full bg-white dark:bg-slate-800 rounded-xl overflow-hidden shadow-sm mb-6 h-[500px]">
+      <div className="w-full bg-white dark:bg-slate-800 rounded-xl overflow-hidden shadow-sm mb-6 h-[400px]">
         <LiveMap embedded={true} hideControls={true} />
       </div>
 

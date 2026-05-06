@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../lib/supabase';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
-import { Send, User, Loader2, X, FileText, Scale } from 'lucide-react';
+import { Send, User, Loader2, X, FileText, Scale, ArrowRight } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
@@ -206,12 +206,19 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ roomId, onClose, orderNumber, i
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 20 }}
-      className="flex flex-col h-full bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200"
+      className="flex flex-col h-full bg-white md:rounded-lg overflow-hidden md:border border-gray-200"
     >
       {/* Header */}
-      <div id="chat-header" className="p-4 bg-primary text-white flex justify-between items-center">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-[#FFFFFF80] flex items-center justify-center overflow-hidden">
+      <div id="chat-header" className="p-3 md:p-4 bg-primary text-white flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0">
+        <div className="flex items-center gap-3 w-full sm:w-auto overflow-hidden">
+          <button 
+            id="close-chat-btn-mobile"
+            onClick={onClose}
+            className="md:hidden p-1.5 hover:bg-[#FFFFFF80] rounded-full transition-colors shrink-0"
+          >
+            <ArrowRight className="w-5 h-5" />
+          </button>
+          <div className="w-10 h-10 rounded-full bg-[#FFFFFF80] flex items-center justify-center overflow-hidden shrink-0">
             {otherParticipant?.avatar_url ? (
               <img 
                 src={otherParticipant.avatar_url} 
@@ -223,32 +230,32 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ roomId, onClose, orderNumber, i
               <User className="w-6 h-6" />
             )}
           </div>
-          <div>
-            <h3 className="font-bold text-lg">
+          <div className="min-w-0 flex-1">
+            <h3 className="font-bold text-sm md:text-lg truncate">
               {otherParticipant?.full_name ? `محادثة مع ${otherParticipant.full_name}` : 'محادثة الدعم'} 
-              {orderNumber && ` (طلب #${orderNumber})`}
+              {orderNumber && ` (#${orderNumber})`}
             </h3>
             <p className="text-xs text-gray-200">{isActive ? 'نشط الآن' : 'مغلق'}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 overflow-x-auto w-full sm:w-auto no-scrollbar pb-1 sm:pb-0">
           {(ticketId || orderId) && (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               {ticketId && (
                 <Link
                   to={`/support?ticketId=${ticketId}`}
-                  className="flex items-center gap-1 px-3 py-1 bg-[#FFFFFF80] hover:bg-[#FFFFFF80] text-white text-xs font-bold rounded-lg border border-white/20 transition-colors"
+                  className="flex items-center gap-1 px-3 py-1.5 md:py-1 bg-[#FFFFFF80] hover:bg-[#FFFFFF80] text-white text-[11px] md:text-xs font-bold rounded-lg border border-white/20 transition-colors whitespace-nowrap"
                 >
-                  <FileText className="w-4 h-4" />
+                  <FileText className="w-3.5 h-3.5 md:w-4 md:h-4" />
                   التذكرة
                 </Link>
               )}
               <button
                 onClick={() => setShowConfirmEscalate(true)}
-                className="flex items-center gap-1 px-3 py-1 bg-amber-500 hover:bg-amber-500 text-white text-xs font-bold rounded-lg border border-white/20 transition-colors"
+                className="flex items-center gap-1 px-3 py-1.5 md:py-1 bg-amber-500 hover:bg-amber-500 text-white text-[11px] md:text-xs font-bold rounded-lg border border-white/20 transition-colors whitespace-nowrap"
                 title="تحويل إلى نزاع"
               >
-                <Scale className="w-4 h-4" />
+                <Scale className="w-3.5 h-3.5 md:w-4 md:h-4" />
                 تحويل لنزاع
               </button>
             </div>
@@ -257,7 +264,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ roomId, onClose, orderNumber, i
             <button 
               onClick={() => setShowConfirmClose(true)}
               disabled={isClosing}
-              className="px-3 py-1 bg-red-500 hover:bg-red-500 text-white text-xs font-bold rounded-lg border border-white/20 transition-colors"
+              className="px-3 py-1.5 md:py-1 bg-red-500 hover:bg-red-500 text-white text-[11px] md:text-xs font-bold rounded-lg border border-white/20 transition-colors shrink-0 whitespace-nowrap"
             >
               {isClosing ? 'جاري الإغلاق...' : 'إغلاق المحادثة'}
             </button>
@@ -265,7 +272,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ roomId, onClose, orderNumber, i
           <button 
             id="close-chat-btn"
             onClick={onClose}
-            className="p-2 hover:bg-[#FFFFFF80] rounded-full transition-colors"
+            className="hidden md:flex p-2 hover:bg-[#FFFFFF80] rounded-full transition-colors shrink-0"
           >
             <X className="w-6 h-6" />
           </button>
