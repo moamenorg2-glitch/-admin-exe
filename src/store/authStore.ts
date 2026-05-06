@@ -23,6 +23,8 @@ interface AuthState {
   setProfile: (profile: Profile) => void;
 }
 
+let checkUserPromise: Promise<void> | null = null;
+
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   profile: null,
@@ -31,32 +33,42 @@ export const useAuthStore = create<AuthState>((set) => ({
   setProfile: (profile) => set({ profile }),
 
   checkUser: async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session?.user) {
-        // Fetch profile to check if admin
-        const { data: profile, error } = await supabase
-          .from('profiles')
-          .select('full_name, user_type, primary_phone, email, avatar_url, status')
-          .eq('user_id', session.user.id)
-          .single();
-
-        if (error) {
-          console.error('Error fetching profile:', error);
-          set({ user: session.user, profile: null, isAdmin: false, isLoading: false });
-          return;
-        }
-
-        const isAdmin = (profile as any)?.user_type === 'admin';
-        set({ user: session.user, profile: profile as unknown as Profile, isAdmin, isLoading: false });
-      } else {
-        set({ user: null, profile: null, isAdmin: false, isLoading: false });
-      }
-    } catch (error) {
-      console.error('Error checking user session:', error);
-      set({ user: null, profile: null, isAdmin: false, isLoading: false });
+    if (checkUserPromise) {
+      return checkUserPromise;
     }
+
+    checkUserPromise = (async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session?.user) {
+          // Fetch profile to check if admin
+          const { data: profile, error } = await supabase
+            .from('profiles')
+            .select('full_name, user_type, primary_phone, email, avatar_url, status')
+            .eq('user_id', session.user.id)
+            .single();
+
+          if (error) {
+            console.error('Error fetching profile:', error);
+            set({ user: session.user, profile: null, isAdmin: false, isLoading: false });
+            return;
+          }
+
+          const isAdmin = (profile as any)?.user_type === 'admin';
+          set({ user: session.user, profile: profile as unknown as Profile, isAdmin, isLoading: false });
+        } else {
+          set({ user: null, profile: null, isAdmin: false, isLoading: false });
+        }
+      } catch (error) {
+        console.error('Error checking user session:', error);
+        set({ user: null, profile: null, isAdmin: false, isLoading: false });
+      } finally {
+        checkUserPromise = null;
+      }
+    })();
+
+    return checkUserPromise;
   },
 
   signOut: async () => {

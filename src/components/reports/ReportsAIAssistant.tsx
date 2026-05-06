@@ -16,6 +16,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../lib/supabase';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { format } from 'date-fns';
 
 interface Message {
   role: 'user' | 'ai';
@@ -269,7 +270,7 @@ export default function ReportsAIAssistant() {
                         </ReactMarkdown>
                       </div>
                       <span className="text-[11px] text-gray-400 mt-1 font-medium px-2">
-                        {msg.timestamp.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}
+                        {format(msg.timestamp, 'hh:mm a')}
                       </span>
                     </div>
                   ))}
