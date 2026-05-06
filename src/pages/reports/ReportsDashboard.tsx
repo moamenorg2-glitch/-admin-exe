@@ -14,7 +14,7 @@ import {
   MessageSquare
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { format, subDays, startOfDay, endOfDay } from 'date-fns';
+import { format, subDays, startOfDay, endOfDay, parseISO } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { motion } from 'framer-motion';
 import ReportsAIAssistant from '../../components/reports/ReportsAIAssistant';
@@ -149,7 +149,7 @@ export default function ReportsDashboard() {
         if (error) throw error;
 
         // Group by vendor
-        const grouped = (data as any[]).reduce((acc, curr) => {
+        const grouped = (data || []).reduce((acc: any, curr: any) => {
           const vId = curr.vendor_id;
           if (!acc[vId]) {
             acc[vId] = { 
@@ -185,7 +185,7 @@ export default function ReportsDashboard() {
           return acc;
         }, {});
 
-        return Object.values(grouped);
+        return Object.keys(grouped).map(key => grouped[key]);
       } catch (err) {
         console.error("Vendor Report Exception:", err);
         return [];
@@ -234,7 +234,7 @@ export default function ReportsDashboard() {
 
         // Group activity by driver to identify active drivers
         const groupedMap: Record<string, any> = {};
-        for (const item of (activity as any[])) {
+        for (const item of (activity || [])) {
           const dId = item.driver_id;
           if (!dId) continue;
           if (!groupedMap[dId]) {
@@ -261,13 +261,13 @@ export default function ReportsDashboard() {
         }
 
         // 2. Process financial balances from wallets
-        for (const w of (walletData as any[])) {
+        for (const w of (walletData || [])) {
           const dId = w.user_id;
           if (!groupedMap[dId]) continue; 
           groupedMap[dId].actual_paid_earnings = Number(w.current_balance) || 0;
         }
 
-        return Object.values(groupedMap);
+        return Object.keys(groupedMap).map(key => groupedMap[key]);
       } catch (err) {
         console.error("Driver Report Exception:", err);
         return [];
@@ -314,7 +314,7 @@ export default function ReportsDashboard() {
   const exportToCSV = (data: any[], filename: string) => {
     if (!data.length) return;
     const header = Object.keys(data[0]).join(',');
-    const rows = data.map(obj => Object.values(obj).map(val => `"${val}"`).join(','));
+    const rows = data.map(obj => Object.keys(obj).map(key => `"${obj[key]}"`).join(','));
     const csvContent = "\uFEFF" + [header, ...rows].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -360,7 +360,12 @@ export default function ReportsDashboard() {
                 type="date" 
                 className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
                 value={format(dateRange.start, 'yyyy-MM-dd')}
-                onChange={(e) => setDateRange(prev => ({ ...prev, start: startOfDay(new Date(e.target.value)) }))}
+                onChange={(e) => {
+                  const d = new Date(e.target.value);
+                  if (!isNaN(d.getTime())) {
+                    setDateRange(prev => ({ ...prev, start: startOfDay(d) }));
+                  }
+                }}
               />
             </div>
           </div>
@@ -377,7 +382,12 @@ export default function ReportsDashboard() {
                 type="date" 
                 className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
                 value={format(dateRange.end, 'yyyy-MM-dd')}
-                onChange={(e) => setDateRange(prev => ({ ...prev, end: endOfDay(new Date(e.target.value)) }))}
+                onChange={(e) => {
+                  const d = new Date(e.target.value);
+                  if (!isNaN(d.getTime())) {
+                    setDateRange(prev => ({ ...prev, end: endOfDay(d) }));
+                  }
+                }}
               />
             </div>
           </div>
@@ -649,13 +659,13 @@ export default function ReportsDashboard() {
                  <div className="p-4 bg-slate-50 dark:bg-slate-700/50 rounded-2xl border border-slate-100 dark:border-slate-600">
                     <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">جزاءات السائقين</p>
                     <h5 className="text-xl font-black text-slate-900 dark:text-white">
-                       {(penaltiesReport?.filter((p: any) => p.profile?.user_type === 'driver').reduce((sum: number, p: any) => sum + (p.penalty_amount || 0), 0) || 0).toLocaleString()} ج.م
+                       {(penaltiesReport?.filter((p: any) => p.profile?.user_type === 'driver')?.reduce((sum: number, p: any) => sum + (p.penalty_amount || 0), 0) || 0).toLocaleString()} ج.م
                     </h5>
                  </div>
                  <div className="p-4 bg-slate-50 dark:bg-slate-700/50 rounded-2xl border border-slate-100 dark:border-slate-600">
                     <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">جزاءات المتاجر</p>
                     <h5 className="text-xl font-black text-slate-900 dark:text-white">
-                       {(penaltiesReport?.filter((p: any) => p.profile?.user_type === 'vendor').reduce((sum: number, p: any) => sum + (p.penalty_amount || 0), 0) || 0).toLocaleString()} ج.م
+                       {(penaltiesReport?.filter((p: any) => p.profile?.user_type === 'vendor')?.reduce((sum: number, p: any) => sum + (p.penalty_amount || 0), 0) || 0).toLocaleString()} ج.م
                     </h5>
                  </div>
               </div>
@@ -669,7 +679,7 @@ export default function ReportsDashboard() {
                        </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
-                       {penaltiesReport?.slice(0, 5).map((p: any, idx: number) => (
+                       {penaltiesReport?.slice(0, 5)?.map((p: any, idx: number) => (
                          <tr key={p.id || idx} className="hover:bg-slate-50 transition-colors">
                             <td className="py-3 font-bold text-slate-900 dark:text-white">{p.penalty_category}</td>
                             <td className="py-3 text-slate-500 font-medium">{p.profile?.user_type === 'driver' ? 'سائق' : 'متجر'}</td>
@@ -709,7 +719,7 @@ export default function ReportsDashboard() {
                    </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
-                   {supportTickets?.slice(0, 8).map((t: any) => (
+                   {supportTickets?.slice(0, 8)?.map((t: any) => (
                      <tr key={t.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/20 transition-colors">
                         <td className="px-6 py-4 font-black text-slate-900 dark:text-white max-w-[200px] truncate">{t.subject}</td>
                         <td className="px-6 py-4">
@@ -728,7 +738,7 @@ export default function ReportsDashboard() {
                               {t.priority === 'urgent' ? 'عاجل' : 'عادي'}
                            </span>
                         </td>
-                        <td className="px-6 py-4 text-slate-400 font-bold">{t.created_at ? format(new Date(t.created_at), 'dd/MM/yyyy') : '-'}</td>
+                        <td className="px-6 py-4 text-slate-400 font-bold">{t.created_at ? format(parseISO(t.created_at), 'dd/MM/yyyy') : '-'}</td>
                      </tr>
                    ))}
                    {(!supportTickets || supportTickets.length === 0) && (
