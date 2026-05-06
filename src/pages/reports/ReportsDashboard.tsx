@@ -40,12 +40,15 @@ export default function ReportsDashboard() {
   const [technicalError, setTechnicalError] = React.useState<{ message: string; details: any; type: string } | null>(null);
 
   const handleError = (type: string, error: any) => {
+    // Avoid double logging if same error
+    if (technicalError?.type === type && technicalError?.message === error.message) return null;
+    
     console.error(`Technical Error [${type}]:`, error);
     setTechnicalError({
       type,
       message: error.message || 'Unknown Error',
       details: {
-        error,
+        error: error instanceof Error ? { message: error.message, stack: error.stack } : error,
         timestamp: new Date().toISOString(),
         userAgent: navigator.userAgent,
         environment: {
@@ -63,7 +66,20 @@ export default function ReportsDashboard() {
         code: error.code
       }
     });
-    throw error;
+    // Removed throw error to prevent global Error Boundary trigger
+    return null;
+  };
+
+  // Safe Date Formatting helper
+  const safeFormat = (date: any, formatStr: string, options?: any) => {
+    try {
+      if (!date) return '-';
+      const d = typeof date === 'string' ? parseISO(date) : date;
+      if (isNaN(d.getTime())) return '-';
+      return format(d, formatStr, options);
+    } catch (e) {
+      return '-';
+    }
   };
 
   // Fetch Vendors for Filter
@@ -73,7 +89,10 @@ export default function ReportsDashboard() {
     retryDelay: 1000,
     queryFn: async () => {
       const { data, error } = await supabase.from('vendor_details').select('user_id, brand_name').order('brand_name');
-      if (error) throw error;
+      if (error) {
+        handleError('Filter Vendors', error);
+        return [];
+      }
       return data;
     }
   });
@@ -85,7 +104,10 @@ export default function ReportsDashboard() {
     retryDelay: 1000,
     queryFn: async () => {
       const { data, error } = await supabase.from('profiles').select('user_id, full_name').eq('user_type', 'driver').order('full_name');
-      if (error) throw error;
+      if (error) {
+        handleError('Filter Drivers', error);
+        return [];
+      }
       return data;
     }
   });
@@ -110,8 +132,8 @@ export default function ReportsDashboard() {
             )
           `)
           .eq('status', 'Completed')
-          .gte('created_at', format(dateRange.start, "yyyy-MM-dd'T'HH:mm:ss"))
-          .lte('created_at', format(dateRange.end, "yyyy-MM-dd'T'HH:mm:ss"));
+          .gte('created_at', safeFormat(dateRange.start, "yyyy-MM-dd'T'HH:mm:ss"))
+          .lte('created_at', safeFormat(dateRange.end, "yyyy-MM-dd'T'HH:mm:ss"));
 
         const { data, error } = await query;
         if (error) return handleError('Platform Profits', error);
@@ -163,8 +185,8 @@ export default function ReportsDashboard() {
             master_order:master_orders!sub_orders_master_order_id_fkey(payment_method)
           `)
           .eq('sub_status', 'Delivered')
-          .gte('created_at', format(dateRange.start, "yyyy-MM-dd'T'HH:mm:ss"))
-          .lte('created_at', format(dateRange.end, "yyyy-MM-dd'T'HH:mm:ss"));
+          .gte('created_at', safeFormat(dateRange.start, "yyyy-MM-dd'T'HH:mm:ss"))
+          .lte('created_at', safeFormat(dateRange.end, "yyyy-MM-dd'T'HH:mm:ss"));
 
         if (selectedVendor !== 'all') {
           query = query.eq('vendor_id', selectedVendor);
@@ -335,7 +357,7 @@ export default function ReportsDashboard() {
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `${filename}_${format(new Date(), 'yyyyMMdd')}.csv`;
+    link.download = `${filename}_${safeFormat(new Date(), 'yyyyMMdd')}.csv`;
     link.click();
   };
 
@@ -428,12 +450,12 @@ export default function ReportsDashboard() {
             <div className="relative flex items-center bg-slate-50 dark:bg-slate-900/50 px-3 py-2.5 rounded-xl border border-slate-100 dark:border-slate-700 hover:border-emerald-500/30 transition-colors cursor-pointer">
               <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
               <span className="text-xs font-black text-slate-700 dark:text-slate-200 mr-2 truncate">
-                {format(dateRange.start, "dd MMM yyyy", { locale: ar })}
+                {safeFormat(dateRange.start, "dd MMM yyyy", { locale: ar })}
               </span>
               <input 
                 type="date" 
                 className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                value={format(dateRange.start, 'yyyy-MM-dd')}
+                value={safeFormat(dateRange.start, 'yyyy-MM-dd')}
                 onChange={(e) => {
                   const d = new Date(e.target.value);
                   if (!isNaN(d.getTime())) {
@@ -450,12 +472,12 @@ export default function ReportsDashboard() {
             <div className="relative flex items-center bg-slate-50 dark:bg-slate-900/50 px-3 py-2.5 rounded-xl border border-slate-100 dark:border-slate-700 hover:border-emerald-500/30 transition-colors cursor-pointer">
               <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
               <span className="text-xs font-black text-slate-700 dark:text-slate-200 mr-2 truncate">
-                {format(dateRange.end, "dd MMM yyyy", { locale: ar })}
+                {safeFormat(dateRange.end, "dd MMM yyyy", { locale: ar })}
               </span>
               <input 
                 type="date" 
                 className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                value={format(dateRange.end, 'yyyy-MM-dd')}
+                value={safeFormat(dateRange.end, 'yyyy-MM-dd')}
                 onChange={(e) => {
                   const d = new Date(e.target.value);
                   if (!isNaN(d.getTime())) {
@@ -812,7 +834,7 @@ export default function ReportsDashboard() {
                               {t.priority === 'urgent' ? 'عاجل' : 'عادي'}
                            </span>
                         </td>
-                        <td className="px-6 py-4 text-slate-400 font-bold">{t.created_at ? format(parseISO(t.created_at), 'dd/MM/yyyy') : '-'}</td>
+                        <td className="px-6 py-4 text-slate-400 font-bold">{safeFormat(t.created_at, 'dd/MM/yyyy')}</td>
                      </tr>
                    ))}
                    {(!supportTickets || supportTickets.length === 0) && (
