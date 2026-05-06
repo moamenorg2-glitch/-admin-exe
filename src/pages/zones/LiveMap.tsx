@@ -384,7 +384,7 @@ export default function LiveMap({ embedded = false, initialType = 'all', initial
 
 
   return (
-    <div className={cn("w-full relative overflow-hidden flex flex-col", hideControls ? "h-full" : "min-h-screen lg:min-h-[calc(100vh-120px)] pb-6")} dir="rtl">
+    <div className={cn("w-full relative overflow-hidden flex flex-col", hideControls ? "h-full" : "pb-6")} dir="rtl">
       {/* Header */}
       {!hideControls && (
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 px-4 lg:px-0 shrink-0 py-4 lg:py-0">
@@ -487,7 +487,7 @@ export default function LiveMap({ embedded = false, initialType = 'all', initial
 
       {/* Map Container - Must have enough height/flex to show up */}
       <div className={cn(
-        "w-full relative flex-1 min-h-[600px] lg:min-h-[calc(100vh-220px)]", 
+        "w-full relative flex-1 min-h-[400px] h-[400px] shrink-0", 
         !hideControls && "px-4 lg:px-0"
       )}>
         <div className={cn(

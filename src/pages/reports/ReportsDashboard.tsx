@@ -11,7 +11,8 @@ import {
   AlertCircle,
   User,
   DollarSign,
-  MessageSquare
+  MessageSquare,
+  Bot
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { format, subDays, startOfDay, endOfDay, parseISO } from 'date-fns';
@@ -35,10 +36,13 @@ export default function ReportsDashboard() {
   const [selectedDriver, setSelectedDriver] = React.useState<string>('all');
   const [refreshKey, setRefreshKey] = React.useState(0);
   const [activeModal, setActiveModal] = React.useState<{ type: 'vendor' | 'driver', id: string, name: string } | null>(null);
+  const [isAIAssistantOpen, setIsAIAssistantOpen] = React.useState(false);
 
   // Fetch Vendors for Filter
   const { data: vendors } = useQuery({
     queryKey: ['filter-vendors'],
+    retry: 2,
+    retryDelay: 1000,
     queryFn: async () => {
       const { data, error } = await supabase.from('vendor_details').select('user_id, brand_name').order('brand_name');
       if (error) throw error;
@@ -49,6 +53,8 @@ export default function ReportsDashboard() {
   // Fetch Drivers for Filter
   const { data: drivers } = useQuery({
     queryKey: ['filter-drivers'],
+    retry: 2,
+    retryDelay: 1000,
     queryFn: async () => {
       const { data, error } = await supabase.from('profiles').select('user_id, full_name').eq('user_type', 'driver').order('full_name');
       if (error) throw error;
@@ -59,6 +65,8 @@ export default function ReportsDashboard() {
   // 1. Platform Profit Stats (Direct Query to bypass broken RPC)
   const { data: profitStats, isLoading: loadingProfits } = useQuery({
     queryKey: ['platform-profits', dateRange, selectedVendor, selectedDriver, refreshKey],
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
     queryFn: async () => {
       try {
         let query = supabase
@@ -126,6 +134,9 @@ export default function ReportsDashboard() {
   // 2. Vendor Report (Direct Query)
   const { data: vendorReport, isLoading: loadingVendors } = useQuery({
     queryKey: ['vendor-dues', dateRange, selectedVendor, refreshKey],
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
+    enabled: !loadingProfits, // STAGGERED LOADING
     queryFn: async () => {
       try {
         let query = supabase
@@ -194,8 +205,11 @@ export default function ReportsDashboard() {
   });
 
   // 3. Driver Report (Fetched from order activity + transactions for accuracy)
-  const { data: driverReport } = useQuery({
+  const { data: driverReport, isLoading: loadingDrivers } = useQuery({
     queryKey: ['driver-performance', dateRange, selectedDriver, refreshKey],
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
+    enabled: !loadingVendors && !loadingProfits, // STAGGERED LOADING
     queryFn: async () => {
       try {
         // Fetch all drivers to ensure names are available
@@ -276,8 +290,11 @@ export default function ReportsDashboard() {
   });
 
   // 4. Penalties Report
-  const { data: penaltiesReport } = useQuery({
+  const { data: penaltiesReport, isLoading: loadingPenalties } = useQuery({
     queryKey: ['penalties-report', dateRange, refreshKey],
+    retry: 2,
+    retryDelay: 2000,
+    enabled: !loadingDrivers && !loadingVendors, // STAGGERED
     queryFn: async () => {
       const { data, error } = await supabase
         .from('admin_penalties')
@@ -294,8 +311,11 @@ export default function ReportsDashboard() {
   });
 
   // 5. Support Tickets Report
-  const { data: supportTickets } = useQuery({
+  const { data: supportTickets, isLoading: loadingSupport } = useQuery({
     queryKey: ['support-tickets-report', dateRange, refreshKey],
+    retry: 2,
+    retryDelay: 2000,
+    enabled: !loadingPenalties && !loadingDrivers, // STAGGERED
     queryFn: async () => {
       const { data, error } = await supabase
         .from('support_tickets')
@@ -335,6 +355,14 @@ export default function ReportsDashboard() {
         </div>
         
         <div className="flex items-center gap-2">
+          <button 
+            onClick={() => setIsAIAssistantOpen(true)}
+            className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black shadow-lg shadow-blue-200 dark:shadow-none transition-all active:scale-95"
+          >
+            <Bot className="w-4 h-4" />
+            <span>المساعد الذكي</span>
+          </button>
+
           <button 
             onClick={handleRefresh}
             className="flex items-center justify-center w-[42px] h-[42px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-slate-50 transition-all shrink-0 shadow-sm active:scale-95"
@@ -751,9 +779,10 @@ export default function ReportsDashboard() {
       </div>
 
       {/* AI Assistant */}
-      <div className="flex justify-center mb-10">
-        <ReportsAIAssistant />
-      </div>
+      <ReportsAIAssistant 
+        isOpen={isAIAssistantOpen} 
+        onClose={() => setIsAIAssistantOpen(false)} 
+      />
 
       {/* Entity Orders Modal */}
       {activeModal && (
