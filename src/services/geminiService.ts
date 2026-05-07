@@ -117,15 +117,22 @@ async function executeQueryDatabase(args: any) {
 
 export async function askGemini(prompt: string, context?: any) {
   try {
-    // جلب المفتاح الخاص من الخادم
-    const configRes = await fetch('/api/config/gemini');
-    const { apiKey } = await configRes.json();
+    // ---------- إعداد مفتاح API الخاص بـ Gemini ----------
+    // للحصول على مفتاح مجاني: https://aistudio.google.com/app/apikey
+    // إذا كنت تقوم بتشغيل التطبيق محلياً أو على Android (بدون الخادم)،
+    // يمكنك لصق مفتاحك مباشرة هنا بين علامات التنصيص كحل مؤقت:
+    const HARDCODED_API_KEY = "AIzaSyBd6h2AhRR9TRpHUjxfFvBfB4S2jMbV0d0"; 
+    // ---------------------------------------------------------
+
+    // جلب المفتاح الخاص من الخادم (للبيئة السحابية)
+    const configRes = await fetch('/api/config/gemini').catch(() => null);
+    const { apiKey } = configRes ? await configRes.json().catch(() => ({ apiKey: '' })) : { apiKey: '' };
     
-    // إذا لم يكن هناك مفتاح من الخادم، نقوم باستخدام process.env كبديل (للبيئات التي تدعم ذلك)
-    const finalApiKey = apiKey || process.env.GEMINI_API_KEY;
+    // الأولوية للمفتاح المكتوب يدوياً، ثم الخادم، ثم متغيرات البيئة
+    const finalApiKey = HARDCODED_API_KEY || apiKey || process.env.GEMINI_API_KEY;
 
     if (!finalApiKey) {
-        throw new Error("لم يتم إعداد مفتاح API الخاص بالمساعد الذكي.");
+        throw new Error("لم يتم إعداد مفتاح API الخاص بالمساعد الذكي (GEMINI_API_KEY). يرجى إضافته في الكود أو في ملف .env.");
     }
 
     const ai = new GoogleGenAI({ apiKey: finalApiKey });
