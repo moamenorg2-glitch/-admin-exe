@@ -11,7 +11,15 @@
       "output": "release"
     },
     "win": {
-      "target": "nsis"
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64",
+            "ia32"
+          ]
+        }
+      ]
     },
     "files": [
       "dist/**/*",
@@ -78,7 +86,7 @@
     "@types/react-select": "^5.0.0",
     "@vitejs/plugin-legacy": "^6.0.0",
     "autoprefixer": "^10.4.21",
-    "electron": "^42.0.0",
+    "electron": "^33.0.0",
     "electron-builder": "^26.8.1",
     "tailwindcss": "^4.1.14",
     "terser": "^5.46.1",

@@ -44,21 +44,25 @@ export default function ReportsDashboard() {
     if (technicalError?.type === type && technicalError?.message === error.message) return null;
     
     console.error(`Technical Error [${type}]:`, error);
+    
+    // Fallback for missing navigator properties in some environments
+    const env = {
+      onLine: typeof navigator !== 'undefined' ? navigator.onLine : true,
+      memory: typeof navigator !== 'undefined' ? (navigator as any).deviceMemory : 'N/A',
+      connection: typeof navigator !== 'undefined' && (navigator as any).connection ? {
+        effectiveType: (navigator as any).connection.effectiveType,
+        saveData: (navigator as any).connection.saveData
+      } : 'N/A'
+    };
+
     setTechnicalError({
       type,
       message: error.message || 'Unknown Error',
       details: {
         error: error instanceof Error ? { message: error.message, stack: error.stack } : error,
         timestamp: new Date().toISOString(),
-        userAgent: navigator.userAgent,
-        environment: {
-          onLine: navigator.onLine,
-          memory: (navigator as any).deviceMemory,
-          connection: (navigator as any).connection ? {
-            effectiveType: (navigator as any).connection.effectiveType,
-            saveData: (navigator as any).connection.saveData
-          } : 'N/A'
-        },
+        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'N/A',
+        environment: env,
         type: type,
         message: error.message,
         hint: error.hint,
@@ -87,6 +91,7 @@ export default function ReportsDashboard() {
     queryKey: ['filter-vendors'],
     retry: 2,
     retryDelay: 1000,
+    meta: { suppressGlobalError: true },
     queryFn: async () => {
       const { data, error } = await supabase.from('vendor_details').select('user_id, brand_name').order('brand_name');
       if (error) {
@@ -102,6 +107,7 @@ export default function ReportsDashboard() {
     queryKey: ['filter-drivers'],
     retry: 2,
     retryDelay: 1000,
+    meta: { suppressGlobalError: true },
     queryFn: async () => {
       const { data, error } = await supabase.from('profiles').select('user_id, full_name').eq('user_type', 'driver').order('full_name');
       if (error) {
@@ -117,6 +123,7 @@ export default function ReportsDashboard() {
     queryKey: ['platform-profits', dateRange, selectedVendor, selectedDriver, refreshKey],
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
+    meta: { suppressGlobalError: true },
     queryFn: async () => {
         let query = supabase
           .from('master_orders')
@@ -174,6 +181,7 @@ export default function ReportsDashboard() {
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
     enabled: !loadingProfits, // STAGGERED LOADING
+    meta: { suppressGlobalError: true },
     queryFn: async () => {
         let query = supabase
           .from('sub_orders')
@@ -240,6 +248,7 @@ export default function ReportsDashboard() {
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
     enabled: !loadingVendors && !loadingProfits, // STAGGERED LOADING
+    meta: { suppressGlobalError: true },
     queryFn: async () => {
         const { data: driversList, error: pError } = await supabase
           .from('profiles')
@@ -265,8 +274,8 @@ export default function ReportsDashboard() {
             )
           `)
           .eq('master_order.status', 'Completed')
-          .gte('master_order.created_at', dateRange.start.toISOString())
-          .lte('master_order.created_at', dateRange.end.toISOString());
+          .gte('master_order.created_at', safeFormat(dateRange.start, "yyyy-MM-dd'T'HH:mm:ss"))
+          .lte('master_order.created_at', safeFormat(dateRange.end, "yyyy-MM-dd'T'HH:mm:ss"));
 
         if (selectedDriver !== 'all') {
           activityQuery = activityQuery.eq('driver_id', selectedDriver);
@@ -319,12 +328,13 @@ export default function ReportsDashboard() {
     retry: 2,
     retryDelay: 2000,
     enabled: !loadingDrivers && !loadingVendors, // STAGGERED
+    meta: { suppressGlobalError: true },
     queryFn: async () => {
       const { data, error } = await supabase
         .from('admin_penalties')
         .select('*, profile:profiles!target_user_id(user_type)')
-        .gte('created_at', dateRange.start.toISOString())
-        .lte('created_at', dateRange.end.toISOString())
+        .gte('created_at', safeFormat(dateRange.start, "yyyy-MM-dd'T'HH:mm:ss"))
+        .lte('created_at', safeFormat(dateRange.end, "yyyy-MM-dd'T'HH:mm:ss"))
         .order('created_at', { ascending: false });
       if (error) return handleError('Penalties Report', error);
       return data;
@@ -337,12 +347,13 @@ export default function ReportsDashboard() {
     retry: 2,
     retryDelay: 2000,
     enabled: !loadingPenalties && !loadingDrivers, // STAGGERED
+    meta: { suppressGlobalError: true },
     queryFn: async () => {
       const { data, error } = await supabase
         .from('support_tickets')
         .select('*')
-        .gte('created_at', dateRange.start.toISOString())
-        .lte('created_at', dateRange.end.toISOString())
+        .gte('created_at', safeFormat(dateRange.start, "yyyy-MM-dd'T'HH:mm:ss"))
+        .lte('created_at', safeFormat(dateRange.end, "yyyy-MM-dd'T'HH:mm:ss"))
         .order('created_at', { ascending: false });
       if (error) return handleError('Support Tickets', error);
       return data;
@@ -419,8 +430,13 @@ export default function ReportsDashboard() {
                    <button 
                     onClick={() => {
                         const logs = JSON.stringify(technicalError.details, null, 2);
-                        navigator.clipboard.writeText(logs);
-                        alert('تم نسخ السجل التقني، أرسله للمطور');
+                        if (navigator.clipboard) {
+                          navigator.clipboard.writeText(logs);
+                          import('react-hot-toast').then(t => t.default.success('تم نسخ السجل التقني، أرسله للمطور'));
+                        } else {
+                          console.log('Technical Log:', logs);
+                          import('react-hot-toast').then(t => t.default.error('لا يمكن النسخ التلقائي، السجل مطبوع في Console'));
+                        }
                     }}
                     className="text-[10px] bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg font-black transition-all"
                    >
