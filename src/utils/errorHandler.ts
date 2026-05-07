@@ -37,16 +37,17 @@ export const handleGlobalError = (error: any, context?: string) => {
     message = error;
   }
 
-  // Show toast safely (suppress for generic unhandled promises to avoid noise)
-  if (context !== 'Unhandled Promise' && context !== 'Uncaught Exception') {
-    setTimeout(() => {
-      try {
+  // Always show toast for errors so the user sees the 'error box'
+  setTimeout(() => {
+    try {
+      // Don't show toast for ResizeObserver limit which is benign
+      if (!message.includes('ResizeObserver')) {
         toast.error(message, { id: String(message) });
-      } catch (e) {
-        console.error('Failed to show toast:', e);
       }
-    }, 0);
-  }
+    } catch (e) {
+      console.error('Failed to show toast:', e);
+    }
+  }, 0);
 
   // Log to database asynchronously
   (async () => {

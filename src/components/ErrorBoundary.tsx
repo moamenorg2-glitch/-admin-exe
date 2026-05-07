@@ -23,6 +23,11 @@ export class ErrorBoundary extends React.Component<Props, State> {
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('ErrorBoundary caught an error:', error, errorInfo);
     
+    // Import toast dynamically to avoid SSR issues if any, or just use it directly if imported
+    import('react-hot-toast').then(({ toast }) => {
+      toast.error('حدث خطأ في النظام: ' + error.message, { id: 'error-boundary', duration: 6000 });
+    });
+
     // Recovery logic
     const errorMsg = error.message || '';
     const isDOMError = errorMsg.includes('removeChild') || 
@@ -53,26 +58,22 @@ export class ErrorBoundary extends React.Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-[#151521] p-4 text-right" dir="rtl">
-          <div className="bg-[#1E1E2D] p-10 rounded-[2rem] shadow-2xl max-w-lg w-full text-center border border-gray-800">
-            <div className="flex justify-center mb-8">
-              <div className="bg-red-500 p-6 rounded-full border border-red-500">
-                <AlertTriangle className="h-16 w-16 text-red-500" />
-              </div>
-            </div>
-            <h1 className="text-3xl font-black text-white mb-4">عذراً، حدث خطأ تقني</h1>
-            <p className="text-gray-400 mb-10 leading-relaxed font-medium">
-              واجه النظام مشكلة في مزامنة البيانات. يرجى الضغط على زر التحديث لاستكمال العمل.
+        <div className="fixed inset-0 flex items-center justify-center p-4 z-50 bg-[#111118]" dir="rtl">
+          <div className="bg-[#1E1E2D] p-6 rounded-2xl shadow-xl max-w-sm w-full border border-rose-500/30 flex flex-col items-center">
+            <AlertTriangle className="h-10 w-10 text-rose-500 mb-3" />
+            <h3 className="text-lg font-bold text-white mb-2">صندوق الأخطاء</h3>
+            <p className="text-sm text-gray-400 mb-6 text-center">
+              حدث مشكلة ما، يمكنك إعادة تحميل الصفحة للعودة.
             </p>
             <button
               onClick={() => {
                 sessionStorage.setItem('boundary_recovery_count', '0');
                 window.location.reload();
               }}
-              className="w-full flex items-center justify-center gap-3 bg-emerald-600 text-white py-4 px-6 rounded-2xl hover:bg-emerald-700 transition-all font-black shadow-lg shadow-emerald-500"
+              className="w-full flex items-center justify-center gap-2 bg-emerald-600/20 text-emerald-500 py-3 rounded-xl hover:bg-emerald-600/30 transition-all font-bold"
             >
-              <RefreshCw className="w-6 h-6" />
-              تحديث واجهة التطبيق
+              <RefreshCw className="w-5 h-5" />
+              تحديث الواجهة
             </button>
           </div>
         </div>
