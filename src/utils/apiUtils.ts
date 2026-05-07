@@ -15,7 +15,8 @@ export const getApiUrl = (path: string): string => {
                       window.location.origin.startsWith('capacitor://');
 
   if (isCapacitor) {
-    const baseUrl = import.meta.env.VITE_APP_URL || '';
+    const FALLBACK_URL = 'https://ais-pre-fq35qqepcygp5opugmoebg-181556651247.europe-west3.run.app';
+    const baseUrl = import.meta.env.VITE_APP_URL || FALLBACK_URL;
     if (baseUrl) {
       // Remove trailing slash from baseUrl if exists
       const normalizedBase = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;

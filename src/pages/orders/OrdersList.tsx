@@ -254,6 +254,7 @@ export default function OrdersList() {
       await orderService.updateOrderStatus(orderId, 'Active');
       toast.success('تم قبول الطلب بنجاح وتحويله للتحضير');
       queryClient.invalidateQueries({ queryKey: ['orders'] }).catch(console.error);
+      queryClient.invalidateQueries({ queryKey: ['infinite-orders'] }).catch(console.error);
     } catch (error) {
       handleGlobalError(error, 'Quick Accept Order');
     }

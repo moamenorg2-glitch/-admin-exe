@@ -38,7 +38,7 @@ export function useDashboard() {
         throw error;
       }
     },
-    refetchInterval: 30000,
+    refetchInterval: 3000,
   });
 
   const { data: permissions } = useQuery({

@@ -140,6 +140,7 @@ export function useOrders(page: number, pageSize: number, filters: any) {
     // Technical Stability Improvements for React Query
     placeholderData: (previousData) => previousData,
     staleTime: 0, // Instant refresh
+    refetchInterval: 3000, 
     // gcTime: 1000 * 60 * 5, // Keep in cache for 5 minutes (default in v5 is 5 mins anyway)
     retry: 2, // Retry failed requests twice
     refetchOnWindowFocus: true, // Keep updated when user returns to app
@@ -221,6 +222,7 @@ export function useInfiniteOrders(pageSize: number, filters: any) {
     initialPageParam: 0,
     getNextPageParam: (lastPage) => lastPage.nextPage,
     staleTime: 0,
+    refetchInterval: 3000,
     retry: 2,
     refetchOnWindowFocus: true,
   });

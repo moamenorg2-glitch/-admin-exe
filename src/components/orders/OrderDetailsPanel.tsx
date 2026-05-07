@@ -126,6 +126,7 @@ export default function OrderDetailsPanel({ orderId, onClose, prepThreshold, del
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['order-details', orderId] }).catch(console.error);
       queryClient.invalidateQueries({ queryKey: ['orders'] }).catch(console.error);
+      queryClient.invalidateQueries({ queryKey: ['infinite-orders'] }).catch(console.error);
       toast.success('تم تعيين السائق بنجاح');
       setIsAssigningDriver(false);
     },
@@ -147,6 +148,7 @@ export default function OrderDetailsPanel({ orderId, onClose, prepThreshold, del
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['order-details', orderId] }).catch(console.error);
       queryClient.invalidateQueries({ queryKey: ['orders'] }).catch(console.error);
+      queryClient.invalidateQueries({ queryKey: ['infinite-orders'] }).catch(console.error);
       toast.success('تم إزالة المندوب بنجاح');
       setDriverToRemove(null);
     },
@@ -221,6 +223,7 @@ export default function OrderDetailsPanel({ orderId, onClose, prepThreshold, del
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['order-details', orderId] }).catch(console.error);
       queryClient.invalidateQueries({ queryKey: ['orders'] }).catch(console.error);
+      queryClient.invalidateQueries({ queryKey: ['infinite-orders'] }).catch(console.error);
       toast.success('تم تحديث حالة الطلب بنجاح');
     },
     onError: (error: any) => {
@@ -236,6 +239,7 @@ export default function OrderDetailsPanel({ orderId, onClose, prepThreshold, del
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['order-details', orderId] }).catch(console.error);
       queryClient.invalidateQueries({ queryKey: ['orders'] }).catch(console.error);
+      queryClient.invalidateQueries({ queryKey: ['infinite-orders'] }).catch(console.error);
       toast.success('تم تحديث حالة الطلب الفرعي بنجاح');
     },
     onError: (error: any) => {
@@ -286,6 +290,7 @@ export default function OrderDetailsPanel({ orderId, onClose, prepThreshold, del
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['order-details', orderId] }).catch(console.error);
       queryClient.invalidateQueries({ queryKey: ['orders'] }).catch(console.error);
+      queryClient.invalidateQueries({ queryKey: ['infinite-orders'] }).catch(console.error);
       toast.success('تم إلغاء الطلب بنجاح');
     },
     onError: (error: any) => {
@@ -310,6 +315,7 @@ export default function OrderDetailsPanel({ orderId, onClose, prepThreshold, del
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['order-details', orderId] }).catch(console.error);
       queryClient.invalidateQueries({ queryKey: ['orders'] }).catch(console.error);
+      queryClient.invalidateQueries({ queryKey: ['infinite-orders'] }).catch(console.error);
       toast.success('تم إضافة الخصم بنجاح');
     },
     onError: (error: any) => {
@@ -422,6 +428,7 @@ export default function OrderDetailsPanel({ orderId, onClose, prepThreshold, del
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['order-details', orderId] }).catch(console.error);
       queryClient.invalidateQueries({ queryKey: ['orders'] }).catch(console.error);
+      queryClient.invalidateQueries({ queryKey: ['infinite-orders'] }).catch(console.error);
       toast.success('تم التعيين التلقائي للسائق بنجاح');
     },
     onError: (error: any) => {
@@ -441,6 +448,7 @@ export default function OrderDetailsPanel({ orderId, onClose, prepThreshold, del
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['order-details', orderId] }).catch(console.error);
       queryClient.invalidateQueries({ queryKey: ['orders'] }).catch(console.error);
+      queryClient.invalidateQueries({ queryKey: ['infinite-orders'] }).catch(console.error);
       toast.success('تم إزالة المتجر من الطلب بنجاح');
     },
     onError: (error: any) => handleGlobalError(error, 'Remove SubOrder')
@@ -454,6 +462,7 @@ export default function OrderDetailsPanel({ orderId, onClose, prepThreshold, del
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['order-details', orderId] }).catch(console.error);
       queryClient.invalidateQueries({ queryKey: ['orders'] }).catch(console.error);
+      queryClient.invalidateQueries({ queryKey: ['infinite-orders'] }).catch(console.error);
       toast.success('تم إزالة المنتج بنجاح');
     },
     onError: (error: any) => handleGlobalError(error, 'Remove Item')
@@ -467,6 +476,7 @@ export default function OrderDetailsPanel({ orderId, onClose, prepThreshold, del
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['order-details', orderId] }).catch(console.error);
       queryClient.invalidateQueries({ queryKey: ['orders'] }).catch(console.error);
+      queryClient.invalidateQueries({ queryKey: ['infinite-orders'] }).catch(console.error);
       toast.success('تم تحديث الكمية بنجاح');
     },
     onError: (error: any) => handleGlobalError(error, 'Update Quantity')
@@ -504,6 +514,7 @@ export default function OrderDetailsPanel({ orderId, onClose, prepThreshold, del
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['order-details', orderId] }).catch(console.error);
       queryClient.invalidateQueries({ queryKey: ['orders'] }).catch(console.error);
+      queryClient.invalidateQueries({ queryKey: ['infinite-orders'] }).catch(console.error);
       toast.success('تم إضافة المنتج بنجاح');
       setAddProductModal(null);
     },
@@ -518,6 +529,7 @@ export default function OrderDetailsPanel({ orderId, onClose, prepThreshold, del
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['order-details', orderId] }).catch(console.error);
       queryClient.invalidateQueries({ queryKey: ['orders'] }).catch(console.error);
+      queryClient.invalidateQueries({ queryKey: ['infinite-orders'] }).catch(console.error);
       toast.success('تم تحديث الإضافات بنجاح');
       setEditModifiersModal(null);
     },

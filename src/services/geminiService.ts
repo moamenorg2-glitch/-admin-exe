@@ -1,5 +1,6 @@
 import { GoogleGenAI, Type, FunctionDeclaration } from "@google/genai";
 import { supabase } from "../lib/supabase";
+import { getApiUrl } from '../utils/apiUtils';
 import databaseSchemaRaw from "../types/database.types.ts?raw";
 
 const queryDatabaseDeclaration: FunctionDeclaration = {
@@ -120,19 +121,31 @@ export async function askGemini(prompt: string, context?: any) {
     // ---------- إعداد مفتاح API الخاص بـ Gemini ----------
     // للحصول على مفتاح مجاني: https://aistudio.google.com/app/apikey
     // إذا كنت تقوم بتشغيل التطبيق محلياً أو على Android (بدون الخادم)،
-    // يمكنك لصق مفتاحك مباشرة هنا بين علامات التنصيص كحل مؤقت:
-    const HARDCODED_API_KEY = "AIzaSyBd6h2AhRR9TRpHUjxfFvBfB4S2jMbV0d0"; 
+    // يمكنك لصق مفتاحك مباشرة هنا بين علامات التنصيص كحل مؤقت مثل: "AIzaSy..."
+    const HARDCODED_API_KEY = ""; 
     // ---------------------------------------------------------
 
-    // جلب المفتاح الخاص من الخادم (للبيئة السحابية)
-    const configRes = await fetch('/api/config/gemini').catch(() => null);
-    const { apiKey } = configRes ? await configRes.json().catch(() => ({ apiKey: '' })) : { apiKey: '' };
-    
-    // الأولوية للمفتاح المكتوب يدوياً، ثم الخادم، ثم متغيرات البيئة
-    const finalApiKey = HARDCODED_API_KEY || apiKey || process.env.GEMINI_API_KEY;
+    let finalApiKey = HARDCODED_API_KEY;
 
     if (!finalApiKey) {
-        throw new Error("لم يتم إعداد مفتاح API الخاص بالمساعد الذكي (GEMINI_API_KEY). يرجى إضافته في الكود أو في ملف .env.");
+        finalApiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
+        
+        // إذا لم يكن متوفرا محليا، نقوم بجلبه من الخادم للبيئة السحابية و APK
+        if (!finalApiKey) {
+            try {
+               const configRes = await fetch(getApiUrl('/api/config/gemini'), { cache: 'no-store' });
+               if (configRes.ok) {
+                   const { apiKey } = await configRes.json();
+                   finalApiKey = apiKey || '';
+               }
+            } catch (err) {
+               console.warn("Could not fetch Gemini API key from backend:", err);
+            }
+        }
+    }
+
+    if (!finalApiKey || finalApiKey === '') {
+        throw new Error("لم يتم إعداد مفتاح API الخاص بالمساعد الذكي (GEMINI_API_KEY). للأسف لا يمكنني توفير مفتاح مجاني من عندي لدواعي أمان Google، يرجى الحصول على مفتاحك المجاني من aistudio.google.com وإضافته في إعدادات التطبيق أو داخل الكود (HARDCODED_API_KEY).");
     }
 
     const ai = new GoogleGenAI({ apiKey: finalApiKey });

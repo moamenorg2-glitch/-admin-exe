@@ -59,6 +59,7 @@ export default function ReportsDashboard() {
   // 1. Platform Profit Stats (Direct Query to bypass broken RPC)
   const { data: profitStats, isLoading: loadingProfits } = useQuery({
     queryKey: ['platform-profits', dateRange, selectedVendor, selectedDriver, refreshKey],
+    refetchInterval: 3000,
     queryFn: async () => {
       try {
         let query = supabase
@@ -126,6 +127,7 @@ export default function ReportsDashboard() {
   // 2. Vendor Report (Direct Query)
   const { data: vendorReport, isLoading: loadingVendors } = useQuery({
     queryKey: ['vendor-dues', dateRange, selectedVendor, refreshKey],
+    refetchInterval: 3000,
     queryFn: async () => {
       try {
         let query = supabase
@@ -196,6 +198,7 @@ export default function ReportsDashboard() {
   // 3. Driver Report (Fetched from order activity + transactions for accuracy)
   const { data: driverReport } = useQuery({
     queryKey: ['driver-performance', dateRange, selectedDriver, refreshKey],
+    refetchInterval: 3000,
     queryFn: async () => {
       try {
         // Fetch all drivers to ensure names are available
@@ -278,6 +281,7 @@ export default function ReportsDashboard() {
   // 4. Penalties Report
   const { data: penaltiesReport } = useQuery({
     queryKey: ['penalties-report', dateRange, refreshKey],
+    refetchInterval: 3000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('admin_penalties')
@@ -296,6 +300,7 @@ export default function ReportsDashboard() {
   // 5. Support Tickets Report
   const { data: supportTickets } = useQuery({
     queryKey: ['support-tickets-report', dateRange, refreshKey],
+    refetchInterval: 3000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('support_tickets')
