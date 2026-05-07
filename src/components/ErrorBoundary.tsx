@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { AlertTriangle, RefreshCw, X } from 'lucide-react';
 
 interface Props {
   children: React.ReactNode;
@@ -56,25 +56,51 @@ export class ErrorBoundary extends React.Component<Props, State> {
   }
 
   render() {
+    // If there's an error, we display a floating non-blocking UI and still try to render children
+    // Wait, rendering children after error will cause an infinite loop if the error persists.
+    // Instead we render the fallback box. If the user dismisses it, we reset state to try rendering again.
     if (this.state.hasError) {
       return (
-        <div className="fixed inset-0 flex items-center justify-center p-4 z-50 bg-[#111118]" dir="rtl">
-          <div className="bg-[#1E1E2D] p-6 rounded-2xl shadow-xl max-w-sm w-full border border-rose-500/30 flex flex-col items-center">
-            <AlertTriangle className="h-10 w-10 text-rose-500 mb-3" />
-            <h3 className="text-lg font-bold text-white mb-2">صندوق الأخطاء</h3>
-            <p className="text-sm text-gray-400 mb-6 text-center">
-              حدث مشكلة ما، يمكنك إعادة تحميل الصفحة للعودة.
-            </p>
-            <button
-              onClick={() => {
-                sessionStorage.setItem('boundary_recovery_count', '0');
-                window.location.reload();
-              }}
-              className="w-full flex items-center justify-center gap-2 bg-emerald-600/20 text-emerald-500 py-3 rounded-xl hover:bg-emerald-600/30 transition-all font-bold"
+        <div className="fixed inset-x-0 bottom-10 flex flex-col items-center justify-center p-4 z-[9999] pointer-events-none" dir="rtl">
+          <div className="bg-[#1E1E2D] p-5 rounded-2xl shadow-2xl max-w-md w-full border-2 border-rose-500/50 flex flex-col pointer-events-auto relative animate-in slide-in-from-bottom-10">
+            <button 
+              onClick={() => this.setState({ hasError: false, error: null })}
+              className="absolute top-4 left-4 text-gray-400 hover:text-white bg-gray-800 p-1.5 rounded-full transition-colors"
             >
-              <RefreshCw className="w-5 h-5" />
-              تحديث الواجهة
+              <X className="w-4 h-4" />
             </button>
+            <div className="flex items-center gap-4 mb-4">
+              <div className="bg-rose-500/20 p-3 rounded-full">
+                <AlertTriangle className="h-8 w-8 text-rose-500" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white leading-tight">صندوق الأخطاء</h3>
+                <p className="text-xs text-rose-400 font-mono mt-1 break-words line-clamp-2" title={this.state.error?.message}>
+                  {this.state.error?.message}
+                </p>
+              </div>
+            </div>
+            <p className="text-sm text-gray-400 mb-5 border-t border-gray-800 pt-3">
+              حدثت مشكلة فنية. يمكنك إغلاق هذا الصندوق لمحاولة الاستمرار، أو إعادة تحميل الصفحة إذا بقيت المشكلة.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => this.setState({ hasError: false, error: null })}
+                className="flex-1 py-2.5 text-sm bg-gray-800 text-gray-300 rounded-xl hover:bg-gray-700 transition-colors font-bold"
+              >
+                تجاهل وإغلاق
+              </button>
+              <button
+                onClick={() => {
+                  sessionStorage.setItem('boundary_recovery_count', '0');
+                  window.location.reload();
+                }}
+                className="flex-1 flex items-center justify-center gap-2 bg-emerald-600/20 text-emerald-500 py-2.5 rounded-xl hover:bg-emerald-600/30 transition-all font-bold text-sm"
+              >
+                <RefreshCw className="w-4 h-4" />
+                إعادة تحميل للصفحة
+              </button>
+            </div>
           </div>
         </div>
       );
