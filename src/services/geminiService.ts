@@ -122,7 +122,7 @@ export async function askGemini(prompt: string, context?: any) {
     // للحصول على مفتاح مجاني: https://aistudio.google.com/app/apikey
     // إذا كنت تقوم بتشغيل التطبيق محلياً أو على Android (بدون الخادم)،
     // يمكنك لصق مفتاحك مباشرة هنا بين علامات التنصيص كحل مؤقت مثل: "AIzaSy..."
-    const HARDCODED_API_KEY = ""; 
+    const HARDCODED_API_KEY = "AIzaSyBd6h2AhRR9TRpHUjxfFvBfB4S2jMbV0d0"; 
     // ---------------------------------------------------------
 
     let finalApiKey = HARDCODED_API_KEY;
