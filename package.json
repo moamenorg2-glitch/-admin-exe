@@ -7,7 +7,6 @@
   "build": {
     "appId": "com.zajel.admin",
     "productName": "Zajel Admin",
-    "artifactName": "${productName}-${version}-${arch}.${ext}",
     "directories": {
       "output": "release"
     },
@@ -24,10 +23,7 @@
     "start": "npx tsx server.ts",
     "dev": "tsx server.ts",
     "build": "vite build",
-    "build:electron": "vite build && npm run build:electron:64 && npm run build:electron:32",
-    "build:electron:64": "electron-builder --win --x64",
-    "build:electron:32": "electron-builder --win --ia32",
-    "build:android": "vite build && npx cap sync android && cd android && ./gradlew assembleRelease",
+    "build:electron": "vite build && electron-builder --win --ia32",
     "preview": "vite preview",
     "lint": "tsc --noEmit"
   },
@@ -82,7 +78,7 @@
     "@types/react-select": "^5.0.0",
     "@vitejs/plugin-legacy": "^6.0.0",
     "autoprefixer": "^10.4.21",
-    "electron": "^33.0.0",
+    "electron": "^42.0.0",
     "electron-builder": "^26.8.1",
     "tailwindcss": "^4.1.14",
     "terser": "^5.46.1",

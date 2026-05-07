@@ -2,8 +2,6 @@ import { GoogleGenAI, Type, FunctionDeclaration } from "@google/genai";
 import { supabase } from "../lib/supabase";
 import databaseSchemaRaw from "../types/database.types.ts?raw";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-
 const queryDatabaseDeclaration: FunctionDeclaration = {
   name: "queryDatabase",
   description: "استعلام متقدم في قاعدة بيانات Supabase. استخدم هذه الأداة بذكاء لجلب البيانات واستخراج الإحصائيات.",
@@ -119,6 +117,18 @@ async function executeQueryDatabase(args: any) {
 
 export async function askGemini(prompt: string, context?: any) {
   try {
+    // جلب المفتاح الخاص من الخادم
+    const configRes = await fetch('/api/config/gemini');
+    const { apiKey } = await configRes.json();
+    
+    // إذا لم يكن هناك مفتاح من الخادم، نقوم باستخدام process.env كبديل (للبيئات التي تدعم ذلك)
+    const finalApiKey = apiKey || process.env.GEMINI_API_KEY;
+
+    if (!finalApiKey) {
+        throw new Error("لم يتم إعداد مفتاح API الخاص بالمساعد الذكي.");
+    }
+
+    const ai = new GoogleGenAI({ apiKey: finalApiKey });
     const systemPrompt = `أنت مساعد الإدارة الذكي والنخبة لنظام "زاجل إكسبريس" (Zajel Express).
 أنت متصل مباشرة بقاعدة البيانات اللحظية (Supabase) الخاصة بالتطبيق وبصلاحيات مطلقة، وقادر على استدعاء الأداة 'queryDatabase' للحصول على أي بيانات حقيقية ولحظية والإجابة على أي استفسار من المدير بدقة متناهية وسرعة.
 
@@ -211,6 +221,10 @@ ${databaseSchemaRaw}
     const errorStr = typeof error === 'object' ? JSON.stringify(error) : String(error);
     const errorMessage = error.message || '';
 
+    if (errorMessage.includes("API Key") || errorStr.includes("API Key") || errorMessage.includes("API_KEY_INVALID")) {
+        throw new Error("لم يتم إعداد مفتاح API الخاص بالمساعد الذكي (GEMINI_API_KEY) في إعدادات التطبيق. يرجى إضافته من خلال لوحة Secrets.");
+    }
+
     if (errorStr.includes("429") || errorStr.includes("RESOURCE_EXHAUSTED") || errorMessage.includes("quota") || errorMessage.includes("429")) {
         throw new Error("عذراً، لقد تم تجاوز الحد المسموح به للاستخدام اليومي (Quota Exceeded). يرجى المحاولة غداً أو التحقق من خطة الحساب.");
     }
@@ -218,6 +232,6 @@ ${databaseSchemaRaw}
     if (errorMessage.includes("404")) {
       throw new Error("عذراً، الموديل المطلوب غير متوفر حالياً. يرجى التواصل مع الدعم الفني.");
     }
-    throw new Error("عذراً، حدث خطأ أثناء الاتصال بالمساعد الذكي. تأكد من اتصال الإنترنت أو حاول مرة أخرى.");
+    throw new Error("عذراً، حدث خطأ أثناء الاتصال بالمساعد الذكي. تأكد من اتصال الإنترنت أو إعدادات المفتاح.");
   }
 }

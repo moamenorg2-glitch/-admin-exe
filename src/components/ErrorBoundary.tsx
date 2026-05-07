@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { AlertTriangle, RefreshCw, X } from 'lucide-react';
+import { AlertTriangle, RefreshCw } from 'lucide-react';
 
 interface Props {
   children: React.ReactNode;
@@ -23,11 +23,6 @@ export class ErrorBoundary extends React.Component<Props, State> {
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('ErrorBoundary caught an error:', error, errorInfo);
     
-    // Import toast dynamically to avoid SSR issues if any, or just use it directly if imported
-    import('react-hot-toast').then(({ toast }) => {
-      toast.error('حدث خطأ في النظام: ' + error.message, { id: 'error-boundary', duration: 6000 });
-    });
-
     // Recovery logic
     const errorMsg = error.message || '';
     const isDOMError = errorMsg.includes('removeChild') || 
@@ -56,51 +51,29 @@ export class ErrorBoundary extends React.Component<Props, State> {
   }
 
   render() {
-    // If there's an error, we display a floating non-blocking UI and still try to render children
-    // Wait, rendering children after error will cause an infinite loop if the error persists.
-    // Instead we render the fallback box. If the user dismisses it, we reset state to try rendering again.
     if (this.state.hasError) {
       return (
-        <div className="fixed inset-x-0 bottom-10 flex flex-col items-center justify-center p-4 z-[9999] pointer-events-none" dir="rtl">
-          <div className="bg-[#1E1E2D] p-5 rounded-2xl shadow-2xl max-w-md w-full border-2 border-rose-500/50 flex flex-col pointer-events-auto relative animate-in slide-in-from-bottom-10">
-            <button 
-              onClick={() => this.setState({ hasError: false, error: null })}
-              className="absolute top-4 left-4 text-gray-400 hover:text-white bg-gray-800 p-1.5 rounded-full transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
-            <div className="flex items-center gap-4 mb-4">
-              <div className="bg-rose-500/20 p-3 rounded-full">
-                <AlertTriangle className="h-8 w-8 text-rose-500" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-white leading-tight">صندوق الأخطاء</h3>
-                <p className="text-xs text-rose-400 font-mono mt-1 break-words line-clamp-2" title={this.state.error?.message}>
-                  {this.state.error?.message}
-                </p>
+        <div className="min-h-screen flex items-center justify-center bg-[#151521] p-4 text-right" dir="rtl">
+          <div className="bg-[#1E1E2D] p-10 rounded-[2rem] shadow-2xl max-w-lg w-full text-center border border-gray-800">
+            <div className="flex justify-center mb-8">
+              <div className="bg-red-500 p-6 rounded-full border border-red-500">
+                <AlertTriangle className="h-16 w-16 text-red-500" />
               </div>
             </div>
-            <p className="text-sm text-gray-400 mb-5 border-t border-gray-800 pt-3">
-              حدثت مشكلة فنية. يمكنك إغلاق هذا الصندوق لمحاولة الاستمرار، أو إعادة تحميل الصفحة إذا بقيت المشكلة.
+            <h1 className="text-3xl font-black text-white mb-4">عذراً، حدث خطأ تقني</h1>
+            <p className="text-gray-400 mb-10 leading-relaxed font-medium">
+              واجه النظام مشكلة في مزامنة البيانات. يرجى الضغط على زر التحديث لاستكمال العمل.
             </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => this.setState({ hasError: false, error: null })}
-                className="flex-1 py-2.5 text-sm bg-gray-800 text-gray-300 rounded-xl hover:bg-gray-700 transition-colors font-bold"
-              >
-                تجاهل وإغلاق
-              </button>
-              <button
-                onClick={() => {
-                  sessionStorage.setItem('boundary_recovery_count', '0');
-                  window.location.reload();
-                }}
-                className="flex-1 flex items-center justify-center gap-2 bg-emerald-600/20 text-emerald-500 py-2.5 rounded-xl hover:bg-emerald-600/30 transition-all font-bold text-sm"
-              >
-                <RefreshCw className="w-4 h-4" />
-                إعادة تحميل للصفحة
-              </button>
-            </div>
+            <button
+              onClick={() => {
+                sessionStorage.setItem('boundary_recovery_count', '0');
+                window.location.reload();
+              }}
+              className="w-full flex items-center justify-center gap-3 bg-emerald-600 text-white py-4 px-6 rounded-2xl hover:bg-emerald-700 transition-all font-black shadow-lg shadow-emerald-500"
+            >
+              <RefreshCw className="w-6 h-6" />
+              تحديث واجهة التطبيق
+            </button>
           </div>
         </div>
       );

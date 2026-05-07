@@ -24,12 +24,8 @@ interface Message {
   timestamp: Date;
 }
 
-interface ReportsAIAssistantProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
-
-export default function ReportsAIAssistant({ isOpen, onClose }: ReportsAIAssistantProps) {
+export default function ReportsAIAssistant() {
+  const [isOpen, setIsOpen] = React.useState(false);
   const [hasOpened, setHasOpened] = React.useState(false);
   const [isMinimized, setIsMinimized] = React.useState(false);
   const [isFullScreen, setIsFullScreen] = React.useState(true);
@@ -68,7 +64,7 @@ export default function ReportsAIAssistant({ isOpen, onClose }: ReportsAIAssista
 
       // 1. Orders Data
       try {
-        const { data: ordersStatus } = await supabase.from('master_orders').select('status');
+        const { data: ordersStatus } = await (supabase as any).from('master_orders').select('status');
         if (ordersStatus) {
           contextData.orders = {
             total: ordersStatus.length,
@@ -84,7 +80,7 @@ export default function ReportsAIAssistant({ isOpen, onClose }: ReportsAIAssista
 
       // 2. Users (Drivers, Customers, Vendors)
       try {
-        const { data: profiles } = await supabase.from('profiles').select('user_type, is_verified');
+        const { data: profiles } = await (supabase as any).from('profiles').select('user_type, is_verified');
         if (profiles) {
           contextData.users = {
             total: profiles.length,
@@ -101,7 +97,7 @@ export default function ReportsAIAssistant({ isOpen, onClose }: ReportsAIAssista
 
       // 3. Transactions / Finances (Summary)
       try {
-        const { data: transactions } = await supabase.from('wallets_transaction').select('transaction_type, amount');
+        const { data: transactions } = await (supabase as any).from('wallets_transaction').select('transaction_type, amount');
         if (transactions) {
           contextData.finances = {
             total_transactions: transactions.length,
@@ -115,7 +111,7 @@ export default function ReportsAIAssistant({ isOpen, onClose }: ReportsAIAssista
 
       // 4. Disputes & Support
       try {
-        const { data: disputes } = await supabase.from('dispute_resolution').select('status');
+        const { data: disputes } = await (supabase as any).from('dispute_resolution').select('status');
         if (disputes) {
           contextData.disputes = {
             total: disputes.length,
@@ -129,7 +125,7 @@ export default function ReportsAIAssistant({ isOpen, onClose }: ReportsAIAssista
       
       // 5. Recent Activity (Last 5 Orders)
       try {
-        const { data: recentOrders } = await supabase.from('master_orders')
+        const { data: recentOrders } = await (supabase as any).from('master_orders')
           .select('order_number, status, grand_total, created_at')
           .order('created_at', { ascending: false })
           .limit(5);
@@ -168,66 +164,87 @@ export default function ReportsAIAssistant({ isOpen, onClose }: ReportsAIAssista
   };
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          initial={{ y: 100, opacity: 0, scale: 0.8 }}
-          animate={{ 
-            y: 0, 
-            opacity: 1, 
-            scale: 1,
-            width: isFullScreen ? '100vw' : '400px',
-            height: isFullScreen ? '100vh' : (isMinimized ? '80px' : '600px'),
-            left: isFullScreen ? '0' : '2rem',
-            bottom: isFullScreen ? '0' : '2rem'
-          }}
-          exit={{ y: 100, opacity: 0, scale: 0.8 }}
-          transition={{ type: "spring", bounce: 0, duration: 0.4 }}
-          className={cn(
-            "fixed z-[100] bg-white dark:bg-slate-900 shadow-2xl flex flex-col overflow-hidden transition-colors",
-            isFullScreen ? "rounded-none max-w-full" : "rounded-3xl border border-gray-100 dark:border-slate-800 max-w-[calc(100vw-4rem)]"
-          )}
-          dir="rtl"
-        >
-          {/* Header */}
-          <div className="bg-blue-600 p-4 flex items-center justify-between text-white shadow-lg shrink-0">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-[#FFFFFF80] rounded-xl">
-                <Bot className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="font-black text-sm">المساعد الشخصي الذكي</h3>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
-                  <span className="text-[11px] font-bold text-blue-100 uppercase tracking-tighter">متصل الآن</span>
+    <>
+      {/* Floating Toggle Button */}
+      <motion.button
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
+        onClick={() => setIsOpen(true)}
+        className={cn(
+          "fixed bottom-8 left-8 z-[100] w-16 h-16 bg-blue-600 text-white rounded-full shadow-2xl flex items-center justify-center transition-all",
+          isOpen && "scale-0 opacity-0 pointer-events-none"
+        )}
+      >
+        <Bot className="w-8 h-8" />
+        <div className={cn(
+          "absolute -top-1 -right-1 w-5 h-5 rounded-full border-2 border-white",
+          !hasOpened && "animate-pulse",
+          hasOpened ? "bg-green-500" : "bg-red-500"
+        )} />
+      </motion.button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ y: 100, opacity: 0, scale: 0.8 }}
+            animate={{ 
+              y: 0, 
+              opacity: 1, 
+              scale: 1,
+              width: isFullScreen ? '100vw' : '400px',
+              height: isFullScreen ? '100vh' : (isMinimized ? '80px' : '600px'),
+              left: isFullScreen ? '0' : '2rem',
+              bottom: isFullScreen ? '0' : '2rem'
+            }}
+            exit={{ y: 100, opacity: 0, scale: 0.8 }}
+            transition={{ type: "spring", bounce: 0, duration: 0.4 }}
+            className={cn(
+              "fixed z-[100] bg-white dark:bg-slate-900 shadow-2xl flex flex-col overflow-hidden transition-colors",
+              isFullScreen ? "rounded-none max-w-full" : "rounded-3xl border border-gray-100 dark:border-slate-800 max-w-[calc(100vw-4rem)]"
+            )}
+            dir="rtl"
+          >
+            {/* Header */}
+            <div className="bg-blue-600 p-4 flex items-center justify-between text-white shadow-lg shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-[#FFFFFF80] rounded-xl">
+                  <Bot className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="font-black text-sm">المساعد الشخصي الذكي</h3>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
+                    <span className="text-[11px] font-bold text-blue-100 uppercase tracking-tighter">متصل الآن</span>
+                  </div>
                 </div>
               </div>
+              <div className="flex items-center gap-1">
+                <button 
+                  onClick={() => setIsFullScreen(!isFullScreen)}
+                  className="p-2 hover:bg-[#FFFFFF80] rounded-lg transition-colors hidden md:block"
+                  title={isFullScreen ? "تصغير" : "ملء الشاشة"}
+                >
+                  <MessageSquare className="w-4 h-4" />
+                </button>
+                <button 
+                  onClick={() => {
+                    if (isFullScreen) setIsFullScreen(false);
+                    setIsMinimized(!isMinimized);
+                  }}
+                  className="p-2 hover:bg-[#FFFFFF80] rounded-lg transition-colors"
+                >
+                  {isMinimized ? <Maximize2 className="w-4 h-4" /> : <Minimize2 className="w-4 h-4" />}
+                </button>
+                <button 
+                  onClick={() => setIsOpen(false)}
+                  className="p-2 hover:bg-[#FFFFFF80] rounded-lg transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
             </div>
-            <div className="flex items-center gap-1">
-              <button 
-                onClick={() => setIsFullScreen(!isFullScreen)}
-                className="p-2 hover:bg-[#FFFFFF80] rounded-lg transition-colors hidden md:block"
-                title={isFullScreen ? "تصغير" : "ملء الشاشة"}
-              >
-                <MessageSquare className="w-4 h-4" />
-              </button>
-              <button 
-                onClick={() => {
-                  if (isFullScreen) setIsFullScreen(false);
-                  setIsMinimized(!isMinimized);
-                }}
-                className="p-2 hover:bg-[#FFFFFF80] rounded-lg transition-colors"
-              >
-                {isMinimized ? <Maximize2 className="w-4 h-4" /> : <Minimize2 className="w-4 h-4" />}
-              </button>
-              <button 
-                onClick={onClose}
-                className="p-2 hover:bg-[#FFFFFF80] rounded-lg transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
 
             {/* Content (only if not minimized) */}
             {!isMinimized && (
@@ -298,5 +315,6 @@ export default function ReportsAIAssistant({ isOpen, onClose }: ReportsAIAssista
           </motion.div>
         )}
       </AnimatePresence>
-    );
-  }
+    </>
+  );
+}

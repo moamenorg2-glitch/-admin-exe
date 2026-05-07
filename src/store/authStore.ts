@@ -38,55 +38,34 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
 
     checkUserPromise = (async () => {
-      let retryCount = 0;
-      const maxRetries = 2;
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session?.user) {
+          // Fetch profile to check if admin
+          const { data: profile, error } = await supabase
+            .from('profiles')
+            .select('full_name, user_type, primary_phone, email, avatar_url, status')
+            .eq('user_id', session.user.id)
+            .single();
 
-      while (retryCount <= maxRetries) {
-        try {
-          const { data: { session } } = await supabase.auth.getSession();
-          
-          if (session?.user) {
-            // Fetch profile to check if admin
-            const { data: profile, error } = await supabase
-              .from('profiles')
-              .select('full_name, user_type, primary_phone, email, avatar_url, status')
-              .eq('user_id', session.user.id)
-              .single();
-
-            if (error) {
-              // If it's a fetch error, we might want to retry
-              if (error.message?.includes('fetch') && retryCount < maxRetries) {
-                retryCount++;
-                await new Promise(res => setTimeout(res, 1000 * retryCount));
-                continue;
-              }
-              console.error('Error fetching profile:', error);
-              set({ user: session.user, profile: null, isAdmin: false, isLoading: false });
-              return;
-            }
-
-            const isAdmin = (profile as any)?.user_type === 'admin';
-            set({ user: session.user, profile: profile as unknown as Profile, isAdmin, isLoading: false });
-          } else {
-            set({ user: null, profile: null, isAdmin: false, isLoading: false });
+          if (error) {
+            console.error('Error fetching profile:', error);
+            set({ user: session.user, profile: null, isAdmin: false, isLoading: false });
+            return;
           }
-          break; // Success, exit loop
-        } catch (error: any) {
-          if (error?.message?.includes('fetch') && retryCount < maxRetries) {
-            retryCount++;
-            await new Promise(res => setTimeout(res, 1000 * retryCount));
-            continue;
-          }
-          console.error('Error checking user session:', error);
+
+          const isAdmin = (profile as any)?.user_type === 'admin';
+          set({ user: session.user, profile: profile as unknown as Profile, isAdmin, isLoading: false });
+        } else {
           set({ user: null, profile: null, isAdmin: false, isLoading: false });
-          break;
-        } finally {
-          if (retryCount >= maxRetries || !checkUserPromise) {
-             // Will be cleared below
-          }
         }
+      } catch (error) {
+        console.error('Error checking user session:', error);
+        set({ user: null, profile: null, isAdmin: false, isLoading: false });
+      } finally {
+        checkUserPromise = null;
       }
-      checkUserPromise = null;
     })();
 
     return checkUserPromise;

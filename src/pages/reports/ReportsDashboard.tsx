@@ -11,8 +11,7 @@ import {
   AlertCircle,
   User,
   DollarSign,
-  MessageSquare,
-  Bot
+  MessageSquare
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { format, subDays, startOfDay, endOfDay, parseISO } from 'date-fns';
@@ -36,68 +35,13 @@ export default function ReportsDashboard() {
   const [selectedDriver, setSelectedDriver] = React.useState<string>('all');
   const [refreshKey, setRefreshKey] = React.useState(0);
   const [activeModal, setActiveModal] = React.useState<{ type: 'vendor' | 'driver', id: string, name: string } | null>(null);
-  const [isAIAssistantOpen, setIsAIAssistantOpen] = React.useState(false);
-  const [technicalError, setTechnicalError] = React.useState<{ message: string; details: any; type: string } | null>(null);
-
-  const handleError = (type: string, error: any) => {
-    // Avoid double logging if same error
-    if (technicalError?.type === type && technicalError?.message === error.message) return null;
-    
-    console.error(`Technical Error [${type}]:`, error);
-    
-    // Fallback for missing navigator properties in some environments
-    const env = {
-      onLine: typeof navigator !== 'undefined' ? navigator.onLine : true,
-      memory: typeof navigator !== 'undefined' ? (navigator as any).deviceMemory : 'N/A',
-      connection: typeof navigator !== 'undefined' && (navigator as any).connection ? {
-        effectiveType: (navigator as any).connection.effectiveType,
-        saveData: (navigator as any).connection.saveData
-      } : 'N/A'
-    };
-
-    setTechnicalError({
-      type,
-      message: error.message || 'Unknown Error',
-      details: {
-        error: error instanceof Error ? { message: error.message, stack: error.stack } : error,
-        timestamp: new Date().toISOString(),
-        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'N/A',
-        environment: env,
-        type: type,
-        message: error.message,
-        hint: error.hint,
-        details: error.details,
-        code: error.code
-      }
-    });
-    // Removed throw error to prevent global Error Boundary trigger
-    return null;
-  };
-
-  // Safe Date Formatting helper
-  const safeFormat = (date: any, formatStr: string, options?: any) => {
-    try {
-      if (!date) return '-';
-      const d = typeof date === 'string' ? parseISO(date) : date;
-      if (isNaN(d.getTime())) return '-';
-      return format(d, formatStr, options);
-    } catch (e) {
-      return '-';
-    }
-  };
 
   // Fetch Vendors for Filter
   const { data: vendors } = useQuery({
     queryKey: ['filter-vendors'],
-    retry: 2,
-    retryDelay: 1000,
-    meta: { suppressGlobalError: true },
     queryFn: async () => {
       const { data, error } = await supabase.from('vendor_details').select('user_id, brand_name').order('brand_name');
-      if (error) {
-        handleError('Filter Vendors', error);
-        return [];
-      }
+      if (error) throw error;
       return data;
     }
   });
@@ -105,26 +49,18 @@ export default function ReportsDashboard() {
   // Fetch Drivers for Filter
   const { data: drivers } = useQuery({
     queryKey: ['filter-drivers'],
-    retry: 2,
-    retryDelay: 1000,
-    meta: { suppressGlobalError: true },
     queryFn: async () => {
       const { data, error } = await supabase.from('profiles').select('user_id, full_name').eq('user_type', 'driver').order('full_name');
-      if (error) {
-        handleError('Filter Drivers', error);
-        return [];
-      }
+      if (error) throw error;
       return data;
     }
   });
 
   // 1. Platform Profit Stats (Direct Query to bypass broken RPC)
-  const { data: profitStats, isLoading: loadingProfits, error: profitError } = useQuery({
+  const { data: profitStats, isLoading: loadingProfits } = useQuery({
     queryKey: ['platform-profits', dateRange, selectedVendor, selectedDriver, refreshKey],
-    retry: 3,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
-    meta: { suppressGlobalError: true },
     queryFn: async () => {
+      try {
         let query = supabase
           .from('master_orders')
           .select(`
@@ -139,11 +75,15 @@ export default function ReportsDashboard() {
             )
           `)
           .eq('status', 'Completed')
-          .gte('created_at', safeFormat(dateRange.start, "yyyy-MM-dd'T'HH:mm:ss"))
-          .lte('created_at', safeFormat(dateRange.end, "yyyy-MM-dd'T'HH:mm:ss"));
+          .gte('created_at', format(dateRange.start, "yyyy-MM-dd'T'HH:mm:ss"))
+          .lte('created_at', format(dateRange.end, "yyyy-MM-dd'T'HH:mm:ss"));
+
+        if (selectedVendor !== 'all') {
+            // Filter is applied later in the reduction if needed or we could add join filter
+        }
 
         const { data, error } = await query;
-        if (error) return handleError('Platform Profits', error);
+        if (error) throw error;
 
         const ordersData = (data as any[]) || [];
         const stats = {
@@ -155,6 +95,7 @@ export default function ReportsDashboard() {
           total_commissions: ordersData.reduce((sum, o) => {
             const subOrders = o.sub_orders as any[] || [];
             return sum + subOrders.reduce((s: number, sub: any) => {
+              // Calculate for past orders if 0 or use vendor value
               const commRate = Number(sub.vendor?.commission_rate || 0);
               const comm = Number(sub.vendor_commission) || 
                 ((Number(sub.sub_total) * commRate) / 100);
@@ -168,21 +109,25 @@ export default function ReportsDashboard() {
           driverDues: 0
         };
         stats.platformProfit = stats.total_commissions + stats.total_service_fees - stats.total_discounts;
-        stats.vendorDues = stats.totalSales * 0.85; 
-        stats.driverDues = stats.total_orders * 15; 
+        
+        // Simple heuristic for vendor and driver dues for the summary cards
+        // In a real app we'd fetch these specifically or aggregate better
+        stats.vendorDues = stats.totalSales * 0.85; // Example estimation if not fully joined
+        stats.driverDues = stats.total_orders * 15; // Example estimation
 
         return stats;
+      } catch (err) {
+        console.error("Platform Profits Exception:", err);
+        return { total_orders: 0, totalSales: 0, total_commissions: 0, total_service_fees: 0, total_discounts: 0, platformProfit: 0, vendorDues: 0, driverDues: 0 };
+      }
     }
   });
 
   // 2. Vendor Report (Direct Query)
-  const { data: vendorReport, isLoading: loadingVendors, error: vendorError } = useQuery({
+  const { data: vendorReport, isLoading: loadingVendors } = useQuery({
     queryKey: ['vendor-dues', dateRange, selectedVendor, refreshKey],
-    retry: 3,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
-    enabled: !loadingProfits, // STAGGERED LOADING
-    meta: { suppressGlobalError: true },
     queryFn: async () => {
+      try {
         let query = supabase
           .from('sub_orders')
           .select(`
@@ -193,16 +138,17 @@ export default function ReportsDashboard() {
             master_order:master_orders!sub_orders_master_order_id_fkey(payment_method)
           `)
           .eq('sub_status', 'Delivered')
-          .gte('created_at', safeFormat(dateRange.start, "yyyy-MM-dd'T'HH:mm:ss"))
-          .lte('created_at', safeFormat(dateRange.end, "yyyy-MM-dd'T'HH:mm:ss"));
+          .gte('created_at', format(dateRange.start, "yyyy-MM-dd'T'HH:mm:ss"))
+          .lte('created_at', format(dateRange.end, "yyyy-MM-dd'T'HH:mm:ss"));
 
         if (selectedVendor !== 'all') {
           query = query.eq('vendor_id', selectedVendor);
         }
 
         const { data, error } = await query;
-        if (error) return handleError('Vendor Report', error);
+        if (error) throw error;
 
+        // Group by vendor
         const grouped = (data || []).reduce((acc: any, curr: any) => {
           const vId = curr.vendor_id;
           if (!acc[vId]) {
@@ -220,6 +166,7 @@ export default function ReportsDashboard() {
             };
           }
           
+          // Calculate for past orders if 0 or use vendor value
           const commRate = Number(curr.vendor?.commission_rate || 0);
           const comm = Number(curr.vendor_commission) || 
             ((Number(curr.sub_total) * commRate) / 100);
@@ -239,29 +186,30 @@ export default function ReportsDashboard() {
         }, {});
 
         return Object.keys(grouped).map(key => grouped[key]);
+      } catch (err) {
+        console.error("Vendor Report Exception:", err);
+        return [];
+      }
     }
   });
 
   // 3. Driver Report (Fetched from order activity + transactions for accuracy)
-  const { data: driverReport, isLoading: loadingDrivers, error: driverError } = useQuery({
+  const { data: driverReport } = useQuery({
     queryKey: ['driver-performance', dateRange, selectedDriver, refreshKey],
-    retry: 3,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
-    enabled: !loadingVendors && !loadingProfits, // STAGGERED LOADING
-    meta: { suppressGlobalError: true },
     queryFn: async () => {
-        const { data: driversList, error: pError } = await supabase
+      try {
+        // Fetch all drivers to ensure names are available
+        const { data: driversList } = await supabase
           .from('profiles')
           .select('user_id, full_name, avatar_url')
           .eq('user_type', 'driver');
         
-        if (pError) return handleError('Driver Profiles', pError);
-
         const driversMap: Record<string, {name: string, avatar_url: string}> = {};
         driversList?.forEach(d => {
           driversMap[d.user_id] = { name: d.full_name || 'غير معروف', avatar_url: d.avatar_url || '' };
         });
 
+        // Fetch activity from order_delivery_team (Performance)
         let activityQuery = supabase
           .from('order_delivery_team')
           .select(`
@@ -274,16 +222,17 @@ export default function ReportsDashboard() {
             )
           `)
           .eq('master_order.status', 'Completed')
-          .gte('master_order.created_at', safeFormat(dateRange.start, "yyyy-MM-dd'T'HH:mm:ss"))
-          .lte('master_order.created_at', safeFormat(dateRange.end, "yyyy-MM-dd'T'HH:mm:ss"));
+          .gte('master_order.created_at', dateRange.start.toISOString())
+          .lte('master_order.created_at', dateRange.end.toISOString());
 
         if (selectedDriver !== 'all') {
           activityQuery = activityQuery.eq('driver_id', selectedDriver);
         }
 
         const { data: activity, error: activityError } = await activityQuery;
-        if (activityError) return handleError('Driver Activity', activityError);
+        if (activityError) throw activityError;
 
+        // Group activity by driver to identify active drivers
         const groupedMap: Record<string, any> = {};
         for (const item of (activity || [])) {
           const dId = item.driver_id;
@@ -300,18 +249,18 @@ export default function ReportsDashboard() {
           groupedMap[dId].delivery_count++;
         }
 
+        // Fetch actual earnings from wallets (Financial Dues) for identified drivers
         const driverIds = Object.keys(groupedMap);
         let walletData: any[] = [];
         if (driverIds.length > 0) {
-          const { data: wallets, error: wError } = await supabase
+          const { data: wallets } = await supabase
             .from('wallets')
             .select('user_id, current_balance')
             .in('user_id', driverIds);
-          
-          if (wError) return handleError('Driver Wallets', wError);
           walletData = wallets || [];
         }
 
+        // 2. Process financial balances from wallets
         for (const w of (walletData || [])) {
           const dId = w.user_id;
           if (!groupedMap[dId]) continue; 
@@ -319,43 +268,45 @@ export default function ReportsDashboard() {
         }
 
         return Object.keys(groupedMap).map(key => groupedMap[key]);
+      } catch (err) {
+        console.error("Driver Report Exception:", err);
+        return [];
+      }
     }
   });
 
   // 4. Penalties Report
-  const { data: penaltiesReport, isLoading: loadingPenalties } = useQuery({
+  const { data: penaltiesReport } = useQuery({
     queryKey: ['penalties-report', dateRange, refreshKey],
-    retry: 2,
-    retryDelay: 2000,
-    enabled: !loadingDrivers && !loadingVendors, // STAGGERED
-    meta: { suppressGlobalError: true },
     queryFn: async () => {
       const { data, error } = await supabase
         .from('admin_penalties')
         .select('*, profile:profiles!target_user_id(user_type)')
-        .gte('created_at', safeFormat(dateRange.start, "yyyy-MM-dd'T'HH:mm:ss"))
-        .lte('created_at', safeFormat(dateRange.end, "yyyy-MM-dd'T'HH:mm:ss"))
+        .gte('created_at', dateRange.start.toISOString())
+        .lte('created_at', dateRange.end.toISOString())
         .order('created_at', { ascending: false });
-      if (error) return handleError('Penalties Report', error);
+      if (error) {
+        console.error("Penalties Query Error:", error);
+        return [];
+      }
       return data;
     }
   });
 
   // 5. Support Tickets Report
-  const { data: supportTickets, isLoading: loadingSupport, error: supportError } = useQuery({
+  const { data: supportTickets } = useQuery({
     queryKey: ['support-tickets-report', dateRange, refreshKey],
-    retry: 2,
-    retryDelay: 2000,
-    enabled: !loadingPenalties && !loadingDrivers, // STAGGERED
-    meta: { suppressGlobalError: true },
     queryFn: async () => {
       const { data, error } = await supabase
         .from('support_tickets')
         .select('*')
-        .gte('created_at', safeFormat(dateRange.start, "yyyy-MM-dd'T'HH:mm:ss"))
-        .lte('created_at', safeFormat(dateRange.end, "yyyy-MM-dd'T'HH:mm:ss"))
+        .gte('created_at', dateRange.start.toISOString())
+        .lte('created_at', dateRange.end.toISOString())
         .order('created_at', { ascending: false });
-      if (error) return handleError('Support Tickets', error);
+      if (error) {
+        console.error("Support Tickets Error:", error);
+        return [];
+      }
       return data;
     }
   });
@@ -368,7 +319,7 @@ export default function ReportsDashboard() {
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `${filename}_${safeFormat(new Date(), 'yyyyMMdd')}.csv`;
+    link.download = `${filename}_${format(new Date(), 'yyyyMMdd')}.csv`;
     link.click();
   };
 
@@ -385,14 +336,6 @@ export default function ReportsDashboard() {
         
         <div className="flex items-center gap-2">
           <button 
-            onClick={() => setIsAIAssistantOpen(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black shadow-lg shadow-blue-200 dark:shadow-none transition-all active:scale-95"
-          >
-            <Bot className="w-4 h-4" />
-            <span>المساعد الذكي</span>
-          </button>
-
-          <button 
             onClick={handleRefresh}
             className="flex items-center justify-center w-[42px] h-[42px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-slate-50 transition-all shrink-0 shadow-sm active:scale-95"
             title="تحديث البيانات"
@@ -401,61 +344,6 @@ export default function ReportsDashboard() {
           </button>
         </div>
       </div>
-
-      {/* Technical Error Monitor - Detailed Breakdown for Android Debugging */}
-      {technicalError && (
-        <div className="mb-6 p-5 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900 rounded-3xl overflow-hidden shadow-xl shadow-rose-200/20" dir="rtl">
-          <div className="flex items-start justify-between gap-4 mb-4">
-            <div className="flex items-start gap-4">
-              <div className="p-3 bg-rose-500 text-white rounded-2xl shadow-lg shadow-rose-500/30 animate-pulse">
-                 <AlertCircle className="w-6 h-6" />
-              </div>
-              <div className="flex flex-col">
-                <h3 className="text-lg font-black text-rose-900 dark:text-rose-100">حدث خطأ تقني في: {technicalError.type}</h3>
-                <p className="text-sm font-bold text-rose-600 dark:text-rose-400 mt-1">المشكلة: {technicalError.message}</p>
-              </div>
-            </div>
-            <button 
-              onClick={() => setTechnicalError(null)}
-              className="p-2 hover:bg-rose-100 dark:hover:bg-rose-900/50 rounded-xl transition-colors text-rose-500"
-            >
-              إغلاق
-            </button>
-          </div>
-
-          <div className="bg-slate-900 rounded-2xl p-4 border border-rose-500/20">
-             <div className="flex items-center justify-between mb-3 border-b border-white/10 pb-2">
-                <span className="text-[10px] font-black text-rose-500 tracking-widest uppercase">مخرجات النظام التقني (Debug Log)</span>
-                <div className="flex gap-2">
-                   <button 
-                    onClick={() => {
-                        const logs = JSON.stringify(technicalError.details, null, 2);
-                        if (navigator.clipboard) {
-                          navigator.clipboard.writeText(logs);
-                          import('react-hot-toast').then(t => t.default.success('تم نسخ السجل التقني، أرسله للمطور'));
-                        } else {
-                          console.log('Technical Log:', logs);
-                          import('react-hot-toast').then(t => t.default.error('لا يمكن النسخ التلقائي، السجل مطبوع في Console'));
-                        }
-                    }}
-                    className="text-[10px] bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg font-black transition-all"
-                   >
-                     نسخ السجل للتحليل
-                   </button>
-                   <button 
-                    onClick={() => window.location.reload()}
-                    className="text-[10px] bg-white text-slate-900 px-3 py-1.5 rounded-lg font-black transition-all"
-                   >
-                     تحديث الصفحة
-                   </button>
-                </div>
-             </div>
-             <pre className="text-[11px] font-mono text-rose-400 overflow-x-auto overflow-y-auto max-h-[300px] leading-relaxed">
-               {JSON.stringify(technicalError.details, null, 2)}
-             </pre>
-          </div>
-        </div>
-      )}
 
       {/* Unified Filter Bar */}
       <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm mb-6">
@@ -466,12 +354,12 @@ export default function ReportsDashboard() {
             <div className="relative flex items-center bg-slate-50 dark:bg-slate-900/50 px-3 py-2.5 rounded-xl border border-slate-100 dark:border-slate-700 hover:border-emerald-500/30 transition-colors cursor-pointer">
               <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
               <span className="text-xs font-black text-slate-700 dark:text-slate-200 mr-2 truncate">
-                {safeFormat(dateRange.start, "dd MMM yyyy", { locale: ar })}
+                {format(dateRange.start, "dd MMM yyyy", { locale: ar })}
               </span>
               <input 
                 type="date" 
                 className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                value={safeFormat(dateRange.start, 'yyyy-MM-dd')}
+                value={format(dateRange.start, 'yyyy-MM-dd')}
                 onChange={(e) => {
                   const d = new Date(e.target.value);
                   if (!isNaN(d.getTime())) {
@@ -488,12 +376,12 @@ export default function ReportsDashboard() {
             <div className="relative flex items-center bg-slate-50 dark:bg-slate-900/50 px-3 py-2.5 rounded-xl border border-slate-100 dark:border-slate-700 hover:border-emerald-500/30 transition-colors cursor-pointer">
               <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
               <span className="text-xs font-black text-slate-700 dark:text-slate-200 mr-2 truncate">
-                {safeFormat(dateRange.end, "dd MMM yyyy", { locale: ar })}
+                {format(dateRange.end, "dd MMM yyyy", { locale: ar })}
               </span>
               <input 
                 type="date" 
                 className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                value={safeFormat(dateRange.end, 'yyyy-MM-dd')}
+                value={format(dateRange.end, 'yyyy-MM-dd')}
                 onChange={(e) => {
                   const d = new Date(e.target.value);
                   if (!isNaN(d.getTime())) {
@@ -850,7 +738,7 @@ export default function ReportsDashboard() {
                               {t.priority === 'urgent' ? 'عاجل' : 'عادي'}
                            </span>
                         </td>
-                        <td className="px-6 py-4 text-slate-400 font-bold">{safeFormat(t.created_at, 'dd/MM/yyyy')}</td>
+                        <td className="px-6 py-4 text-slate-400 font-bold">{t.created_at ? format(parseISO(t.created_at), 'dd/MM/yyyy') : '-'}</td>
                      </tr>
                    ))}
                    {(!supportTickets || supportTickets.length === 0) && (
@@ -863,10 +751,9 @@ export default function ReportsDashboard() {
       </div>
 
       {/* AI Assistant */}
-      <ReportsAIAssistant 
-        isOpen={isAIAssistantOpen} 
-        onClose={() => setIsAIAssistantOpen(false)} 
-      />
+      <div className="flex justify-center mb-10">
+        <ReportsAIAssistant />
+      </div>
 
       {/* Entity Orders Modal */}
       {activeModal && (

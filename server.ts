@@ -89,6 +89,10 @@ async function startServer() {
       })
     : null;
 
+  app.get("/api/config/gemini", (_req, res) => {
+    res.json({ apiKey: process.env.GEMINI_API_KEY || '' });
+  });
+
   // API Routes
   app.post("/api/admin/create-user", catchAsync(async (req: Request, res: Response, next: NextFunction) => {
     if (!supabaseAdmin) {

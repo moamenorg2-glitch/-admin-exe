@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
-import { format, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import { X, Download, Package, Calendar, TrendingUp, DollarSign, Receipt, Filter } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import toast from 'react-hot-toast';
@@ -15,89 +15,69 @@ interface EntityOrdersModalProps {
   dateRange: { start: Date; end: Date };
 }
 
-// Safe Date Formatting helper
-const safeFormatDate = (date: any, formatStr: string) => {
-  try {
-    if (!date) return '-';
-    const d = typeof date === 'string' ? parseISO(date) : date;
-    if (isNaN(d.getTime())) return '-';
-    return format(d, formatStr);
-  } catch (e) {
-    return '-';
-  }
-};
-
 export default function EntityOrdersModal({ isOpen, onClose, type, entityId, entityName, dateRange }: EntityOrdersModalProps) {
   const [filterPayment, setFilterPayment] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
 
   const { data: rawOrders, isLoading } = useQuery({
     queryKey: ['entity-orders', type, entityId, dateRange],
-    meta: { suppressGlobalError: true },
     queryFn: async () => {
-      try {
-        // Fetch orders based on type
-        if (type === 'vendor') {
-          const { data, error } = await supabase
-            .from('sub_orders')
-            .select(`
-              id,
-              master_order_id,
-              sub_total,
-              vendor_commission,
-              sub_status,
-              created_at,
-              vendor:vendor_details!sub_orders_vendor_id_fkey(commission_rate),
-              master_order:master_orders!sub_orders_master_order_id_fkey(
-                order_number,
-                payment_method,
-                customer:profiles!master_orders_customer_id_fkey(full_name)
-              )
-            `)
-            .eq('vendor_id', entityId)
-            .gte('created_at', format(dateRange.start, "yyyy-MM-dd'T'00:00:00"))
-            .lte('created_at', format(dateRange.end, "yyyy-MM-dd'T'23:59:59"))
-            .order('created_at', { ascending: false });
+      // Fetch orders based on type
+      if (type === 'vendor') {
+        const { data, error } = await supabase
+          .from('sub_orders')
+          .select(`
+            id,
+            master_order_id,
+            sub_total,
+            vendor_commission,
+            sub_status,
+            created_at,
+            vendor:vendor_details!sub_orders_vendor_id_fkey(commission_rate),
+            master_order:master_orders!sub_orders_master_order_id_fkey(
+              order_number,
+              payment_method,
+              customer:profiles!master_orders_customer_id_fkey(full_name)
+            )
+          `)
+          .eq('vendor_id', entityId)
+          .gte('created_at', format(dateRange.start, "yyyy-MM-dd'T'00:00:00"))
+          .lte('created_at', format(dateRange.end, "yyyy-MM-dd'T'23:59:59"))
+          .order('created_at', { ascending: false });
 
-          if (error) throw error;
-          return data;
-        } else {
-          const { data: orderData, error: orderError } = await supabase
-            .from('order_delivery_team')
-            .select(`
+        if (error) throw error;
+        return data;
+      } else {
+        const { data: orderData, error: orderError } = await supabase
+          .from('order_delivery_team')
+          .select(`
+            id,
+            master_order_id,
+            master_order:master_orders!fk_order_delivery_team_master_order!inner(
               id,
-              master_order_id,
-              master_order:master_orders!fk_order_delivery_team_master_order!inner(
-                id,
-                order_number,
-                status,
-                payment_method,
-                delivery_fee,
-                distance_fee,
-                driver_tip,
-                items_total,
-                grand_total,
-                platform_discount,
-                delivery_discount,
-                customer:profiles!master_orders_customer_id_fkey(full_name),
-                created_at
-              ),
+              order_number,
+              status,
+              payment_method,
+              delivery_fee,
+              distance_fee,
+              driver_tip,
+              items_total,
+              grand_total,
+              platform_discount,
+              delivery_discount,
+              customer:profiles!master_orders_customer_id_fkey(full_name),
               created_at
-            `)
-            .eq('driver_id', entityId)
-            .gte('created_at', format(dateRange.start, "yyyy-MM-dd'T'00:00:00"))
-            .lte('created_at', format(dateRange.end, "yyyy-MM-dd'T'23:59:59"))
-            .order('created_at', { ascending: false });
+            ),
+            created_at
+          `)
+          .eq('driver_id', entityId)
+          .gte('created_at', format(dateRange.start, "yyyy-MM-dd'T'00:00:00"))
+          .lte('created_at', format(dateRange.end, "yyyy-MM-dd'T'23:59:59"))
+          .order('created_at', { ascending: false });
 
-          if (orderError) throw orderError;
-          
-          return orderData.filter(d => d.master_order) || [];
-        }
-      } catch (err: any) {
-        console.error('Modal Query Error:', err);
-        // Instead of throwing and hitting global boundary, return empty and toast
-        toast.error('حدث خطأ أثناء تحميل البيانات: ' + (err.message || 'خطأ غير معروف'));
-        return [];
+        if (orderError) throw orderError;
+        
+        return orderData.filter(d => d.master_order) || [];
       }
     },
     enabled: isOpen && !!entityId
@@ -179,7 +159,7 @@ export default function EntityOrdersModal({ isOpen, onClose, type, entityId, ent
          const commRate = Number(o.vendor?.commission_rate || 0);
          const comm = Number(o.vendor_commission) || ((Number(subTotal) * commRate) / 100);
          const net = Number(subTotal) - comm;
-         const date = safeFormatDate(o.created_at, 'yyyy-MM-dd HH:mm');
+         const date = format(new Date(o.created_at), 'yyyy-MM-dd HH:mm');
          return `"${orderNum}","${payment}","${status}","${subTotal}","${comm.toFixed(2)}","${net.toFixed(2)}","${date}"`;
       });
       csvContent = "\uFEFF" + [header, ...rows].join('\n');
@@ -203,7 +183,7 @@ export default function EntityOrdersModal({ isOpen, onClose, type, entityId, ent
          const deduction = isCash ? (grandTotal - itemsTotal) : 0;
          const net = income - deduction;
          
-         const date = safeFormatDate(o.created_at, 'yyyy-MM-dd HH:mm');
+         const date = format(new Date(o.created_at), 'yyyy-MM-dd HH:mm');
          return `"${orderNum}","${payment}","${status}","${itemsTotal}","${totalDiscount}","${grandTotal}","${deliveryFee}","${distanceFee}","${driverTip}","${net.toFixed(2)}","${date}"`;
       });
       csvContent = "\uFEFF" + [header, ...rows].join('\n');
@@ -212,7 +192,7 @@ export default function EntityOrdersModal({ isOpen, onClose, type, entityId, ent
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `orders_${type}_${entityName}_${safeFormatDate(new Date(), 'yyyyMMdd')}.csv`;
+    link.download = `orders_${type}_${entityName}_${format(new Date(), 'yyyyMMdd')}.csv`;
     link.click();
   };
 
@@ -520,8 +500,8 @@ export default function EntityOrdersModal({ isOpen, onClose, type, entityId, ent
                           )}
                           <td className="px-5 py-4 text-gray-500 dark:text-gray-400 font-bold whitespace-nowrap text-[13px]">
                             <div className="flex flex-col">
-                              <span>{safeFormatDate(o.created_at, 'yyyy/MM/dd')}</span>
-                              <span className="text-[11px] text-gray-400">{safeFormatDate(o.created_at, 'HH:mm a')}</span>
+                              <span>{format(new Date(o.created_at), 'yyyy/MM/dd')}</span>
+                              <span className="text-[11px] text-gray-400">{format(new Date(o.created_at), 'HH:mm a')}</span>
                             </div>
                           </td>
                         </tr>
