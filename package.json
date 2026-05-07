@@ -7,19 +7,12 @@
   "build": {
     "appId": "com.zajel.admin",
     "productName": "Zajel Admin",
+    "artifactName": "${productName}-${version}-${arch}.${ext}",
     "directories": {
       "output": "release"
     },
     "win": {
-      "target": [
-        {
-          "target": "nsis",
-          "arch": [
-            "x64",
-            "ia32"
-          ]
-        }
-      ]
+      "target": "nsis"
     },
     "files": [
       "dist/**/*",
@@ -31,7 +24,9 @@
     "start": "npx tsx server.ts",
     "dev": "tsx server.ts",
     "build": "vite build",
-    "build:electron": "vite build && electron-builder --win --ia32",
+    "build:electron": "vite build && npm run build:electron:64 && npm run build:electron:32",
+    "build:electron:64": "electron-builder --win --x64",
+    "build:electron:32": "electron-builder --win --ia32",
     "build:android": "vite build && npx cap sync android && cd android && ./gradlew assembleRelease",
     "preview": "vite preview",
     "lint": "tsc --noEmit"
