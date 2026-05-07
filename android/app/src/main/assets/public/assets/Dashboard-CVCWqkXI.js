@@ -1,0 +1,1 @@
+import{j as s}from"./index-MmfGCx3s.js";const r=()=>s.jsxs("div",{className:"p-6",children:[s.jsx("h1",{className:"text-2xl font-bold mb-4",children:"لوحة تحكم العميل"}),s.jsx("p",{children:"مرحباً بك في لوحة تحكم العميل. يمكنك هنا تصفح المنتجات وتتبع طلباتك."})]});export{r as default};
