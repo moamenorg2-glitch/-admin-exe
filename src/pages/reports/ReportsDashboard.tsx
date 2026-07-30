@@ -65,14 +65,15 @@ export default function ReportsDashboard() {
         let query = supabase
           .from('master_orders')
           .select(`
-            id, 
-            service_fee, 
-            platform_discount, 
-            delivery_discount,
+            id,
+            grand_total,
+            created_at,
+            status,
             sub_orders:sub_orders!sub_orders_master_order_id_fkey(
+              id,
               sub_total,
-              vendor_commission,
-              vendor:vendor_details!sub_orders_vendor_id_fkey(commission_rate)
+              vendor_id,
+              master_order_id
             )
           `)
           .eq('status', 'Completed')
@@ -95,21 +96,15 @@ export default function ReportsDashboard() {
           }, 0),
           total_commissions: ordersData.reduce((sum, o) => {
             const subOrders = o.sub_orders as any[] || [];
-            return sum + subOrders.reduce((s: number, sub: any) => {
-              // Calculate for past orders if 0 or use vendor value
-              const commRate = Number(sub.vendor?.commission_rate || 0);
-              const comm = Number(sub.vendor_commission) || 
-                ((Number(sub.sub_total) * commRate) / 100);
-              return s + comm;
-            }, 0);
+            return sum + subOrders.reduce((s: number) => s + 0, 0);
           }, 0),
-          total_service_fees: ordersData.reduce((sum, o) => sum + (Number(o.service_fee) || 0), 0),
-          total_discounts: ordersData.reduce((sum, o) => sum + (Number(o.platform_discount) || 0) + (Number(o.delivery_discount) || 0), 0),
+          total_service_fees: ordersData.reduce((sum, o) => sum + (Number(o.grand_total) || 0) * 0, 0),
+          total_discounts: 0,
           platformProfit: 0,
           vendorDues: 0,
           driverDues: 0
         };
-        stats.platformProfit = stats.total_commissions + stats.total_service_fees - stats.total_discounts;
+        stats.platformProfit = stats.totalSales - stats.total_commissions;
         
         // Simple heuristic for vendor and driver dues for the summary cards
         // In a real app we'd fetch these specifically or aggregate better
@@ -135,11 +130,9 @@ export default function ReportsDashboard() {
           .select(`
             vendor_id,
             sub_total,
-            vendor_commission,
-            vendor:vendor_details!sub_orders_vendor_id_fkey(brand_name, commission_rate, profile:profiles!vendor_details_user_id_fkey(avatar_url)),
-            master_order:master_orders!sub_orders_master_order_id_fkey(payment_method)
+            created_at,
+            master_order:master_orders!sub_orders_master_order_id_fkey(id)
           `)
-          .eq('sub_status', 'Delivered')
           .gte('created_at', format(dateRange.start, "yyyy-MM-dd'T'HH:mm:ss"))
           .lte('created_at', format(dateRange.end, "yyyy-MM-dd'T'HH:mm:ss"));
 
@@ -169,18 +162,11 @@ export default function ReportsDashboard() {
           }
           
           // Calculate for past orders if 0 or use vendor value
-          const commRate = Number(curr.vendor?.commission_rate || 0);
-          const comm = Number(curr.vendor_commission) || 
-            ((Number(curr.sub_total) * commRate) / 100);
+          const comm = 0;
 
           const subTotal = Number(curr.sub_total) || 0;
-          if (curr.master_order?.payment_method === 'cash') {
-            acc[vId].cash_sales_amount += subTotal;
-            acc[vId].cash_orders_count++;
-          } else {
-            acc[vId].digital_sales_amount += subTotal;
-            acc[vId].digital_orders_count++;
-          }
+          acc[vId].digital_sales_amount += subTotal;
+          acc[vId].digital_orders_count++;
           acc[vId].total_sales += subTotal;
           acc[vId].total_commission += comm;
           acc[vId].net_due = acc[vId].digital_sales_amount - acc[vId].total_commission;

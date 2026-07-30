@@ -69,7 +69,7 @@ export const userService = {
           .from('order_delivery_team')
           .select('*, master_order:master_orders!fk_order_delivery_team_master_order(*)', { count: 'exact', head: true })
           .eq('driver_id', user.user_id)
-          .gte('master_orders.created_at', startOfDay.toISOString());
+          .gte('master_order.created_at', startOfDay.toISOString());
           
         stats.total_orders = total || 0;
         stats.today_orders = today || 0;

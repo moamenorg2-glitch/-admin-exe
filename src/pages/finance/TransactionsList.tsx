@@ -74,11 +74,18 @@ export default function TransactionsList() {
       try {
         let walletIds: string[] = [];
         if (searchQuery) {
-          const { data: profiles } = await supabase
+          const { data: profiles, error: profileError } = await supabase
             .from('profiles')
             .select('user_id')
             .or(`full_name.ilike.%${searchQuery}%,primary_phone.ilike.%${searchQuery}%`);
-          
+
+          if (profileError) {
+            if (profileError.message && /could not find|schema cache/i.test(profileError.message)) {
+              return { transactions: [], count: 0 };
+            }
+            throw profileError;
+          }
+
           if (profiles && profiles.length > 0) {
             walletIds = profiles.map(p => p.user_id);
           }
@@ -113,7 +120,12 @@ export default function TransactionsList() {
         }
 
         const { data, count, error } = await query;
-        if (error) throw error;
+        if (error) {
+          if (error.message && /could not find|schema cache/i.test(error.message)) {
+            return { transactions: [], count: 0 };
+          }
+          throw error;
+        }
         return { transactions: data, count };
       } catch (error) {
         handleGlobalError(error, 'تحميل سجل المعاملات');

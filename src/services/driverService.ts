@@ -37,7 +37,7 @@ export const driverService = {
     }
 
     // استبعاد المناديب المحذوفين منطقياً
-    query = query.neq('profiles.status', 'محذوف');
+    query = query.neq('profile.status', 'محذوف');
 
     const { data: drivers, error, count } = await query
       .order('created_at', { ascending: false })
@@ -59,22 +59,22 @@ export const driverService = {
         .from('order_delivery_team')
         .select('*, master_order:master_orders!fk_order_delivery_team_master_order(created_at)', { count: 'exact', head: true })
         .eq('driver_id', driver.user_id)
-        .gte('master_orders.created_at', startOfDay.toISOString());
+        .gte('master_order.created_at', startOfDay.toISOString());
 
       // Get Today's status counts for the modal requirement
       const { count: completedToday } = await supabase
         .from('order_delivery_team')
         .select('*, master_order:master_orders!fk_order_delivery_team_master_order(status, created_at)', { count: 'exact', head: true })
         .eq('driver_id', driver.user_id)
-        .eq('master_orders.status', 'Completed')
-        .gte('master_orders.created_at', startOfDay.toISOString());
+        .eq('master_order.status', 'Completed')
+        .gte('master_order.created_at', startOfDay.toISOString());
 
       const { count: cancelledToday } = await supabase
         .from('order_delivery_team')
         .select('*, master_order:master_orders!fk_order_delivery_team_master_order(status, created_at)', { count: 'exact', head: true })
         .eq('driver_id', driver.user_id)
-        .eq('master_orders.status', 'Cancelled')
-        .gte('master_orders.created_at', startOfDay.toISOString());
+        .eq('master_order.status', 'Cancelled')
+        .gte('master_order.created_at', startOfDay.toISOString());
 
       return { 
         ...driver, 

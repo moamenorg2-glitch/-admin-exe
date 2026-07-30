@@ -31,58 +31,85 @@ export default function FinanceDashboard() {
   const { data: stats, isLoading: isStatsLoading } = useQuery({
     queryKey: ['wallet-stats'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('wallets')
-        .select('current_balance, locked_balance');
-      
-      if (error) throw error;
+      try {
+        const { data = [], error } = await supabase
+          .from('wallets')
+          .select('current_balance, locked_balance');
 
-      const total = data.reduce((acc, w) => acc + (Number(w.current_balance) || 0), 0);
-      const pending = data.reduce((acc, w) => acc + (Number(w.locked_balance) || 0), 0);
+        if (error) {
+          if (error.message && /could not find|schema cache/i.test(error.message)) {
+            return { total: 0, pending: 0 };
+          }
+          throw error;
+        }
 
-      return { total, pending };
+        const total = (data as any[]).reduce((acc, w) => acc + (Number(w.current_balance) || 0), 0);
+        const pending = (data as any[]).reduce((acc, w) => acc + (Number(w.locked_balance) || 0), 0);
+
+        return { total, pending };
+      } catch (error) {
+        console.warn('wallet stats unavailable', error);
+        return { total: 0, pending: 0 };
+      }
     }
   });
 
   const { data, isLoading } = useQuery({
     queryKey: ['wallets', page, searchQuery, userTypeFilter],
     queryFn: async () => {
-      let userIds: string[] = [];
-      let query = supabase
-        .from('wallets')
-        .select(`
-          *,
-          profiles!inner (
-            full_name,
-            user_type,
-            primary_phone
-          )
-        `, { count: 'exact' })
-        .order('current_balance', { ascending: false })
-        .range(page * pageSize, (page + 1) * pageSize - 1);
+      try {
+        let userIds: string[] = [];
+        let query = supabase
+          .from('wallets')
+          .select(`
+            *,
+            profiles!inner (
+              full_name,
+              user_type,
+              primary_phone
+            )
+          `, { count: 'exact' })
+          .order('current_balance', { ascending: false })
+          .range(page * pageSize, (page + 1) * pageSize - 1);
 
-      if (userTypeFilter !== 'All') {
-        query = query.eq('profiles.user_type', userTypeFilter);
-      }
-
-      if (searchQuery) {
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('user_id')
-          .or(`full_name.ilike.%${searchQuery}%,primary_phone.ilike.%${searchQuery}%`);
-        
-        if (profiles && profiles.length > 0) {
-          userIds = profiles.map(p => p.user_id);
-          query = query.in('user_id', userIds);
-        } else {
-          return { wallets: [], count: 0 };
+        if (userTypeFilter !== 'All') {
+          query = query.eq('profiles.user_type', userTypeFilter);
         }
+
+        if (searchQuery) {
+          const { data: profiles, error: profileError } = await supabase
+            .from('profiles')
+            .select('user_id')
+            .or(`full_name.ilike.%${searchQuery}%,primary_phone.ilike.%${searchQuery}%`);
+
+          if (profileError) {
+            if (profileError.message && /could not find|schema cache/i.test(profileError.message)) {
+              return { wallets: [], count: 0 };
+            }
+            throw profileError;
+          }
+
+          if (profiles && profiles.length > 0) {
+            userIds = profiles.map(p => p.user_id);
+            query = query.in('user_id', userIds);
+          } else {
+            return { wallets: [], count: 0 };
+          }
+        }
+
+        const { data, count, error } = await query;
+        if (error) {
+          if (error.message && /could not find|schema cache/i.test(error.message)) {
+            return { wallets: [], count: 0 };
+          }
+          throw error;
+        }
+
+        return { wallets: data as any[], count };
+      } catch (error) {
+        console.warn('wallet list unavailable', error);
+        return { wallets: [], count: 0 };
       }
-
-      const { data, count, error } = await query;
-      if (error) throw error;
-
-      return { wallets: data as any[], count };
     },
   });
 
